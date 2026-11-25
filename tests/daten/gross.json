@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "exportedAt": "2026-11-25T00:00:00+01:00",
   "schule": {
     "name": "Gesamtschule Nord (Testdaten groß)",
     "schuljahr": "2026/27"
@@ -113,77 +114,88 @@
       "name": "Biologie",
       "kuerzel": "BI",
       "raumtyp": null,
-      "blockbar": true
+      "blockbar": true,
+      "hauptfach": false
     },
     {
       "id": "f-ge",
       "name": "Geschichte",
       "kuerzel": "GE",
       "raumtyp": null,
-      "blockbar": true
+      "blockbar": true,
+      "hauptfach": false
     },
     {
       "id": "f-ek",
       "name": "Erdkunde",
       "kuerzel": "EK",
       "raumtyp": null,
-      "blockbar": true
+      "blockbar": true,
+      "hauptfach": false
     },
     {
       "id": "f-sp",
       "name": "Sport",
       "kuerzel": "SP",
       "raumtyp": "turnhalle",
-      "blockbar": true
+      "blockbar": true,
+      "hauptfach": false
     },
     {
       "id": "f-mu",
       "name": "Musik",
       "kuerzel": "MU",
       "raumtyp": "musik",
-      "blockbar": false
+      "blockbar": false,
+      "hauptfach": false
     },
     {
       "id": "f-ku",
       "name": "Kunst",
       "kuerzel": "KU",
       "raumtyp": "kunst",
-      "blockbar": true
+      "blockbar": true,
+      "hauptfach": false
     },
     {
       "id": "f-re",
       "name": "Religion/Ethik",
       "kuerzel": "RE",
       "raumtyp": null,
-      "blockbar": false
+      "blockbar": false,
+      "hauptfach": false
     },
     {
       "id": "f-if",
       "name": "Informatik",
       "kuerzel": "IF",
       "raumtyp": "informatik",
-      "blockbar": true
+      "blockbar": true,
+      "hauptfach": false
     },
     {
       "id": "f-sw",
       "name": "Schwimmen",
       "kuerzel": "SW",
       "raumtyp": "schwimmhalle",
-      "blockbar": true
+      "blockbar": true,
+      "hauptfach": false
     },
     {
       "id": "f-ph",
       "name": "Physik",
       "kuerzel": "PH",
       "raumtyp": "nawi",
-      "blockbar": true
+      "blockbar": true,
+      "hauptfach": false
     },
     {
       "id": "f-ch",
       "name": "Chemie",
       "kuerzel": "CH",
       "raumtyp": "nawi",
-      "blockbar": true
+      "blockbar": true,
+      "hauptfach": false
     }
   ],
   "lehrkraefte": [
@@ -331,6 +343,7 @@
       "sollStunden": 14,
       "minStunden": 10,
       "maxStunden": 16,
+      "teilzeitfaktor": 0.5,
       "aufsichtenProWoche": 1,
       "gesperrt": [
         {
@@ -343,8 +356,7 @@
           ]
         }
       ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
+      "abwesenheiten": []
     },
     {
       "id": "l-isk",
@@ -370,6 +382,7 @@
       "sollStunden": 14,
       "minStunden": 10,
       "maxStunden": 16,
+      "teilzeitfaktor": 0.5,
       "aufsichtenProWoche": 1,
       "gesperrt": [
         {
@@ -382,8 +395,7 @@
           ]
         }
       ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
+      "abwesenheiten": []
     },
     {
       "id": "l-pet",
@@ -460,6 +472,7 @@
       "sollStunden": 14,
       "minStunden": 10,
       "maxStunden": 16,
+      "teilzeitfaktor": 0.5,
       "aufsichtenProWoche": 1,
       "gesperrt": [
         {
@@ -472,8 +485,7 @@
           ]
         }
       ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
+      "abwesenheiten": []
     },
     {
       "id": "l-mar",
@@ -527,6 +539,7 @@
       "sollStunden": 14,
       "minStunden": 10,
       "maxStunden": 16,
+      "teilzeitfaktor": 0.5,
       "aufsichtenProWoche": 1,
       "gesperrt": [
         {
@@ -539,8 +552,7 @@
           ]
         }
       ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
+      "abwesenheiten": []
     },
     {
       "id": "l-jae",
@@ -1002,6 +1014,7 @@
       "sollStunden": 14,
       "minStunden": 10,
       "maxStunden": 16,
+      "teilzeitfaktor": 0.5,
       "aufsichtenProWoche": 1,
       "gesperrt": [
         {
@@ -1014,8 +1027,7 @@
           ]
         }
       ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
+      "abwesenheiten": []
     },
     {
       "id": "l-uhl",
@@ -1431,6 +1443,7 @@
       "sollStunden": 14,
       "minStunden": 10,
       "maxStunden": 16,
+      "teilzeitfaktor": 0.5,
       "aufsichtenProWoche": 1,
       "gesperrt": [
         {
@@ -1443,8 +1456,7 @@
           ]
         }
       ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
+      "abwesenheiten": []
     },
     {
       "id": "l-cra",
@@ -1516,6 +1528,7 @@
       "sollStunden": 14,
       "minStunden": 10,
       "maxStunden": 16,
+      "teilzeitfaktor": 0.5,
       "aufsichtenProWoche": 1,
       "gesperrt": [
         {
@@ -1528,8 +1541,7 @@
           ]
         }
       ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
+      "abwesenheiten": []
     },
     {
       "id": "l-vol",
@@ -1837,7 +1849,8 @@
         "r-504",
         "r-505"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-502",
@@ -1850,7 +1863,8 @@
         "r-504",
         "r-505"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-503",
@@ -1863,7 +1877,8 @@
         "r-504",
         "r-505"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-504",
@@ -1876,7 +1891,8 @@
         "r-503",
         "r-505"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-505",
@@ -1889,7 +1905,8 @@
         "r-503",
         "r-504"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-601",
@@ -1902,7 +1919,8 @@
         "r-604",
         "r-605"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-602",
@@ -1915,7 +1933,8 @@
         "r-604",
         "r-605"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-603",
@@ -1928,7 +1947,8 @@
         "r-604",
         "r-605"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-604",
@@ -1941,7 +1961,8 @@
         "r-603",
         "r-605"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-605",
@@ -1954,7 +1975,8 @@
         "r-603",
         "r-604"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-701",
@@ -1967,7 +1989,8 @@
         "r-704",
         "r-705"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-702",
@@ -1980,7 +2003,8 @@
         "r-704",
         "r-705"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-703",
@@ -1993,7 +2017,8 @@
         "r-704",
         "r-705"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-704",
@@ -2006,7 +2031,8 @@
         "r-703",
         "r-705"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-705",
@@ -2019,7 +2045,8 @@
         "r-703",
         "r-704"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-801",
@@ -2032,7 +2059,8 @@
         "r-804",
         "r-805"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-802",
@@ -2045,7 +2073,8 @@
         "r-804",
         "r-805"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-803",
@@ -2058,7 +2087,8 @@
         "r-804",
         "r-805"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-804",
@@ -2071,7 +2101,8 @@
         "r-803",
         "r-805"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-805",
@@ -2084,7 +2115,8 @@
         "r-803",
         "r-804"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-901",
@@ -2097,7 +2129,8 @@
         "r-904",
         "r-905"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-902",
@@ -2110,7 +2143,8 @@
         "r-904",
         "r-905"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-903",
@@ -2123,7 +2157,8 @@
         "r-904",
         "r-905"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-904",
@@ -2136,7 +2171,8 @@
         "r-903",
         "r-905"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-905",
@@ -2149,7 +2185,8 @@
         "r-903",
         "r-904"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-1001",
@@ -2162,7 +2199,8 @@
         "r-1004",
         "r-1005"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-1002",
@@ -2175,7 +2213,8 @@
         "r-1004",
         "r-1005"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-1003",
@@ -2188,7 +2227,8 @@
         "r-1004",
         "r-1005"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-1004",
@@ -2201,7 +2241,8 @@
         "r-1003",
         "r-1005"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-1005",
@@ -2214,7 +2255,8 @@
         "r-1003",
         "r-1004"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-turnhalle1",
@@ -2229,7 +2271,8 @@
             8
           ]
         }
-      ]
+      ],
+      "abwesenheiten": []
     },
     {
       "id": "r-turnhalle2",
@@ -2237,7 +2280,8 @@
       "typ": "turnhalle",
       "kapazitaet": 60,
       "nahe": [],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-turnhalle3",
@@ -2245,7 +2289,8 @@
       "typ": "turnhalle",
       "kapazitaet": 60,
       "nahe": [],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-musik1",
@@ -2254,7 +2299,8 @@
       "fachraumtyp": "musik",
       "kapazitaet": 32,
       "nahe": [],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-musik2",
@@ -2263,7 +2309,8 @@
       "fachraumtyp": "musik",
       "kapazitaet": 32,
       "nahe": [],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-kunst1",
@@ -2272,7 +2319,8 @@
       "fachraumtyp": "kunst",
       "kapazitaet": 32,
       "nahe": [],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-kunst2",
@@ -2281,7 +2329,8 @@
       "fachraumtyp": "kunst",
       "kapazitaet": 32,
       "nahe": [],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-informatik1",
@@ -2290,7 +2339,8 @@
       "fachraumtyp": "informatik",
       "kapazitaet": 32,
       "nahe": [],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-informatik2",
@@ -2299,7 +2349,8 @@
       "fachraumtyp": "informatik",
       "kapazitaet": 32,
       "nahe": [],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-schwimmhalle1",
@@ -2315,7 +2366,8 @@
             2
           ]
         }
-      ]
+      ],
+      "abwesenheiten": []
     },
     {
       "id": "r-nawi1",
@@ -2324,7 +2376,8 @@
       "fachraumtyp": "nawi",
       "kapazitaet": 32,
       "nahe": [],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-nawi2",
@@ -2333,7 +2386,8 @@
       "fachraumtyp": "nawi",
       "kapazitaet": 32,
       "nahe": [],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-nawi3",
@@ -2342,7 +2396,8 @@
       "fachraumtyp": "nawi",
       "kapazitaet": 32,
       "nahe": [],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     }
   ],
   "klassen": [
@@ -6748,6 +6803,5 @@
     "aufsichten": [],
     "vertretungen": [],
     "aufsichtsVertretungen": []
-  },
-  "exportedAt": "2026-11-25T00:00:00+01:00"
+  }
 }

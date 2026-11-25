@@ -193,6 +193,8 @@ Eine Seite mit Reitern. Alle Eingaben werden sofort validiert (Pflichtfelder, do
 
 Das Programm speichert nichts selbst. Der gesamte Zustand liegt in einer JSON-Datei, die die Nutzerin exportiert und später wieder importiert. Der Export erfolgt als Download (`Blob` + `<a download>`), der Import über Dateiauswahl oder Drag-and-drop (`FileReader`). Dateiname: `stundenplan-JJJJ-MM-TT.json`.
 
+Das folgende Beispiel ist gekürzt (nur zwei Stunden im Zeitraster, nicht alle referenzierten Klassen und Räume) und zeigt die Struktur; für sich allein importiert, meldet die Prüfung die fehlenden Referenzen.
+
 ```json
 {
   "schemaVersion": 1,

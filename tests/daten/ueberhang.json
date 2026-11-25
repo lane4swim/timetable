@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "exportedAt": "2026-11-25T00:00:00+01:00",
   "schule": {
     "name": "Grundschule Sonnenhang (Testdaten Überhang)",
     "schuljahr": "2026/27"
@@ -89,35 +90,40 @@
       "name": "Sachunterricht",
       "kuerzel": "SU",
       "raumtyp": null,
-      "blockbar": true
+      "blockbar": true,
+      "hauptfach": false
     },
     {
       "id": "f-sp",
       "name": "Sport",
       "kuerzel": "SP",
       "raumtyp": "turnhalle",
-      "blockbar": true
+      "blockbar": true,
+      "hauptfach": false
     },
     {
       "id": "f-mu",
       "name": "Musik",
       "kuerzel": "MU",
       "raumtyp": "musik",
-      "blockbar": false
+      "blockbar": false,
+      "hauptfach": false
     },
     {
       "id": "f-ku",
       "name": "Kunst",
       "kuerzel": "KU",
       "raumtyp": "kunst",
-      "blockbar": true
+      "blockbar": true,
+      "hauptfach": false
     },
     {
       "id": "f-re",
       "name": "Religion/Ethik",
       "kuerzel": "RE",
       "raumtyp": null,
-      "blockbar": false
+      "blockbar": false,
+      "hauptfach": false
     }
   ],
   "lehrkraefte": [
@@ -201,6 +207,7 @@
       "sollStunden": 14,
       "minStunden": 10,
       "maxStunden": 16,
+      "teilzeitfaktor": 0.5,
       "aufsichtenProWoche": 2,
       "gesperrt": [
         {
@@ -211,8 +218,7 @@
           ]
         }
       ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
+      "abwesenheiten": []
     },
     {
       "id": "l-ott",
@@ -381,6 +387,7 @@
       "sollStunden": 14,
       "minStunden": 10,
       "maxStunden": 16,
+      "teilzeitfaktor": 0.5,
       "aufsichtenProWoche": 2,
       "gesperrt": [
         {
@@ -391,8 +398,7 @@
           ]
         }
       ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
+      "abwesenheiten": []
     }
   ],
   "raeume": [
@@ -404,7 +410,8 @@
       "nahe": [
         "r-102"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-102",
@@ -414,7 +421,8 @@
       "nahe": [
         "r-101"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-201",
@@ -424,7 +432,8 @@
       "nahe": [
         "r-202"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-202",
@@ -434,7 +443,8 @@
       "nahe": [
         "r-201"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-turnhalle1",
@@ -449,7 +459,8 @@
             6
           ]
         }
-      ]
+      ],
+      "abwesenheiten": []
     },
     {
       "id": "r-musik1",
@@ -458,7 +469,8 @@
       "fachraumtyp": "musik",
       "kapazitaet": 32,
       "nahe": [],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-kunst1",
@@ -467,7 +479,8 @@
       "fachraumtyp": "kunst",
       "kapazitaet": 32,
       "nahe": [],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     }
   ],
   "klassen": [
@@ -893,6 +906,5 @@
     "aufsichten": [],
     "vertretungen": [],
     "aufsichtsVertretungen": []
-  },
-  "exportedAt": "2026-11-25T00:00:00+01:00"
+  }
 }

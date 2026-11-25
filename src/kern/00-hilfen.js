@@ -129,6 +129,14 @@ const Hilfen = (() => {
     return jetzt.getFullYear() + '-' + z(jetzt.getMonth() + 1) + '-' + z(jetzt.getDate());
   }
 
+  /** Zeitpunkt als ISO-Text in lokaler Zeit mit Zeitzonenversatz, z. B. 2026-11-25T16:59:00+01:00 (§8 exportedAt). */
+  function isoMitZeitzone(jetzt = new Date()) {
+    const z = (n) => String(Math.abs(n)).padStart(2, '0');
+    const versatz = -jetzt.getTimezoneOffset();
+    return heuteIso(jetzt) + 'T' + z(jetzt.getHours()) + ':' + z(jetzt.getMinutes()) + ':' + z(jetzt.getSeconds())
+      + (versatz >= 0 ? '+' : '-') + z(Math.trunc(versatz / 60)) + ':' + z(versatz % 60);
+  }
+
   /** Dateiname für den Export: stundenplan-JJJJ-MM-TT.json (§8). */
   function exportDateiname(jetzt = new Date(), zusatz = '') {
     return 'stundenplan-' + (zusatz ? zusatz + '-' : '') + heuteIso(jetzt) + '.json';
@@ -137,6 +145,6 @@ const Hilfen = (() => {
   return {
     erzeugeZufall, neueId, normalisiereStamm, tiefeKopie,
     WOCHENTAGE, istIsoDatum, wochentag, plusTage, unterrichtstage, wochenbeginn,
-    heuteIso, exportDateiname,
+    heuteIso, isoMitZeitzone, exportDateiname,
   };
 })();

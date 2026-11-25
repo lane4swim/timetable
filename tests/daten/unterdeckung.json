@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "exportedAt": "2026-11-25T00:00:00+01:00",
   "schule": {
     "name": "Grundschule Lindenhof (Testdaten Unterdeckung)",
     "schuljahr": "2026/27"
@@ -89,7 +90,8 @@
       "name": "Sachunterricht",
       "kuerzel": "SU",
       "raumtyp": null,
-      "blockbar": true
+      "blockbar": true,
+      "hauptfach": false
     },
     {
       "id": "f-en",
@@ -104,28 +106,32 @@
       "name": "Sport",
       "kuerzel": "SP",
       "raumtyp": "turnhalle",
-      "blockbar": true
+      "blockbar": true,
+      "hauptfach": false
     },
     {
       "id": "f-mu",
       "name": "Musik",
       "kuerzel": "MU",
       "raumtyp": "musik",
-      "blockbar": false
+      "blockbar": false,
+      "hauptfach": false
     },
     {
       "id": "f-ku",
       "name": "Kunst",
       "kuerzel": "KU",
       "raumtyp": "kunst",
-      "blockbar": true
+      "blockbar": true,
+      "hauptfach": false
     },
     {
       "id": "f-re",
       "name": "Religion/Ethik",
       "kuerzel": "RE",
       "raumtyp": null,
-      "blockbar": false
+      "blockbar": false,
+      "hauptfach": false
     }
   ],
   "lehrkraefte": [
@@ -148,6 +154,7 @@
       "sollStunden": 12,
       "minStunden": 10,
       "maxStunden": 14,
+      "teilzeitfaktor": 0.43,
       "aufsichtenProWoche": 2,
       "gesperrt": [
         {
@@ -158,8 +165,7 @@
           ]
         }
       ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.43
+      "abwesenheiten": []
     },
     {
       "id": "l-nol",
@@ -301,7 +307,8 @@
       "nahe": [
         "r-302"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-302",
@@ -311,7 +318,8 @@
       "nahe": [
         "r-301"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-401",
@@ -321,7 +329,8 @@
       "nahe": [
         "r-402"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-402",
@@ -331,7 +340,8 @@
       "nahe": [
         "r-401"
       ],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-turnhalle1",
@@ -346,7 +356,8 @@
             6
           ]
         }
-      ]
+      ],
+      "abwesenheiten": []
     },
     {
       "id": "r-musik1",
@@ -355,7 +366,8 @@
       "fachraumtyp": "musik",
       "kapazitaet": 32,
       "nahe": [],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "r-kunst1",
@@ -364,7 +376,8 @@
       "fachraumtyp": "kunst",
       "kapazitaet": 32,
       "nahe": [],
-      "gesperrt": []
+      "gesperrt": [],
+      "abwesenheiten": []
     }
   ],
   "klassen": [
@@ -780,6 +793,5 @@
     "aufsichten": [],
     "vertretungen": [],
     "aufsichtsVertretungen": []
-  },
-  "exportedAt": "2026-11-25T00:00:00+01:00"
+  }
 }

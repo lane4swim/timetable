@@ -19,7 +19,7 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ladeKern } from '../hilfe/lade-kern.mjs';
 
-const { Hilfen, Modell } = ladeKern();
+const { Hilfen, Modell, Schema } = ladeKern();
 const ORDNER = dirname(fileURLToPath(import.meta.url));
 
 /* ------------------------------ Fächer ---------------------------------- */
@@ -313,9 +313,9 @@ export const DATENSAETZE = {
   },
 };
 
-/** Kanonischer Text einer Datensatzdatei. */
+/** Kanonischer Text einer Datensatzdatei (Standardwerte ergänzt, Schemareihenfolge). */
 export function alsText(zustand) {
-  return JSON.stringify(zustand, null, 2) + '\n';
+  return JSON.stringify(Schema.ordne(Schema.normalisiere(Hilfen.tiefeKopie(zustand))), null, 2) + '\n';
 }
 
 // Aufruf als Programm

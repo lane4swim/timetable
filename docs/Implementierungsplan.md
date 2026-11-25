@@ -174,9 +174,9 @@ Jeder Meilenstein endet mit grünen Tests und einem lauffähigen `stundenplan.ht
 | M | Inhalt | Ergebnis / Abnahme |
 | --- | --- | --- |
 | **M0** Grundgerüst | Build-Skript, Template, Testrahmen (`node --test`, Playwright), PRNG, Testdatengenerator mit vier Datensätzen: *klein* (4 Klassen), *unterdeckung*, *ueberhang*, *gross* (30 Klassen/60 LK) | `stundenplan.html` öffnet leer, CI-fähige Skripte |
-| **M1** Daten & Persistenz | Modell, Schema-Validator mit Pfaden, Migrationen, Import/Export voll + teilweise, Erhalt unbekannter Felder | Abnahme 1, 7 |
+| **M1** Daten & Persistenz | Modell, Schema-Validator mit Pfaden, Migrationen, Import/Export voll + teilweise, Erhalt unbekannter Felder, Reiter „Daten“ | Abnahme 1, 7 |
 | **M2** Regeln & Kosten | H1–H14, W1–W12, Kostenvektor, Erklärungen | Grundlage für alle weiteren |
-| **M3** Stammdaten-UI | Reiter Stammdaten, Zuordnung, Daten; Undo/Redo; Tastaturbedienung | Daten vollständig pflegbar |
+| **M3** Stammdaten-UI | Reiter Stammdaten, Zuordnung; Undo/Redo; Tastaturbedienung (Reiter „Daten“ bereits in M1) | Daten vollständig pflegbar |
 | **M4** Planer | Bedarf, Vorprüfung, Min-Cost-Flow, Konstruktion mit Tagesprofilen, Zweitbesetzung, Pausenaufsichten, SA, Worker mit Fortschritt/Abbruch | Abnahme 2, 3, 4, 8, 12; Leistung 30 s |
 | **M5** Plan-Ansicht | Raster mit Pausenzeilen, Umschalter (inkl. Aufsicht), Drag-and-drop mit Live-Prüfung, Zweitbesetzung und Aufsicht per Drag, Druckansicht | < 100 ms Reaktion |
 | **M6** Vertretung | Kalender (Datum → Wochentag), datumsgenaue Eskalationskette, Aufsichtsvertretung, Raumausfall, Tagesvertretungsplan, Vorschlagsdialog, Ausfallbericht | Abnahme 5, 6, 9, 10, 11, 13 |
@@ -234,7 +234,14 @@ Diese Punkte sollten vor bzw. während M1 bestätigt werden; bis dahin gelten di
 14. **Anwesenheit für Aufsicht:** *Bestätigt:* hart nur „Unterricht an diesem Tag“ (H13); dass die Aufsicht direkt an eigenen Unterricht grenzt, ist weich (W12).
 15. **Aufsichtsbereiche** (Hof, Flur …): *Bestätigt:* nicht vorgesehen; je Pause zählt nur die Anzahl.
 16. **Zuordnung Fach ↔ Fachraum:** *Bestätigt:* `raum.typ` ist `klassenraum`, `fachraum`, `turnhalle` oder `schwimmhalle`. Fachräume erhalten zusätzlich `fachraumtyp` (z. B. `nawi`, `musik`, `kunst`, `informatik`); `fach.raumtyp` ist `null`, `turnhalle`, `schwimmhalle` oder ein Fachraumtyp. H5 prüft „passender Raumtyp“ über diese Felder.
-17. **Offene fachliche Fragen** (Bundesland, Obergrenzen für Gäste, PDF/CSV-Export, Priorität der Zweitbesetzung): werden konfigurierbar gehalten bzw. sind nicht Teil der ersten Version; CSV-Export ließe sich in M7 ergänzen.
+17. **Festlegungen aus M1 (Import/Export):**
+    - Pflicht sind nur `schemaVersion`, `zeitraster` und die Kernfelder je Eintrag (z. B. `id`, `name`, `kuerzel`, `sollStunden`). Fehlende optionale Felder ergänzt der Import mit Standardwerten (z. B. `maxStunden = sollStunden`, leere Listen, Standardgewichte).
+    - IDs sind je Sammlung eindeutig; Kürzel (Fächer, Lehrkräfte) und Namen (Räume, Klassen) ohne Rücksicht auf Groß-/Kleinschreibung.
+    - Fehler verhindern den Import; *Warnungen* (z. B. Heimatraum kleiner als Klasse, kein Raum für den Raumtyp eines Fachs, Stundentafel größer als das Raster) werden nur angezeigt.
+    - Teil-Dateien tragen `teil: "stammdaten"` (alles außer `plan`) bzw. `teil: "plan"`. Ein Plan-Import wird gegen die vorhandenen Stammdaten geprüft. Passt der vorhandene Plan nicht zu neu importierten Stammdaten, wird der Import abgelehnt und „Stammdaten übernehmen und Plan verwerfen“ angeboten.
+    - Ein vollständiger Import gilt als gespeicherter Stand; nach einem Teil-Import gilt der Gesamtstand als ungespeichert, bis vollständig exportiert wird.
+    - Abwesenheiten sind auch für Räume möglich (`raeume[].abwesenheiten`, datumsgenau).
+18. **Offene fachliche Fragen** (Bundesland, Obergrenzen für Gäste, PDF/CSV-Export, Priorität der Zweitbesetzung): werden konfigurierbar gehalten bzw. sind nicht Teil der ersten Version; CSV-Export ließe sich in M7 ergänzen.
 
 Neue optionale Felder ändern `schemaVersion: 1` nicht, da unbekannte Felder ohnehin erhalten bleiben und alle neuen Felder Standardwerte haben.
 
@@ -243,8 +250,9 @@ Neue optionale Felder ändern `schemaVersion: 1` nicht, da unbekannte Felder ohn
 | Meilenstein | Stand |
 | --- | --- |
 | M0 Grundgerüst | erledigt (25.11.2026): Build `tools/build.mjs`, Vorlage mit CSP, Kern-Module `Hilfen` (PRNG, IDs, Datum) und `Modell` (Standardwerte, Pausen), Blob-Worker mit Ping, Reiter-Gerüst mit Tastaturbedienung, Testdatengenerator mit vier Datensätzen, 31 Kern-/Build-Tests, 5 Browser-Tests, CI-Workflow |
-| M1 Daten & Persistenz | als Nächstes |
+| M1 Daten & Persistenz | erledigt (25.11.2026): Module `Schema` (deklaratives Schema, Validator mit Pfaden, Querprüfungen, Standardwerte, kanonische Reihenfolge, Migrationsrahmen) und `Io` (Export gesamt/Stammdaten/Plan, atomarer Import, Teil-Import); Reiter „Daten“ mit Dateiauswahl, Drag-and-drop, Rückfrage mit Export-Angebot, Fehlerliste mit Pfad, Zurücksetzen, Speicherstand und `beforeunload`-Warnung. Abnahme 1 und 7 automatisiert (Kern und Browser) |
+| M2 Regeln & Kosten | als Nächstes |
 
 ## 10. Nächster Schritt
 
-Die Annahmen in Abschnitt 8 sind bestätigt (25.11.2026). Umsetzung beginnt mit **M0** (Build, Testrahmen, Testdatensätze inkl. Pausen und Aufsichtssoll), danach **M1** (Schema, Validierung, Import/Export).
+Die Annahmen in Abschnitt 8 sind bestätigt (25.11.2026). Als Nächstes folgt **M2** (Regelprüfer H1–H14, Kostenvektor mit W1–W12, Erklärungen).

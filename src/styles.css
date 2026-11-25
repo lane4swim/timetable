@@ -14,6 +14,8 @@
   --ok: #1d6b35;
   --fehler: #b3261e;
   --fokus: #f2a900;
+  --warnung: #8a5300;     /* 6,1:1 auf Weiß */
+  --linie-kraeftig: #8a92a3;
   --radius: 6px;
   --abstand: 16px;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -61,12 +63,62 @@ body { margin: 0; background: var(--hintergrund); color: var(--text); min-width:
 #status-rechenkern[data-art="fehler"] { color: var(--fehler); }
 #status-rechenkern[data-art="fehler"]::before { content: "⚠ "; }
 
+/* ---------------------------- Bausteine ---------------------------------- */
+.versteckt { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.abschnitt { margin-bottom: 24px; max-width: 960px; }
+.abschnitt h3 { font-size: 1rem; margin: 0 0 8px; }
+.knopfleiste { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.knopf {
+  font: inherit; padding: 6px 14px; border-radius: var(--radius); cursor: pointer;
+  border: 1px solid var(--linie-kraeftig); background: var(--flaeche); color: var(--text);
+}
+.knopf:hover { background: #eef1f6; }
+.knopf-primaer { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); }
+.knopf-primaer:hover { background: #184f9f; }
+.knopf-gefahr { border-color: var(--fehler); color: var(--fehler); }
+.knopf-gefahr:hover { background: #fbeceb; }
+
+.uebersicht { display: grid; grid-template-columns: max-content 1fr; gap: 2px 16px; margin: 0 0 8px; }
+.uebersicht dt { color: var(--text-leise); }
+.uebersicht dd { margin: 0; font-variant-numeric: tabular-nums; }
+.warnung-text { color: var(--warnung); font-weight: 600; }
+
+.ablage {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  border: 2px dashed var(--linie-kraeftig); border-radius: var(--radius); padding: 16px; background: var(--hintergrund);
+}
+.ablage p { margin: 0; }
+body.ablage-aktiv::after {
+  content: "Datei hier ablegen, um sie zu importieren"; position: fixed; inset: 12px; z-index: 50;
+  display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 600;
+  border: 4px dashed var(--akzent); border-radius: 12px; background: rgba(255, 255, 255, .92); color: var(--akzent);
+  pointer-events: none;
+}
+
+.meldungen { margin-top: 12px; }
+.meldung { border: 1px solid var(--linie); border-left-width: 6px; border-radius: var(--radius); padding: 8px 12px; background: var(--flaeche); }
+.meldung p { margin: 4px 0; }
+.meldung-titel { font-weight: 600; }
+.meldung-ok { border-left-color: var(--ok); }
+.meldung-info { border-left-color: var(--akzent); }
+.meldung-warnung { border-left-color: var(--warnung); }
+.meldung-fehler { border-left-color: var(--fehler); }
+.meldung-fehler .meldung-titel { color: var(--fehler); }
+.pfadliste { margin: 4px 0; padding-left: 20px; max-height: 320px; overflow: auto; }
+.pfadliste code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9em; background: #eef1f6; padding: 0 4px; border-radius: 3px; }
+
+.dialog { border: 1px solid var(--linie); border-radius: 8px; padding: 20px 24px; max-width: 520px; color: var(--text); }
+.dialog::backdrop { background: rgba(20, 24, 32, .45); }
+.dialog h2 { margin: 0 0 8px; font-size: 1.1rem; }
+.dialog-knoepfe { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+
 /* Fokus immer sichtbar, unabhängig von Farbe des Elements */
 :focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; }
 
 @media print {
   body { background: #fff; min-width: 0; }
-  .kopf, .reiterleiste, .fuss { display: none; }
+  .kopf, .reiterleiste, .fuss, .dialog { display: none; }
   .panel { border: none; padding: 0; min-height: 0; }
   .panel[hidden] { display: none; }
 }
