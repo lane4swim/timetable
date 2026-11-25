@@ -23,6 +23,14 @@ Browserbasiertes Werkzeug zur Erstellung von Stundenplänen, Pausenaufsichten un
 
 Rückgängig/Wiederholen über die Knöpfe oben rechts oder Strg+Z / Strg+Y.
 
+## Veröffentlichung auf GitHub Pages
+
+Der Workflow `.github/workflows/pages.yml` veröffentlicht die Anwendung bei jedem Push auf `main` (oder manuell über „Run workflow“). Vorher laufen Build-Prüfung und Kern-Tests; schlagen sie fehl, wird nichts veröffentlicht.
+
+Einmalig einrichten: im Repository unter **Settings → Pages → Build and deployment → Source** „GitHub Actions“ wählen.
+
+Lokal lässt sich der Inhalt mit `npm run pages` erzeugen (Ordner `_site/`: `index.html`, `stundenplan.html`, `.nojekyll`). Auch auf GitHub Pages läuft alles im Browser; Daten werden nicht an den Server übertragen.
+
 ## Entwicklung
 
 Voraussetzung: Node.js ≥ 22. Es gibt keine npm-Abhängigkeiten.
@@ -34,6 +42,7 @@ Voraussetzung: Node.js ≥ 22. Es gibt keine npm-Abhängigkeiten.
 | `npm run test:e2e` | Browser-Tests mit Playwright (Chromium) gegen `file://…/stundenplan.html` |
 | `npm run testdaten` | Testdatensätze in `tests/daten/` neu erzeugen (deterministisch) |
 | `npm run pruefen` | Build aktuell? Testdaten aktuell? Kern-Tests grün? (wie in CI) |
+| `npm run pages` | Inhalt für GitHub Pages in `_site/` erzeugen |
 
 ### Aufbau
 
