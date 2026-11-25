@@ -10,7 +10,8 @@ Das Programm erstellt aus Lehrkräften, Räumen und Klassenzuordnungen einen Stu
 
 - Erfassung von Stammdaten (Lehrkräfte, Qualifikationen, Stundenkontingente, Räume, Klassen, Stundentafel)
 - Automatische Erstellung eines festen Wochenplans (Regelplan, keine A/B-Wochen)
-- Neuberechnung bei Ausfall einer Lehrkraft oder eines Raums (Vertretungsplan)
+- Planung der Pausenaufsichten (Regelplan) mit individuellem Aufsichtssoll je Lehrkraft
+- Neuberechnung bei Ausfall einer Lehrkraft oder eines Raums (Vertretungsplan, datumsgenau), einschließlich Aufsichtsvertretung
 - Manuelle Korrektur per Drag-and-drop mit sofortiger Regelprüfung
 - Persistenz ausschließlich über JSON-Export und -Import
 
@@ -24,15 +25,17 @@ Alle Entitäten haben eine stabile `id` (String, vom Programm vergeben) und werd
 
 | Entität | Wichtige Felder | Bedeutung |
 | --- | --- | --- |
-| Zeitraster | Tage (Mo–Fr), Stunden pro Tag (1–10), Pausen, Doppelstundenpaare | Rahmen aller Planungen |
+| Zeitraster | Tage (Mo–Fr), Stunden pro Tag (1–10), Pausen mit Aufsichtsbedarf, Doppelstundenpaare | Rahmen aller Planungen |
+| Pause | Lage (vor Stunde n), Name, Anzahl erforderlicher Aufsichten (0 = keine Aufsicht) | Aufsichtsbedarf je Tag |
 | Fach | Name, Kürzel, Fachraumtyp (optional), Blockung erlaubt (ja/nein) | Unterrichtsinhalt |
-| Lehrkraft | Name, Kürzel, Qualifikationen (Fächer + Stufenbereich), Soll-Stunden pro Woche, Mindest-/Höchstgrenze, Teilzeitfaktor, Abwesenheiten, nicht verfügbare Zeitfenster | Personalressource |
+| Lehrkraft | Name, Kürzel, Qualifikationen (Fächer + Stufenbereich), Soll-Stunden pro Woche, Mindest-/Höchstgrenze, Teilzeitfaktor, Aufsichten pro Woche (individuell), Abwesenheiten, nicht verfügbare Zeitfenster | Personalressource |
 | Raum | Name, Raumtyp (Klassenraum, Fachraum, Turnhalle), Kapazität, Sperrzeiten | Raumressource |
 | Klasse | Name, Stufe, Schülerzahl, Klassenlehrkraft, Heimatraum, Stundentafel | Planungsobjekt |
 | Stundentafel | je Fach: Wochenstunden, Doppelstunde gewünscht (ja/nein) | Bedarf der Klasse |
 | Zuordnung (Fest) | Klasse, Fach, Lehrkraft, Rolle (Haupt oder Zweit) | Vorgabe: Wer unterrichtet was dauerhaft; je Klasse und Fach 1–2 Lehrkräfte |
 | Abwesenheit | Lehrkraft oder Raum, Von, Bis, Grund (optional) | Auslöser für Vertretungsplanung |
 | Unterrichtsstunde (Ergebnis) | Klasse, Fach, Lehrkräfte (1–2; die erste ist die Hauptlehrkraft), Raum, Tag, Stunde, Status | Ergebnis der Planung |
+| Pausenaufsicht (Ergebnis) | Tag, Pause (vor Stunde n), Lehrkraft | Ergebnis der Aufsichtsplanung |
 
 **Status einer Unterrichtsstunde:** `regulär`, `vertreten` (andere Lehrkraft), `doppelt betreut` (eine Lehrkraft, zwei Klassen), `aufgeteilt` (Klasse wird auf andere Klassen verteilt), `entfällt`.
 
@@ -42,18 +45,23 @@ Alle Entitäten haben eine stabile `id` (String, vom Programm vergeben) und werd
 
 **Zweitbesetzung und Personalüberhang:** Es können mehr Lehrkräfte als Klassen vorhanden sein. Pro Klasse und Zeitslot sind bis zu zwei Lehrkräfte möglich. Die erste ist die Hauptlehrkraft (trägt Unterricht und Verantwortung), die zweite die Zweitbesetzung (Team-Teaching, Förderung, Inklusion, Absicherung bei Ausfall). Die Zweitbesetzung nutzt den Raum der Klasse und braucht keine Fachqualifikation. Lehrkräfte ohne eigene Hauptzuordnung oder mit ungenutztem Kontingent bilden den **Springerpool**: Sie werden zuerst für Vertretungen und danach als Zweitbesetzung eingesetzt. Vom Sollkontingent jeder Lehrkraft bleibt eine einstellbare **Vertretungsreserve** (Standard 10 %) für Vertretungen frei.
 
+**Pausen und Pausenaufsicht:** Pausen liegen vor ausgewählten Stunden. Voreinstellung: vor der 1. Stunde (Frühaufsicht) und danach vor jeder zweiten Stunde (vor der 3., 5., 7., 9. Stunde). Lage und Zahl der Pausen sind konfigurierbar. Für jede Pause ist eine konfigurierbare Anzahl an Aufsichten erforderlich; der Bedarf gilt an jedem Unterrichtstag. Jede Lehrkraft hat ein individuell festgelegtes **Aufsichtssoll** (Anzahl Aufsichten pro Woche, 0 ist zulässig). Aufsichten zählen nicht gegen das Stundenkontingent (Soll-, Mindest-, Höchststunden).
+
+**Datumsbezug:** Der Regelplan ist ein fester Wochenplan. Vertretungen werden datumsgenau geplant: Eine Abwesenheit (Von–Bis) betrifft die konkreten Unterrichtstage in diesem Zeitraum; jeder Tag wird über seinen Wochentag dem Regelplan zugeordnet. Vertretungen gelten nur für ihr Datum und verändern den Regelplan nicht.
+
 ## 3. Planungsziele
 
 Die Ziele gelten in strikter Reihenfolge (lexikografisch): Ein Plan, der bei Ziel 1 besser ist, schlägt jeden Plan, der bei Ziel 1 schlechter, aber bei den späteren Zielen besser ist. Erst bei Gleichstand entscheidet das nächste Ziel.
 
 1. **Unterrichtsausfall minimieren.** Zählt jede Klassenstunde der Stundentafel, die nicht durch eine Hauptlehrkraft in einem Raum abgedeckt ist (Status `entfällt`). Eine Zweitbesetzung deckt keine Stunde ab, die sonst ohne Hauptlehrkraft bliebe.
+   - **1A. Pausenaufsichten besetzen.** Zählt jede erforderliche Aufsicht, die keiner Lehrkraft zugewiesen ist. Ziel 1A steht unmittelbar hinter Ziel 1. Da Aufsichten in den Pausen und Unterricht in den Stunden liegen, konkurrieren beide nur über die Anwesenheit der Lehrkräfte.
 2. **Eigene Klassen unterrichten.** Zählt jede abgedeckte Stunde, in der die Hauptlehrkraft nicht die für Klasse und Fach festgelegte Lehrkraft ist (zuerst Vertretung durch Klassenlehrkraft der Klasse, dann durch fachlich qualifizierte Lehrkraft, dann Notfalleinsatz). Eine festgelegte Zweitlehrkraft der Klasse zählt als eigene Lehrkraft.
 3. **Fachqualifikation wahren.** Zählt Stunden, die fachfremd erteilt werden. Die Zweitbesetzung ist davon ausgenommen.
 4. **Betreuungsform schonen.** Zählt Stunden mit Doppelbetreuung (eine Lehrkraft, zwei Klassen) und Stunden, in denen eine Klasse aufgeteilt wird. Aufteilung wiegt schwerer als Doppelbetreuung.
 5. **Kontingente nutzen (Zweitbesetzung).** Zählt die Stunden, die Lehrkräfte unter ihrer Sollstundenzahl bleiben, obwohl eine Zweitbesetzung möglich wäre. Die Vertretungsreserve (Standard 10 % der Sollstunden) bleibt ausgenommen. Das Ziel entfällt, wenn die Zweitbesetzung abgeschaltet ist.
-6. **Planqualität.** Gewichtete Summe weicher Regeln aus Abschnitt 4 (kompakter Schultag, Doppelstunden, Raumwechsel, gleichmäßige Verteilung, Lücken bei Lehrkräften). Leerstunden für Klassen sind keine weiche Regel, sie sind durch H12 ausgeschlossen.
+6. **Planqualität.** Gewichtete Summe weicher Regeln aus Abschnitt 4 (kompakter Schultag, Doppelstunden, Raumwechsel, gleichmäßige Verteilung, Lücken bei Lehrkräften, Aufsichtssoll und Lage der Aufsichten). Leerstunden für Klassen sind keine weiche Regel, sie sind durch H12 ausgeschlossen.
 
-Technisch berechnet das Programm einen Kostenvektor `(K1, K2, K3, K4, K5, K6)` und vergleicht ihn lexikografisch. Ein einzelnes zusammengesetztes Gewicht ist nicht vorgesehen, damit die Reihenfolge nachvollziehbar bleibt. Die Oberfläche zeigt den Vektor für jeden Plan an.
+Technisch berechnet das Programm einen Kostenvektor `(K1, K1A, K2, K3, K4, K5, K6)` und vergleicht ihn lexikografisch. Ein einzelnes zusammengesetztes Gewicht ist nicht vorgesehen, damit die Reihenfolge nachvollziehbar bleibt. Die Oberfläche zeigt den Vektor für jeden Plan an.
 
 ## 4. Regeln
 
@@ -73,6 +81,8 @@ Harte Regeln dürfen in keinem erzeugten Plan verletzt sein. Bei manueller Bearb
 | H10 | Pro Klasse und Zeitslot höchstens zwei Lehrkräfte (einstellbar, Standard 2). Die zweite ist immer als Zweitbesetzung gekennzeichnet. |
 | H11 | Eine Zweitbesetzung nutzt den Raum der Klasse und belegt keinen eigenen. H1, H4 und H7 gelten für sie unverändert. Die Vertretungsreserve jeder Lehrkraft bleibt unangetastet. |
 | H12 | Keine Leerstunden für Schüler:innen: Die Stunden einer Klasse liegen an jedem Tag lückenlos hintereinander. Pausen zählen nicht als Lücke. Eine Betreuungs-, Aufsichts- oder Aufteilungsstunde zählt als belegte Stunde. Die Regel gilt im Regelplan und in jedem Vertretungsplan. |
+| H13 | Pausenaufsicht nur durch anwesende Lehrkräfte: nicht bei Abwesenheit, nicht in gesperrten Zeitfenstern (gesperrt sind die angrenzenden Stunden vor und nach der Pause; bei der Frühaufsicht die 1. Stunde) und nur an Tagen, an denen die Lehrkraft Unterricht oder Zweitbesetzung hat. Je Pause höchstens eine Aufsicht pro Lehrkraft. |
+| H14 | Im Regelplan übernimmt eine Lehrkraft höchstens so viele Aufsichten pro Woche wie ihr Aufsichtssoll. Im Vertretungsplan sind Mehraufsichten zulässig und werden im Bericht ausgewiesen. |
 
 | Nr. | Weiche Regel | Voreingestelltes Gewicht |
 | --- | --- | --- |
@@ -86,6 +96,8 @@ Harte Regeln dürfen in keinem erzeugten Plan verletzt sein. Bei manueller Bearb
 | W8 | Unterschreiten der Mindeststundenzahl einer Lehrkraft | 6 |
 | W9 | Zweitbesetzung gezielt einsetzen: bevorzugt in Klassen mit hoher Schülerzahl, niedriger Stufe oder Fächern mit wenigen qualifizierten Lehrkräften | 4 |
 | W10 | Beständigkeit: dieselbe Zweitlehrkraft in derselben Klasse und demselben Fach über die Woche | 3 |
+| W11 | Aufsichtssoll erfüllen: je Aufsicht, die eine Lehrkraft unter ihrem Soll bleibt | 5 |
+| W12 | Aufsicht angrenzend an eigenen Unterricht: Die Lehrkraft unterrichtet direkt vor oder nach der Pause (bei Frühaufsicht: in der 1. Stunde); keine Aufsichten gehäuft an einem Tag | 3 |
 
 Die Gewichte sind in der Oberfläche änderbar und werden im JSON gespeichert.
 
@@ -130,6 +142,16 @@ Letzte Stufe vor dem Entfall. Die Schüler:innen einer Klasse werden auf andere 
 - Dieselbe Klasse darf nicht in zwei aufeinanderfolgenden Stunden aufgeteilt werden, wenn eine Alternative existiert.
 - Der Plan der Zielklassen erhält einen Hinweis `+ n Gäste`, die Gesamtzahl wird gegen die Raumkapazität geprüft.
 
+### Aufsichtsvertretung
+
+Fällt eine Lehrkraft an einem Datum aus, werden auch ihre Pausenaufsichten dieses Tages vertreten. Reihenfolge:
+
+1. Anwesende Lehrkraft mit Unterricht direkt vor oder nach der Pause, die in dieser Pause keine Aufsicht hat (W12).
+2. Andere an diesem Tag anwesende Lehrkraft, bevorzugt mit der geringsten Zahl an Aufsichten in dieser Woche (einschließlich Mehraufsichten).
+3. Bleibt die Aufsicht unbesetzt, erscheint sie als Warnung im Ausfallbericht (Ziel 1A).
+
+Fällt eine Lehrkraft aus, die eine Unterrichtsvertretung übernehmen soll, und hat sie zugleich eine Aufsicht, gilt H13 unverändert; Unterricht und Aufsicht schließen sich nicht aus, da sie in verschiedenen Zeitfenstern liegen.
+
 Das Ergebnis jeder Stufe wird als Vorschlag angezeigt. Die Nutzerin bestätigt, ändert oder verwirft ihn. Nichts wird ohne Bestätigung in den Plan übernommen.
 
 ## 6. Planungsalgorithmus
@@ -141,6 +163,7 @@ Es handelt sich um ein Constraint-Problem mit lexikografischer Optimierung. Vorg
 3. **Lehrkräfte-Zuweisung.** Wo keine Festzuordnung existiert oder das Kontingent nicht reicht, löst das Programm die Zuordnung als Flussproblem (Bedarf → Lehrkraft) mit Kosten nach Ziel 2 und 3. So wird zuerst der Ausfall minimiert, dann die Treue zur eigenen Klasse. Lehrkräfte ohne Hauptzuweisung oder mit freiem Kontingent bilden den Springerpool.
 4. **Konstruktion.** Einheiten werden nach Schwierigkeit sortiert (wenige freie Slots, Doppelstunden, Fachräume zuerst) und per Backtracking mit Forward-Checking in Slots und Räume gesetzt. Je Klasse und Tag wird ein zusammenhängender Block gebildet, damit H12 schon bei der Platzierung erfüllt ist. Schlägt eine Platzierung fehl, wird die Einheit zurückgestellt.
 5. **Zweitbesetzung.** Erst wenn alle Klassen versorgt sind, vergibt das Programm freie Lehrkraft-Slots als Zweitbesetzung. Das ist ein Zuordnungsproblem (freier Slot einer Lehrkraft → Klasse im selben Slot) mit Prioritäten aus W9 und W10. H1, H4, H7, H10 und die Vertretungsreserve bleiben gewahrt. Der Schritt entfällt, wenn `zweitbesetzungErlaubt` aus ist.
+5a. **Pausenaufsichten.** Nach der Unterrichtsplanung verteilt das Programm die Aufsichten als Zuordnungsproblem (Bedarf je Pause und Tag → anwesende Lehrkraft) mit Kapazität = Aufsichtssoll. Kosten: unbesetzte Aufsicht (Ziel 1A) vor W11 und W12. Eine Unterdeckung (Summe der Aufsichtssolls kleiner als der Wochenbedarf) meldet bereits die Vorprüfung.
 6. **Nachoptimierung.** Lokale Suche (Verschieben, Tauschen zweier Einheiten, Tausch von Lehrkräften, Umsetzen einer Zweitbesetzung; Züge, die eine Leerstunde für eine Klasse erzeugen, sind unzulässig) mit Simulated Annealing, bewertet über den Kostenvektor. Zeitbudget und Zufallsstartwert sind einstellbar, die Ausführung ist mit gleichem Startwert reproduzierbar.
 7. **Ausfallbehandlung.** Zurückgestellte Einheiten durchlaufen die Eskalationskette aus Abschnitt 5.
 
@@ -152,12 +175,12 @@ Eine Seite mit Reitern. Alle Eingaben werden sofort validiert (Pflichtfelder, do
 
 | Reiter | Inhalt |
 | --- | --- |
-| Stammdaten | Tabellen für Lehrkräfte, Fächer, Räume, Klassen mit Zeilen hinzufügen, bearbeiten, löschen. Löschen blockiert, solange die Entität referenziert wird (mit Liste der Verweise). |
+| Stammdaten | Tabellen für Lehrkräfte (mit Aufsichtssoll), Fächer, Räume, Klassen, Zeitraster mit Pausen und Aufsichtsbedarf mit Zeilen hinzufügen, bearbeiten, löschen. Löschen blockiert, solange die Entität referenziert wird (mit Liste der Verweise). |
 | Zuordnung | Matrix Klasse × Fach mit Auswahl von Haupt- und Zweitlehrkraft; Anzeige von Soll-/Ist-Stunden je Lehrkraft und Warnung bei Überschreitung. |
 | Planung | Knopf „Plan erstellen“ mit Optionen (Zeitbudget, Startwert, Gewichte, Zweitbesetzung ein/aus, Vertretungsreserve), Anzeige des Kostenvektors und des Fortschritts. |
-| Plan | Wochenraster mit Umschalter Klasse, Lehrkraft oder Raum. Drag-and-drop verschiebt Stunden; Konflikte werden rot markiert und mit Regelnummer erklärt. |
-| Ausfall | Abwesenheit erfassen (Lehrkraft oder Raum, Zeitraum), Vertretungsvorschläge je Stunde prüfen, bestätigen, ändern oder verwerfen. |
-| Bericht | Ausfallstunden je Klasse und Fach, Vertretungsquote, Auslastung je Lehrkraft (mit Zweitbesetzungsstunden und ungenutztem Kontingent), Verstöße gegen weiche Regeln. |
+| Plan | Wochenraster mit Umschalter Klasse, Lehrkraft, Raum oder Aufsicht. Pausen erscheinen als schmale Zeilen zwischen den Stunden mit den eingeteilten Aufsichten. Drag-and-drop verschiebt Stunden und Aufsichten; Konflikte werden rot markiert und mit Regelnummer erklärt. |
+| Ausfall | Abwesenheit erfassen (Lehrkraft oder Raum, Zeitraum), Vertretungsvorschläge je Datum und Stunde bzw. Pause prüfen, bestätigen, ändern oder verwerfen. Ansicht je Tag (Tagesvertretungsplan). |
+| Bericht | Ausfallstunden je Klasse und Fach, Vertretungsquote, Auslastung je Lehrkraft (mit Zweitbesetzungsstunden und ungenutztem Kontingent), Aufsichten je Lehrkraft (Soll, Ist, Mehraufsichten), unbesetzte Aufsichten, Verstöße gegen weiche Regeln. |
 | Daten | JSON exportieren, JSON importieren, Daten zurücksetzen. |
 
 **Darstellung der Betreuungsformen:** Doppelbetreuung zeigt in beiden Klassen den Namen der Lehrkraft mit Symbol „⇄“. Aufgeteilte Klassen sind grau mit dem Hinweis „aufgeteilt“, bei den Zielklassen erscheint „+ n Gäste“.
@@ -181,7 +204,12 @@ Das Programm speichert nichts selbst. Der gesamte Zustand liegt in einer JSON-Da
       { "nr": 1, "von": "08:00", "bis": "08:45" },
       { "nr": 2, "von": "08:50", "bis": "09:35" }
     ],
-    "doppelstundenStart": [1, 3, 5]
+    "doppelstundenStart": [1, 3, 5],
+    "pausen": [
+      { "vorStunde": 1, "name": "Frühaufsicht", "aufsichten": 2 },
+      { "vorStunde": 3, "name": "1. große Pause", "aufsichten": 4 },
+      { "vorStunde": 5, "name": "2. große Pause", "aufsichten": 3 }
+    ]
   },
   "faecher": [
     { "id": "f-ma", "name": "Mathematik", "kuerzel": "MA", "raumtyp": null, "blockbar": true }
@@ -190,14 +218,14 @@ Das Programm speichert nichts selbst. Der gesamte Zustand liegt in einer JSON-Da
     {
       "id": "l-mue", "name": "Anna Müller", "kuerzel": "MÜ",
       "qualifikationen": [ { "fach": "f-ma", "stufenVon": 1, "stufenBis": 4 } ],
-      "sollStunden": 24, "minStunden": 20, "maxStunden": 26,
+      "sollStunden": 24, "minStunden": 20, "maxStunden": 26, "aufsichtenProWoche": 3,
       "gesperrt": [ { "tag": "Fr", "stunden": [5, 6] } ],
       "abwesenheiten": [ { "von": "2026-11-16", "bis": "2026-11-20", "grund": "" } ]
     },
     {
       "id": "l-bau", "name": "Ben Bauer", "kuerzel": "BA",
       "qualifikationen": [ { "fach": "f-ma", "stufenVon": 1, "stufenBis": 4 } ],
-      "sollStunden": 20, "minStunden": 16, "maxStunden": 24,
+      "sollStunden": 20, "minStunden": 16, "maxStunden": 24, "aufsichtenProWoche": 2,
       "gesperrt": [],
       "abwesenheiten": []
     }
@@ -217,7 +245,7 @@ Das Programm speichert nichts selbst. Der gesamte Zustand liegt in einer JSON-Da
     { "klasse": "k-2a", "fach": "f-ma", "lehrkraft": "l-bau", "rolle": "zweit", "zweck": "Förderung" }
   ],
   "einstellungen": {
-    "gewichte": { "W1": 10, "W2": 5, "W3": 8, "W4": 3, "W5": 4, "W6": 2, "W7": 2, "W8": 6, "W9": 4, "W10": 3 },
+    "gewichte": { "W1": 10, "W2": 5, "W3": 8, "W4": 3, "W5": 4, "W6": 2, "W7": 2, "W8": 6, "W9": 4, "W10": 3, "W11": 5, "W12": 3 },
     "maxDoppelbetreuungProTag": 1,
     "zweitbesetzungErlaubt": true,
     "maxLehrkraefteProKlasseUndSlot": 2,
@@ -230,6 +258,10 @@ Das Programm speichert nichts selbst. Der gesamte Zustand liegt in einer JSON-Da
       { "klasse": "k-2a", "fach": "f-ma", "lehrkraefte": ["l-mue", "l-bau"], "raum": "r-101",
         "tag": "Mo", "stunde": 1, "status": "regulaer" }
     ],
+    "aufsichten": [
+      { "tag": "Mo", "vorStunde": 1, "lehrkraft": "l-mue" },
+      { "tag": "Mo", "vorStunde": 3, "lehrkraft": "l-bau" }
+    ],
     "vertretungen": [
       { "datum": "2026-11-16", "klasse": "k-2a", "stunde": 1, "status": "vertreten",
         "lehrkraefte": ["l-bau"], "raum": "r-101", "grund": "zweitbesetzungRueckt" },
@@ -237,6 +269,9 @@ Das Programm speichert nichts selbst. Der gesamte Zustand liegt in einer JSON-Da
         "lehrkraefte": ["l-bau"], "raum": "r-101", "mitKlasse": "k-2b" },
       { "datum": "2026-11-17", "klasse": "k-3a", "stunde": 3, "status": "aufgeteilt",
         "verteilung": [ { "zielKlasse": "k-3b", "anzahl": 6 }, { "zielKlasse": "k-3c", "anzahl": 6 } ] }
+    ],
+    "aufsichtsVertretungen": [
+      { "datum": "2026-11-16", "vorStunde": 1, "fuer": "l-mue", "lehrkraft": "l-bau", "status": "vertreten" }
     ]
   }
 }
@@ -251,6 +286,8 @@ Das Programm speichert nichts selbst. Der gesamte Zustand liegt in einer JSON-Da
 - Unbekannte Zusatzfelder bleiben beim Import erhalten und werden beim Export wieder geschrieben.
 - Die Oberfläche zeigt an, wann zuletzt exportiert wurde und ob es ungespeicherte Änderungen gibt (Warnung beim Schließen des Tabs über `beforeunload`).
 - Als Zusatz ist ein Export einzelner Teile möglich: nur Stammdaten, nur Plan. Beim Import eines Teils werden nur diese Bereiche ersetzt.
+- Pausen werden über `vorStunde` identifiziert (eindeutig, muss eine Stunde des Rasters sein). `aufsichten` und `aufsichtenProWoche` sind ganze Zahlen ≥ 0. Aufsichtsvertretungen haben den Status `vertreten` oder `unbesetzt`.
+- Vertretungen und Aufsichtsvertretungen tragen ein `datum` (ISO, `JJJJ-MM-TT`), das auf einen Tag des Zeitrasters fallen muss.
 - Zuordnungen tragen eine `rolle` (`haupt` oder `zweit`). In jeder Stunde ist `lehrkraefte` eine Liste mit einem oder zwei Einträgen; der erste ist die Hauptlehrkraft, ein zweiter die Zweitbesetzung. Der Import prüft, dass je Klasse und Fach höchstens eine Hauptlehrkraft eingetragen ist, dass nie mehr als `maxLehrkraefteProKlasseUndSlot` Lehrkräfte in einer Stunde stehen und dass eine Lehrkraft nicht zugleich Haupt- und Zweitlehrkraft derselben Stunde ist.
 
 ## 9. Nichtfunktionale Anforderungen und Abnahme
@@ -275,6 +312,8 @@ Das Programm speichert nichts selbst. Der gesamte Zustand liegt in einer JSON-Da
 9. Fällt eine Hauptlehrkraft mit eingeplanter Zweitbesetzung aus, rückt diese auf. Plan und Raum der Klasse bleiben unverändert, und es entsteht kein Ausfall.
 10. Wird eine Lehrkraft als Vertretung gebraucht, die in einer anderen Klasse nur Zweitbesetzung ist, verliert diese Klasse nur die Zweitbesetzung, nicht ihre Hauptlehrkraft.
 11. In keinem Plan, auch nicht im Vertretungsplan, hat eine Klasse eine Leerstunde zwischen ihrer ersten und letzten Stunde eines Tages (H12). Der Test fällt eine Lehrkraft in der Tagesmitte aus und prüft, dass die Klasse nachrückt oder eine Aufsicht erhält.
+12. Im Regelplan ist jede Pause an jedem Tag mit der erforderlichen Zahl an Aufsichten besetzt, sofern die Summe der Aufsichtssolls ausreicht. Keine Lehrkraft überschreitet ihr Aufsichtssoll, keine führt Aufsicht an einem Tag ohne eigenen Unterricht oder in einem gesperrten Zeitfenster (H13, H14).
+13. Fällt eine Lehrkraft an einem Datum aus, werden ihre Aufsichten dieses Tages datumsgenau vertreten; andere Tage und der Regelplan bleiben unverändert.
 
 ## 10. Offene Fragen
 
@@ -282,6 +321,9 @@ Das Programm speichert nichts selbst. Der gesamte Zustand liegt in einer JSON-Da
 - [ ] Wie groß darf eine Klasse bei Doppelbetreuung oder Aufnahme von Gästen höchstens werden (Zahl oder Raumkapazität)?
 - [x] Sollen Teams oder Jahrgangsstufen-Bänder (Parallelunterricht, Wahlpflicht, Religion/Ethik) abgebildet werden? Das erfordert gruppenübergreifende Kurse im Datenmodell. - keine Klassenübergreifende Kurse
 - [x] Brauchen Sie Wochen-A/B-Pläne oder nur einen festen Wochenplan? - fester Wochenplan
-- [ ] Sollen Vertretungen datumsgenau für einzelne Wochen geplant werden (wie im Schema vorgesehen) oder nur als Alternativplan?
+- [x] Sollen Vertretungen datumsgenau für einzelne Wochen geplant werden (wie im Schema vorgesehen) oder nur als Alternativplan? - datumsgenau
+- [x] Wie werden Pausen festgelegt? - Pausen vor der 1. Stunde und danach vor jeder zweiten Stunde, je Pause eine konfigurierbare Anzahl an Aufsichten; das Aufsichtssoll je Lehrkraft wird individuell festgelegt.
+- [ ] Zählen Pausenaufsichten gegen das Stundenkontingent (z. B. als Bruchteil einer Stunde)? Annahme bis zur Klärung: nein.
+- [ ] Gibt es Aufsichtsbereiche (Hof, Flur, Bushaltestelle), denen Aufsichten fest zugeordnet werden?
 - [ ] Ist ein Export als PDF oder CSV für Aushang und Weitergabe nötig (zusätzlich zum JSON)?
 - [ ] Welche Klassen oder Fächer sollen bevorzugt eine Zweitbesetzung bekommen (z. B. Klassen 1–2, Inklusion, Sprachförderung)? Und reicht eine Vertretungsreserve von 10 % der Sollstunden?
