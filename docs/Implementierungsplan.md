@@ -241,7 +241,19 @@ Diese Punkte sollten vor bzw. während M1 bestätigt werden; bis dahin gelten di
     - Teil-Dateien tragen `teil: "stammdaten"` (alles außer `plan`) bzw. `teil: "plan"`. Ein Plan-Import wird gegen die vorhandenen Stammdaten geprüft. Passt der vorhandene Plan nicht zu neu importierten Stammdaten, wird der Import abgelehnt und „Stammdaten übernehmen und Plan verwerfen“ angeboten.
     - Ein vollständiger Import gilt als gespeicherter Stand; nach einem Teil-Import gilt der Gesamtstand als ungespeichert, bis vollständig exportiert wird.
     - Abwesenheiten sind auch für Räume möglich (`raeume[].abwesenheiten`, datumsgenau).
-18. **Offene fachliche Fragen** (Bundesland, Obergrenzen für Gäste, PDF/CSV-Export, Priorität der Zweitbesetzung): werden konfigurierbar gehalten bzw. sind nicht Teil der ersten Version; CSV-Export ließe sich in M7 ergänzen.
+18. **Festlegungen aus M2 (Regeln und Kosten)** – Auslegung mehrdeutiger Stellen:
+    - *Statusgruppen:* „belegt“ (H12) ist jede Stunde außer `entfaellt`; „abgedeckt“ (K1) jede außer `entfaellt` und `aufsicht`; Fachunterricht (K2, K3, H8) sind `regulaer` und `vertreten`.
+    - *H1 Doppelbetreuung:* Eine Lehrkraft darf in genau zwei Klassen eines Slots stehen, wenn beide Einträge über `mitKlasse` verbunden sind und einer den Status `doppeltBetreut` hat. Die Grenzen je Tag zählen zusammenhängende Folgen von Doppelbetreuungsstunden.
+    - *H5:* Ein Fach mit Raumtyp braucht genau diesen Typ; Fachräume, Turn- und Schwimmhallen sind Fächern mit passendem Raumtyp vorbehalten. Jede Stunde außer `entfaellt`/`aufgeteilt` braucht einen Raum.
+    - *H8* gilt nur für `regulaer`; Vertretungen dürfen fachfremd sein (zählt in K3).
+    - *H11:* Sobald eine Lehrkraft Zweitbesetzungsstunden hat, darf ihre Gesamtstundenzahl `Soll − Reserve` nicht übersteigen. Hauptunterricht allein darf bis zur Höchstgrenze gehen (Ausfall hat Vorrang).
+    - *H13:* Eine Aufsicht vor Stunde s ist gesperrt, wenn Stunde s−1 oder s gesperrt ist (Frühaufsicht: Stunde 1).
+    - *H7, H11, H14* sind Wochenregeln und gelten im Regelplan; im Tagesplan (Vertretung) prüft die Vertretungsplanung sie mit dem Wochenkontext.
+    - *K1A:* Aufsichtsbedarf entsteht für eine Pause vor Stunde s an einem Tag, wenn mindestens eine Klasse an diesem Tag Stunde s belegt.
+    - *K2* zählt Stunden (wie in §3); die Art der Vertretung (Klassenlehrkraft, Lehrkraft der Klasse, qualifiziert, Notfall) steht im Posten. Die Reihenfolge erzwingt die Eskalationskette.
+    - *K5:* je Lehrkraft min(Soll − Reserve bzw. Höchstgrenze − Ist, Zahl der Slots, in denen sie frei und nicht gesperrt ist und eine Klasse Fachunterricht mit freiem Platz für eine Zweitbesetzung hat).
+    - *W1:* späterer Beginn als Stunde 1 plus Stunden nach dem Ziel-Tagesende `⌈Wochenstunden/Tage⌉`. *W4:* „Vormittag“ = Beginn vor 12:00; „Sport“ = Fach mit Raumtyp Turn- oder Schwimmhalle. *W5:* weitere Blöcke desselben Fachs am Tag sowie Blöcke über 2 (bzw. über 1 bei nicht blockbaren Fächern). *W6:* Raumwechsel plus Stunden außerhalb des Heimatraums ohne Raumtyp-Bedarf. *W7:* Summe der Abweichungen vom Tagesmittel. *W9:* 1 − Priorität (Mittel aus Schülerzahl, niedriger Stufe, Knappheit des Fachs; gleiche Werte neutral). *W12:* Aufsicht ohne eigenen Unterricht direkt davor/danach sowie mehr als eine Aufsicht am Tag.
+19. **Offene fachliche Fragen** (Bundesland, Obergrenzen für Gäste, PDF/CSV-Export, Priorität der Zweitbesetzung): werden konfigurierbar gehalten bzw. sind nicht Teil der ersten Version; CSV-Export ließe sich in M7 ergänzen.
 
 Neue optionale Felder ändern `schemaVersion: 1` nicht, da unbekannte Felder ohnehin erhalten bleiben und alle neuen Felder Standardwerte haben.
 
@@ -251,8 +263,9 @@ Neue optionale Felder ändern `schemaVersion: 1` nicht, da unbekannte Felder ohn
 | --- | --- |
 | M0 Grundgerüst | erledigt (25.11.2026): Build `tools/build.mjs`, Vorlage mit CSP, Kern-Module `Hilfen` (PRNG, IDs, Datum) und `Modell` (Standardwerte, Pausen), Blob-Worker mit Ping, Reiter-Gerüst mit Tastaturbedienung, Testdatengenerator mit vier Datensätzen, 31 Kern-/Build-Tests, 5 Browser-Tests, CI-Workflow |
 | M1 Daten & Persistenz | erledigt (25.11.2026): Module `Schema` (deklaratives Schema, Validator mit Pfaden, Querprüfungen, Standardwerte, kanonische Reihenfolge, Migrationsrahmen) und `Io` (Export gesamt/Stammdaten/Plan, atomarer Import, Teil-Import); Reiter „Daten“ mit Dateiauswahl, Drag-and-drop, Rückfrage mit Export-Angebot, Fehlerliste mit Pfad, Zurücksetzen, Speicherstand und `beforeunload`-Warnung. Abnahme 1 und 7 automatisiert (Kern und Browser) |
-| M2 Regeln & Kosten | als Nächstes |
+| M2 Regeln & Kosten | erledigt (25.11.2026): Module `Index` (Nachschlagestrukturen), `Regeln` (H1–H14 für Wochen- und Tagesplan, Verstöße mit betroffenen Einträgen) und `Kosten` (Vektor K1, K1A, K2–K6 mit W1–W12 und Einzelposten); von Hand nachgerechnete Testschule; Reiter „Daten“ zeigt Gültigkeit und Kostenvektor des Regelplans |
+| M4 Planer | als Nächstes |
 
 ## 10. Nächster Schritt
 
-Die Annahmen in Abschnitt 8 sind bestätigt (25.11.2026). Als Nächstes folgt **M2** (Regelprüfer H1–H14, Kostenvektor mit W1–W12, Erklärungen).
+Die Annahmen in Abschnitt 8 sind bestätigt (25.11.2026). Als Nächstes folgt **M4** (Planer: Bedarf, Vorprüfung, Lehrkräfte-Zuweisung, Konstruktion, Zweitbesetzung, Aufsichten, Nachoptimierung im Worker).

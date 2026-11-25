@@ -93,6 +93,7 @@ body { margin: 0; background: var(--hintergrund); color: var(--text); min-width:
 .uebersicht dt { color: var(--text-leise); }
 .uebersicht dd { margin: 0; font-variant-numeric: tabular-nums; }
 .warnung-text { color: var(--warnung); font-weight: 600; }
+.fehler-text { color: var(--fehler); font-weight: 600; }
 
 .ablage {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
@@ -1046,6 +1047,759 @@ const Schema = (() => {
   return { T, ZUSTAND, TEILE, SAMMLUNGEN, MIGRATIONEN, validiere, normalisiere, ordne, migriere };
 })();
 
+/* ---- src/kern/30-index.js ---- */
+/* ==========================================================================
+ * Modul Index
+ * Schnelle Nachschlagestrukturen über einem (gültigen) Zustand: Entitäten
+ * nach ID, Zuordnungen je Klasse und Fach, Stundentafeln, Qualifikationen,
+ * Sperrzeiten, Abwesenheiten, Raumtyp-Prüfung. Grundlage für Regeln, Kosten,
+ * Planer und Vertretung.
+ * ========================================================================== */
+const Index = (() => {
+  'use strict';
+
+  const schluessel = (...teile) => teile.join('|');
+
+  /** Erstellt den Index. Der Zustand muss die Schema-Prüfung bestanden haben. */
+  function erstelle(z) {
+    const zr = z.zeitraster;
+    const tage = zr.tage.slice();
+    const tagIndex = new Map(tage.map((t, i) => [t, i]));
+    const stunden = zr.stunden.map((s) => s.nr);
+    const stundeInfo = new Map(zr.stunden.map((s) => [s.nr, s]));
+    const pausen = (zr.pausen || []).slice().sort((a, b) => a.vorStunde - b.vorStunde);
+    const pauseVor = new Map(pausen.map((p) => [p.vorStunde, p]));
+    const doppelstundenStart = new Set(zr.doppelstundenStart || []);
+
+    const nachId = (liste) => new Map(liste.map((e) => [e.id, e]));
+    const lehrkraefte = nachId(z.lehrkraefte);
+    const klassen = nachId(z.klassen);
+    const raeume = nachId(z.raeume);
+    const faecher = nachId(z.faecher);
+    const einstellungen = z.einstellungen;
+
+    // Zuordnungen je Klasse und Fach: { haupt: id|null, zweit: id[] }
+    const zuordnung = new Map();
+    for (const zu of z.zuordnungen) {
+      const k = schluessel(zu.klasse, zu.fach);
+      if (!zuordnung.has(k)) zuordnung.set(k, { haupt: null, zweit: [] });
+      if (zu.rolle === 'haupt') zuordnung.get(k).haupt = zu.lehrkraft;
+      else zuordnung.get(k).zweit.push(zu.lehrkraft);
+    }
+    // Lehrkräfte, die eine Klasse laut Zuordnung unterrichten (für „eigene Lehrkraft“)
+    const lehrkraefteDerKlasse = new Map();
+    for (const zu of z.zuordnungen) {
+      if (!lehrkraefteDerKlasse.has(zu.klasse)) lehrkraefteDerKlasse.set(zu.klasse, new Set());
+      lehrkraefteDerKlasse.get(zu.klasse).add(zu.lehrkraft);
+    }
+
+    // Stundentafel je Klasse: Map fach → { stunden, doppelt }
+    const tafel = new Map(z.klassen.map((k) => [k.id, new Map(k.stundentafel.map((e) => [e.fach, e]))]));
+
+    // Sperrzeiten als Mengen „Tag|Stunde“
+    const sperren = (liste) => {
+      const m = new Set();
+      for (const g of liste || []) for (const s of g.stunden) m.add(schluessel(g.tag, s));
+      return m;
+    };
+    const gesperrtL = new Map(z.lehrkraefte.map((l) => [l.id, sperren(l.gesperrt)]));
+    const gesperrtR = new Map(z.raeume.map((r) => [r.id, sperren(r.gesperrt)]));
+
+    function istQualifiziert(lehrkraftId, fachId, stufe) {
+      const l = lehrkraefte.get(lehrkraftId);
+      return !!l && l.qualifikationen.some((q) => q.fach === fachId && q.stufenVon <= stufe && stufe <= q.stufenBis);
+    }
+    const anzahlQualifiziertCache = new Map();
+    function anzahlQualifizierte(fachId, stufe) {
+      const k = schluessel(fachId, stufe);
+      if (!anzahlQualifiziertCache.has(k)) {
+        anzahlQualifiziertCache.set(k, z.lehrkraefte.filter((l) => istQualifiziert(l.id, fachId, stufe)).length);
+      }
+      return anzahlQualifiziertCache.get(k);
+    }
+    const lehrkraftGesperrt = (id, tag, stunde) => !!gesperrtL.get(id)?.has(schluessel(tag, stunde));
+    const raumGesperrt = (id, tag, stunde) => !!gesperrtR.get(id)?.has(schluessel(tag, stunde));
+    const abwesend = (eintrag, datum) => !!datum && !!eintrag && (eintrag.abwesenheiten || []).some((a) => a.von <= datum && datum <= a.bis);
+    const lehrkraftAbwesend = (id, datum) => abwesend(lehrkraefte.get(id), datum);
+    const raumAbwesend = (id, datum) => abwesend(raeume.get(id), datum);
+
+    /** Vertretungsreserve in Stunden (Annahme 11: aufgerundet). */
+    const reserve = (l) => Modell.vertretungsreserve(l.sollStunden, einstellungen.vertretungsreserveProzent);
+
+    /**
+     * Passt der Raum zum Fach (H5)? Ein Fach mit Raumtyp braucht genau diesen Typ,
+     * Fachräume, Turn- und Schwimmhallen sind Fächern mit passendem Raumtyp vorbehalten.
+     */
+    function raumPasst(raumId, fachId) {
+      const r = raeume.get(raumId);
+      const f = faecher.get(fachId);
+      if (!r || !f) return true;
+      const typDesRaums = r.typ === 'fachraum' ? r.fachraumtyp : r.typ === 'klassenraum' ? null : r.typ;
+      return (f.raumtyp || null) === typDesRaums;
+    }
+
+    /** Ist die Stunde „Vormittag“ (Beginn vor 12:00)? Für W4. */
+    const istVormittag = (stunde) => (stundeInfo.get(stunde)?.von || '00:00') < '12:00';
+
+    /** Lesbare Namen für Meldungen. */
+    const name = {
+      lehrkraft: (id) => lehrkraefte.get(id)?.kuerzel || id,
+      klasse: (id) => klassen.get(id)?.name || id,
+      raum: (id) => raeume.get(id)?.name || id,
+      fach: (id) => faecher.get(id)?.kuerzel || id || '–',
+      slot: (tag, stunde) => `${tag} ${stunde}.`,
+      pause: (tag, vor) => `${tag} ${pauseVor.get(vor)?.name || 'Pause'} (vor der ${vor}. Stunde)`,
+    };
+
+    return {
+      z, tage, tagIndex, stunden, stundeInfo, pausen, pauseVor, doppelstundenStart,
+      lehrkraefte, klassen, raeume, faecher, einstellungen, zuordnung, lehrkraefteDerKlasse, tafel,
+      istQualifiziert, anzahlQualifizierte, lehrkraftGesperrt, raumGesperrt, lehrkraftAbwesend, raumAbwesend,
+      reserve, raumPasst, istVormittag, name,
+      zuordnungVon: (klasse, fach) => zuordnung.get(schluessel(klasse, fach)) || { haupt: null, zweit: [] },
+    };
+  }
+
+  /**
+   * Statusgruppen einer Unterrichtsstunde:
+   *  - belegt:   die Klasse ist anwesend (H12) – alles außer „entfaellt“
+   *  - abgedeckt: Stunde der Stundentafel findet statt (K1) – alles außer „entfaellt“ und „aufsicht“
+   *  - fachunterricht: Hauptlehrkraft erteilt Fachunterricht (K2, K3) – „regulaer“ und „vertreten“
+   *  - mitRaum:  braucht einen Raum – alles außer „entfaellt“ und „aufgeteilt“
+   */
+  const STATUS = {
+    belegt: (s) => s.status !== 'entfaellt',
+    abgedeckt: (s) => s.status !== 'entfaellt' && s.status !== 'aufsicht',
+    fachunterricht: (s) => s.status === 'regulaer' || s.status === 'vertreten',
+    mitRaum: (s) => s.status !== 'entfaellt' && s.status !== 'aufgeteilt',
+  };
+
+  return { erstelle, schluessel, STATUS };
+})();
+
+/* ---- src/kern/40-regeln.js ---- */
+/* ==========================================================================
+ * Modul Regeln
+ * Prüft einen Plan gegen die harten Regeln H1–H14 (Spezifikation §4).
+ * Jeder Verstoß nennt Regel, lesbaren Text und die betroffenen Einträge
+ * (Indizes in stunden[] bzw. aufsichten[]), damit die Oberfläche sie markieren
+ * und erklären kann.
+ *
+ * Geprüft werden zwei Arten von Plänen:
+ *  - Wochenplan (Regelplan): alle Tage, Wochenregeln H7, H11, H14 aktiv
+ *  - Tagesplan (Vertretung, `datum` gesetzt): ein Datum, Abwesenheiten aktiv;
+ *    Wochengrenzen prüft die Vertretungsplanung mit dem Wochenkontext
+ * ========================================================================== */
+const Regeln = (() => {
+  'use strict';
+
+  /** Kurztitel der harten Regeln (für Anzeige und Bericht). */
+  const TITEL = Object.freeze({
+    H1: 'Lehrkraft höchstens einmal je Zeitslot (außer genehmigter Doppelbetreuung)',
+    H2: 'Klasse höchstens eine Veranstaltung je Zeitslot',
+    H3: 'Raum höchstens einmal je Zeitslot belegt',
+    H4: 'Lehrkraft nicht gesperrt oder abwesend',
+    H5: 'Raum nicht gesperrt, passender Raumtyp',
+    H6: 'Raumkapazität reicht',
+    H7: 'Wochenstunden höchstens Höchstgrenze',
+    H8: 'reguläre Fachstunde nur durch qualifizierte Hauptlehrkraft',
+    H9: 'nicht mehr Stunden als in der Stundentafel',
+    H10: 'höchstens zulässige Zahl an Lehrkräften je Klasse und Zeitslot',
+    H11: 'Zweitbesetzung wahrt die Vertretungsreserve',
+    H12: 'keine Leerstunden für Klassen',
+    H13: 'Pausenaufsicht nur durch anwesende Lehrkräfte',
+    H14: 'Aufsichten höchstens Aufsichtssoll',
+  });
+
+  const S = Index.schluessel;
+
+  /**
+   * @param {object} z Zustand (gültig nach Schema)
+   * @param {{stunden?: object[], aufsichten?: object[]}} [plan] Standard: Regelplan des Zustands
+   * @param {{datum?: string}} [optionen] datum: Tagesplan für dieses Datum prüfen
+   * @returns {{regel: string, text: string, stunden: number[], aufsichten: number[]}[]}
+   */
+  function pruefeHart(z, plan, optionen = {}) {
+    const ix = Index.erstelle(z);
+    const stunden = plan?.stunden ?? z.plan.regelplan;
+    const aufsichten = plan?.aufsichten ?? z.plan.aufsichten;
+    const datum = optionen.datum;
+    const woche = !datum;
+    const n = ix.name;
+    const verstoesse = [];
+    const melde = (regel, text, betroffen = {}) => verstoesse.push({
+      regel, text, stunden: betroffen.stunden || [], aufsichten: betroffen.aufsichten || [],
+    });
+
+    /* ---------- Gruppierungen ---------- */
+    const proSlot = gruppiere(stunden, (s) => S(s.tag, s.stunde));
+    const proKlasseSlot = gruppiere(stunden, (s) => S(s.klasse, s.tag, s.stunde));
+    const lehrerSlot = new Map(); // Lehrkraft|Tag|Stunde → Indizes
+    stunden.forEach((s, i) => {
+      for (const l of s.lehrkraefte || []) {
+        const k = S(l, s.tag, s.stunde);
+        if (!lehrerSlot.has(k)) lehrerSlot.set(k, []);
+        lehrerSlot.get(k).push(i);
+      }
+    });
+    const verknuepft = (a, b) => (a.mitKlasse === b.klasse || b.mitKlasse === a.klasse)
+      && (a.status === 'doppeltBetreut' || b.status === 'doppeltBetreut');
+
+    /* ---------- H1: Lehrkraft je Slot ---------- */
+    for (const [k, idx] of lehrerSlot) {
+      if (idx.length < 2) continue;
+      const [l, tag, stunde] = k.split('|');
+      const [a, b] = idx.map((i) => stunden[i]);
+      const erlaubt = idx.length === 2 && verknuepft(a, b) && a.lehrkraefte[0] === l && b.lehrkraefte[0] === l;
+      if (!erlaubt) {
+        melde('H1', `${n.lehrkraft(l)} ist ${n.slot(tag, stunde)} Stunde in ${idx.length} Klassen eingeplant (${idx.map((i) => n.klasse(stunden[i].klasse)).join(', ')})`, { stunden: idx });
+      }
+    }
+    // Doppelbetreuung: Partnerklasse vorhanden, Grenzen je Tag
+    const db = new Map(); // Lehrkraft|Tag → Stunden
+    stunden.forEach((s, i) => {
+      if (s.status !== 'doppeltBetreut') return;
+      const l = s.lehrkraefte?.[0];
+      const partner = (proKlasseSlot.get(S(s.mitKlasse, s.tag, s.stunde)) || []).map((j) => stunden[j]);
+      if (!partner.some((p) => p.lehrkraefte?.includes(l))) {
+        melde('H1', `Doppelbetreuung ${n.slot(s.tag, s.stunde)} Stunde: ${n.klasse(s.mitKlasse)} wird in diesem Slot nicht von ${n.lehrkraft(l)} betreut`, { stunden: [i] });
+      }
+      if (!l) return;
+      const k = S(l, s.tag);
+      if (!db.has(k)) db.set(k, new Map());
+      db.get(k).set(s.stunde, [...(db.get(k).get(s.stunde) || []), i]);
+    });
+    const maxProTag = ix.einstellungen.maxDoppelbetreuungProTag;
+    const maxAmStueck = ix.einstellungen.maxDoppelbetreuungStundenAmStueck;
+    for (const [k, proStunde] of db) {
+      const [l, tag] = k.split('|');
+      const folgen = laeufe([...proStunde.keys()]);
+      const alle = [...proStunde.values()].flat();
+      if (folgen.length > maxProTag) {
+        melde('H1', `${n.lehrkraft(l)} hat am ${tag} ${folgen.length} Doppelbetreuungen (erlaubt: ${maxProTag})`, { stunden: alle });
+      }
+      for (const f of folgen) {
+        if (f.length > maxAmStueck) {
+          melde('H1', `${n.lehrkraft(l)} betreut am ${tag} ${f.length} Stunden am Stück doppelt (erlaubt: ${maxAmStueck})`, { stunden: f.flatMap((st) => proStunde.get(st)) });
+        }
+      }
+    }
+
+    /* ---------- H2: Klasse je Slot ---------- */
+    for (const [k, idx] of proKlasseSlot) {
+      if (idx.length < 2) continue;
+      const [klasse, tag, stunde] = k.split('|');
+      melde('H2', `${n.klasse(klasse)} hat ${n.slot(tag, stunde)} Stunde ${idx.length} Veranstaltungen`, { stunden: idx });
+    }
+
+    /* ---------- H3: Raum je Slot ---------- */
+    const raumSlot = gruppiere(stunden, (s) => (s.raum ? S(s.raum, s.tag, s.stunde) : null));
+    for (const [k, idx] of raumSlot) {
+      if (idx.length < 2) continue;
+      const erlaubt = idx.length === 2 && verknuepft(stunden[idx[0]], stunden[idx[1]]);
+      if (!erlaubt) {
+        const [raum, tag, stunde] = k.split('|');
+        melde('H3', `Raum ${n.raum(raum)} ist ${n.slot(tag, stunde)} Stunde ${idx.length}-fach belegt (${idx.map((i) => n.klasse(stunden[i].klasse)).join(', ')})`, { stunden: idx });
+      }
+    }
+
+    /* ---------- H4, H5, H8, H10: je Eintrag ---------- */
+    const maxL = ix.einstellungen.maxLehrkraefteProKlasseUndSlot;
+    stunden.forEach((s, i) => {
+      const nur = { stunden: [i] };
+      const wo = `${n.klasse(s.klasse)} ${n.slot(s.tag, s.stunde)} Stunde`;
+      for (const l of s.lehrkraefte || []) {
+        if (ix.lehrkraftGesperrt(l, s.tag, s.stunde)) melde('H4', `${n.lehrkraft(l)} ist ${n.slot(s.tag, s.stunde)} Stunde gesperrt (${wo})`, nur);
+        if (ix.lehrkraftAbwesend(l, datum)) melde('H4', `${n.lehrkraft(l)} ist am ${datum} abwesend (${wo})`, nur);
+      }
+      if (Index.STATUS.mitRaum(s)) {
+        if (!s.raum) melde('H5', `${wo}: kein Raum zugewiesen`, nur);
+        else {
+          if (ix.raumGesperrt(s.raum, s.tag, s.stunde)) melde('H5', `Raum ${n.raum(s.raum)} ist ${n.slot(s.tag, s.stunde)} Stunde gesperrt (${wo})`, nur);
+          if (ix.raumAbwesend(s.raum, datum)) melde('H5', `Raum ${n.raum(s.raum)} steht am ${datum} nicht zur Verfügung (${wo})`, nur);
+          if (Index.STATUS.fachunterricht(s) && s.fach && !ix.raumPasst(s.raum, s.fach)) {
+            const f = ix.faecher.get(s.fach);
+            melde('H5', `${wo}: ${n.fach(s.fach)} ${f?.raumtyp ? 'braucht Raumtyp „' + f.raumtyp + '“' : 'gehört in einen Klassenraum'}, Raum ${n.raum(s.raum)} passt nicht`, nur);
+          }
+        }
+      }
+      if (s.status === 'regulaer' && s.fach && s.lehrkraefte?.length) {
+        const stufe = ix.klassen.get(s.klasse)?.stufe;
+        if (!ix.istQualifiziert(s.lehrkraefte[0], s.fach, stufe)) {
+          melde('H8', `${wo}: ${n.lehrkraft(s.lehrkraefte[0])} ist für ${n.fach(s.fach)} in Stufe ${stufe} nicht qualifiziert`, nur);
+        }
+      }
+      if ((s.lehrkraefte || []).length > maxL) melde('H10', `${wo}: ${s.lehrkraefte.length} Lehrkräfte (erlaubt: ${maxL})`, nur);
+    });
+
+    /* ---------- H6: Kapazität (inkl. Gäste aus Aufteilungen) ---------- */
+    const last = new Map(); // Raum|Tag|Stunde → { schueler, idx }
+    const addiere = (raum, tag, stunde, anzahl, i) => {
+      const k = S(raum, tag, stunde);
+      if (!last.has(k)) last.set(k, { schueler: 0, idx: new Set() });
+      const e = last.get(k);
+      e.schueler += anzahl;
+      e.idx.add(i);
+    };
+    stunden.forEach((s, i) => {
+      if (!Index.STATUS.mitRaum(s) || !s.raum) return;
+      addiere(s.raum, s.tag, s.stunde, ix.klassen.get(s.klasse)?.schueler || 0, i);
+    });
+    stunden.forEach((s, i) => {
+      if (s.status !== 'aufgeteilt') return;
+      for (const v of s.verteilung || []) {
+        const zielIdx = (proKlasseSlot.get(S(v.zielKlasse, s.tag, s.stunde)) || [])[0];
+        const zielStunde = zielIdx !== undefined ? stunden[zielIdx] : null;
+        if (!zielStunde || !Index.STATUS.mitRaum(zielStunde) || !zielStunde.raum) {
+          melde('H6', `Aufteilung ${n.klasse(s.klasse)} ${n.slot(s.tag, s.stunde)} Stunde: Zielklasse ${n.klasse(v.zielKlasse)} hat in diesem Slot keinen Unterricht in einem Raum`, { stunden: [i] });
+          continue;
+        }
+        addiere(zielStunde.raum, s.tag, s.stunde, v.anzahl, i);
+      }
+    });
+    for (const [k, e] of last) {
+      const [raum, tag, stunde] = k.split('|');
+      const kap = ix.raeume.get(raum)?.kapazitaet ?? Infinity;
+      if (e.schueler > kap) {
+        melde('H6', `Raum ${n.raum(raum)} ${n.slot(tag, stunde)} Stunde: ${e.schueler} Schüler:innen bei Kapazität ${kap}`, { stunden: [...e.idx] });
+      }
+    }
+
+    /* ---------- H7, H11: Wochenstunden und Reserve ---------- */
+    if (woche) {
+      for (const [l, info] of lehrkraftStunden(stunden)) {
+        const lk = ix.lehrkraefte.get(l);
+        if (!lk) continue;
+        if (info.slots.size > lk.maxStunden) {
+          melde('H7', `${n.lehrkraft(l)} hat ${info.slots.size} Wochenstunden (Höchstgrenze ${lk.maxStunden})`, { stunden: info.idx });
+        }
+        const grenze = lk.sollStunden - ix.reserve(lk);
+        if (info.zweit.size > 0 && info.slots.size > grenze) {
+          melde('H11', `${n.lehrkraft(l)} hat ${info.slots.size} Stunden davon ${info.zweit.size} als Zweitbesetzung; mit Zweitbesetzung höchstens ${grenze} (Soll ${lk.sollStunden} − Reserve ${ix.reserve(lk)})`, { stunden: info.zweitIdx });
+        }
+      }
+    }
+
+    /* ---------- H9: Stundentafel ---------- */
+    const proKlasseFach = gruppiere(stunden, (s) => (s.fach ? S(s.klasse, s.fach) : null));
+    for (const [k, idx] of proKlasseFach) {
+      const [klasse, fach] = k.split('|');
+      const soll = ix.tafel.get(klasse)?.get(fach)?.stunden;
+      // Im Tagesplan gilt dieselbe Obergrenze: ein Tag hat nie mehr Stunden eines Fachs als die Woche.
+      if (soll === undefined) melde('H9', `${n.klasse(klasse)}: ${n.fach(fach)} steht nicht in der Stundentafel`, { stunden: idx });
+      else if (idx.length > soll) melde('H9', `${n.klasse(klasse)}: ${idx.length} Stunden ${n.fach(fach)}, Stundentafel sieht ${soll} vor`, { stunden: idx });
+    }
+
+    /* ---------- H12: keine Leerstunden ---------- */
+    const proKlasseTag = gruppiere(stunden, (s) => (Index.STATUS.belegt(s) ? S(s.klasse, s.tag) : null));
+    for (const [k, idx] of proKlasseTag) {
+      const [klasse, tag] = k.split('|');
+      const belegt = new Set(idx.map((i) => stunden[i].stunde));
+      const reihe = ix.stunden.filter((st) => st >= Math.min(...belegt) && st <= Math.max(...belegt));
+      const luecken = reihe.filter((st) => !belegt.has(st));
+      if (luecken.length) {
+        melde('H12', `${n.klasse(klasse)} hat am ${tag} ${luecken.length === 1 ? 'eine Leerstunde' : luecken.length + ' Leerstunden'} (${luecken.map((st) => st + '.').join(', ')} Stunde)`, { stunden: idx });
+      }
+    }
+
+    /* ---------- H13, H14: Pausenaufsichten ---------- */
+    const unterrichtetAm = new Set(); // Lehrkraft|Tag
+    for (const s of stunden) if (Index.STATUS.belegt(s)) for (const l of s.lehrkraefte || []) unterrichtetAm.add(S(l, s.tag));
+    const aufsichtDoppelt = gruppiere(aufsichten, (a) => S(a.tag, a.vorStunde, a.lehrkraft));
+    for (const [k, idx] of aufsichtDoppelt) {
+      if (idx.length > 1) {
+        const [tag, vor, l] = k.split('|');
+        melde('H13', `${n.lehrkraft(l)} ist für ${n.pause(tag, Number(vor))} mehrfach eingeteilt`, { aufsichten: idx });
+      }
+    }
+    aufsichten.forEach((a, i) => {
+      const nur = { aufsichten: [i] };
+      const wo = n.pause(a.tag, a.vorStunde);
+      const angrenzend = a.vorStunde === ix.stunden[0] ? [a.vorStunde] : [a.vorStunde - 1, a.vorStunde];
+      const gesperrt = angrenzend.filter((st) => ix.lehrkraftGesperrt(a.lehrkraft, a.tag, st));
+      if (gesperrt.length) melde('H13', `${n.lehrkraft(a.lehrkraft)}: Aufsicht ${wo}, aber ${gesperrt.map((st) => st + '.').join(' und ')} Stunde gesperrt`, nur);
+      if (ix.lehrkraftAbwesend(a.lehrkraft, datum)) melde('H13', `${n.lehrkraft(a.lehrkraft)} ist am ${datum} abwesend (Aufsicht ${wo})`, nur);
+      if (!unterrichtetAm.has(S(a.lehrkraft, a.tag))) melde('H13', `${n.lehrkraft(a.lehrkraft)} hat am ${a.tag} keinen Unterricht, ist aber für ${wo} eingeteilt`, nur);
+    });
+    if (woche) {
+      const jeLehrkraft = gruppiere(aufsichten, (a) => a.lehrkraft);
+      for (const [l, idx] of jeLehrkraft) {
+        const soll = ix.lehrkraefte.get(l)?.aufsichtenProWoche ?? 0;
+        if (idx.length > soll) melde('H14', `${n.lehrkraft(l)} hat ${idx.length} Aufsichten (Aufsichtssoll ${soll})`, { aufsichten: idx });
+      }
+    }
+
+    const nr = (r) => Number(r.slice(1));
+    return verstoesse.sort((a, b) => nr(a.regel) - nr(b.regel));
+  }
+
+  /* ------------------------------ Hilfen ---------------------------------- */
+
+  /** Gruppiert Indizes nach Schlüssel; `null` als Schlüssel wird übersprungen. */
+  function gruppiere(liste, schluesselFn) {
+    const m = new Map();
+    liste.forEach((e, i) => {
+      const k = schluesselFn(e);
+      if (k === null || k === undefined) return;
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push(i);
+    });
+    return m;
+  }
+
+  /** Zerlegt Stundennummern in Folgen aufeinanderfolgender Stunden. */
+  function laeufe(nummern) {
+    const sortiert = [...new Set(nummern)].sort((a, b) => a - b);
+    const ergebnis = [];
+    for (const x of sortiert) {
+      const letzte = ergebnis[ergebnis.length - 1];
+      if (letzte && x === letzte[letzte.length - 1] + 1) letzte.push(x);
+      else ergebnis.push([x]);
+    }
+    return ergebnis;
+  }
+
+  /**
+   * Belegte Zeitslots je Lehrkraft (Haupt, Zweit, Aufsicht, Doppelbetreuung
+   * zählt je Slot einmal). Grundlage für H7, H11, K5, W2, W7, W8.
+   * @returns {Map<string, {slots: Set<string>, zweit: Set<string>, idx: number[], zweitIdx: number[], proTag: Map<string, Set<number>>}>}
+   */
+  function lehrkraftStunden(stunden) {
+    const m = new Map();
+    stunden.forEach((s, i) => {
+      if (!Index.STATUS.belegt(s)) return;
+      (s.lehrkraefte || []).forEach((l, rolle) => {
+        if (!m.has(l)) m.set(l, { slots: new Set(), zweit: new Set(), idx: [], zweitIdx: [], proTag: new Map() });
+        const e = m.get(l);
+        const slot = S(s.tag, s.stunde);
+        e.slots.add(slot);
+        e.idx.push(i);
+        if (rolle > 0) { e.zweit.add(slot); e.zweitIdx.push(i); }
+        if (!e.proTag.has(s.tag)) e.proTag.set(s.tag, new Set());
+        e.proTag.get(s.tag).add(s.stunde);
+      });
+    });
+    return m;
+  }
+
+  /** Anzahl Verstöße je Regel, z. B. { H1: 2, H12: 1 }. */
+  function zaehle(verstoesse) {
+    const m = {};
+    for (const v of verstoesse) m[v.regel] = (m[v.regel] || 0) + 1;
+    return m;
+  }
+
+  return { TITEL, pruefeHart, zaehle, lehrkraftStunden, laeufe, gruppiere };
+})();
+
+/* ---- src/kern/50-kosten.js ---- */
+/* ==========================================================================
+ * Modul Kosten
+ * Bewertet einen Plan mit dem lexikografischen Kostenvektor
+ * (K1, K1A, K2, K3, K4, K5, K6) aus Spezifikation §3. K6 ist die gewichtete
+ * Summe der weichen Regeln W1–W12 (§4). Jeder Kostenanteil wird mit
+ * Einzelposten begründet (§9 Nachvollziehbarkeit).
+ * ========================================================================== */
+const Kosten = (() => {
+  'use strict';
+
+  const ZIELE = Object.freeze(['K1', 'K1A', 'K2', 'K3', 'K4', 'K5', 'K6']);
+  const ZIELTITEL = Object.freeze({
+    K1: 'Unterrichtsausfall',
+    K1A: 'unbesetzte Pausenaufsichten',
+    K2: 'Stunden nicht durch die eigene Lehrkraft',
+    K3: 'fachfremd erteilte Stunden',
+    K4: 'Doppelbetreuung und Aufteilung',
+    K5: 'ungenutztes Kontingent trotz möglicher Zweitbesetzung',
+    K6: 'Planqualität (weiche Regeln)',
+  });
+  const WEICH = Object.freeze(['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12']);
+  const WTITEL = Object.freeze({
+    W1: 'kompakter Schultag der Klassen',
+    W2: 'Leerstunden bei Lehrkräften',
+    W3: 'Doppelstunden wie gewünscht',
+    W4: 'Hauptfächer vormittags, Sport nicht direkt nach der Pause',
+    W5: 'gleichmäßige Verteilung eines Fachs',
+    W6: 'wenige Raumwechsel, Heimatraum',
+    W7: 'gleichmäßige Tageslast der Lehrkräfte',
+    W8: 'Mindeststunden unterschritten',
+    W9: 'Zweitbesetzung gezielt eingesetzt',
+    W10: 'beständige Zweitbesetzung',
+    W11: 'Aufsichtssoll erfüllt',
+    W12: 'Aufsicht angrenzend an eigenen Unterricht',
+  });
+
+  const S = Index.schluessel;
+  const rund = (x) => Math.round(x * 100) / 100;
+
+  /**
+   * @param {object} z Zustand
+   * @param {{stunden?: object[], aufsichten?: object[]}} [plan] Standard: Regelplan
+   * @param {{datum?: string, mitPosten?: boolean}} [optionen]
+   *        datum: Tagesplan (Wochenziele K5, W7, W8, W11 entfallen)
+   * @returns {{vektor: number[], ziele: object, weich: object}}
+   */
+  function bewerte(z, plan, optionen = {}) {
+    const ix = Index.erstelle(z);
+    const stunden = plan?.stunden ?? z.plan.regelplan;
+    const aufsichten = plan?.aufsichten ?? z.plan.aufsichten;
+    const woche = !optionen.datum;
+    const mitPosten = optionen.mitPosten !== false;
+    const n = ix.name;
+    const e = ix.einstellungen;
+
+    const ziele = Object.fromEntries(ZIELE.map((k) => [k, { titel: ZIELTITEL[k], wert: 0, posten: [] }]));
+    const weich = Object.fromEntries(WEICH.map((w) => [w, { titel: WTITEL[w], anzahl: 0, gewicht: e.gewichte[w] ?? 0, beitrag: 0, posten: [] }]));
+    const ziel = (k, menge, text) => {
+      if (!menge) return;
+      ziele[k].wert += menge;
+      if (mitPosten) ziele[k].posten.push({ menge: rund(menge), text });
+    };
+    const w = (k, menge, text) => {
+      if (!menge) return;
+      weich[k].anzahl += menge;
+      if (mitPosten) weich[k].posten.push({ menge: rund(menge), text });
+    };
+
+    const lehrer = Regeln.lehrkraftStunden(stunden);
+    const proKlasseTag = Regeln.gruppiere(stunden, (s) => (Index.STATUS.belegt(s) ? S(s.klasse, s.tag) : null));
+    const klassenSlot = new Set(stunden.filter(Index.STATUS.belegt).map((s) => S(s.tag, s.stunde)));
+
+    /* ---------- K1: Unterrichtsausfall ---------- */
+    const abgedeckt = new Map();
+    for (const s of stunden) if (s.fach && Index.STATUS.abgedeckt(s)) abgedeckt.set(S(s.klasse, s.fach), (abgedeckt.get(S(s.klasse, s.fach)) || 0) + 1);
+    for (const k of z.klassen) {
+      for (const t of k.stundentafel) {
+        const ist = abgedeckt.get(S(k.id, t.fach)) || 0;
+        const fehlt = woche ? Math.max(0, t.stunden - ist) : 0;
+        ziel('K1', fehlt, `${n.klasse(k.id)} ${n.fach(t.fach)}: ${fehlt} von ${t.stunden} Stunden fallen aus`);
+      }
+    }
+    if (!woche) {
+      // Im Tagesplan zählen ausdrücklich entfallene Stunden und Aufsichten
+      for (const s of stunden) {
+        if (!Index.STATUS.abgedeckt(s)) ziel('K1', 1, `${n.klasse(s.klasse)} ${n.slot(s.tag, s.stunde)} Stunde: ${s.status === 'aufsicht' ? 'nur Aufsicht' : 'entfällt'}`);
+      }
+    }
+
+    /* ---------- K1A: unbesetzte Pausenaufsichten ---------- */
+    const besetzt = new Map();
+    for (const a of aufsichten) {
+      const k = S(a.tag, a.vorStunde);
+      if (!besetzt.has(k)) besetzt.set(k, new Set());
+      besetzt.get(k).add(a.lehrkraft);
+    }
+    const tage = woche ? ix.tage : [...new Set(stunden.map((s) => s.tag))];
+    for (const tag of tage) {
+      for (const p of ix.pausen) {
+        if (!p.aufsichten) continue;
+        // Bedarf nur, wenn nach der Pause Schüler:innen da sind (Annahme: mindestens eine Klasse hat diese Stunde)
+        if (!klassenSlot.has(S(tag, p.vorStunde))) continue;
+        const fehlt = Math.max(0, p.aufsichten - (besetzt.get(S(tag, p.vorStunde))?.size || 0));
+        ziel('K1A', fehlt, `${n.pause(tag, p.vorStunde)}: ${fehlt} von ${p.aufsichten} Aufsichten unbesetzt`);
+      }
+    }
+
+    /* ---------- K2, K3, K4: je Stunde ---------- */
+    for (const s of stunden) {
+      const wo = `${n.klasse(s.klasse)} ${n.slot(s.tag, s.stunde)} Stunde ${n.fach(s.fach)}`;
+      const haupt = s.lehrkraefte?.[0];
+      if (haupt && s.fach && (Index.STATUS.fachunterricht(s) || s.status === 'doppeltBetreut')) {
+        const zu = ix.zuordnungVon(s.klasse, s.fach);
+        if (zu.haupt !== haupt && !zu.zweit.includes(haupt)) {
+          const klasse = ix.klassen.get(s.klasse);
+          const art = klasse?.klassenlehrkraft === haupt ? 'Klassenlehrkraft'
+            : ix.lehrkraefteDerKlasse.get(s.klasse)?.has(haupt) ? 'Lehrkraft der Klasse'
+              : ix.istQualifiziert(haupt, s.fach, klasse?.stufe) ? 'qualifizierte Lehrkraft' : 'Notfalleinsatz';
+          ziel('K2', 1, `${wo}: ${n.lehrkraft(haupt)} (${art}) statt ${zu.haupt ? n.lehrkraft(zu.haupt) : 'ohne Festzuordnung'}`);
+        }
+      }
+      if (haupt && s.fach && Index.STATUS.fachunterricht(s) && !ix.istQualifiziert(haupt, s.fach, ix.klassen.get(s.klasse)?.stufe)) {
+        ziel('K3', 1, `${wo}: ${n.lehrkraft(haupt)} unterrichtet fachfremd`);
+      }
+      if (s.status === 'doppeltBetreut') ziel('K4', 1, `${wo}: Doppelbetreuung mit ${n.klasse(s.mitKlasse)}`);
+      if (s.status === 'aufgeteilt') ziel('K4', e.gewichtAufteilung, `${wo}: Klasse aufgeteilt (Gewicht ${e.gewichtAufteilung})`);
+    }
+
+    /* ---------- K5: ungenutztes Kontingent trotz möglicher Zweitbesetzung ---------- */
+    if (woche && e.zweitbesetzungErlaubt) {
+      // Slots mit Unterricht, in denen noch eine Zweitbesetzung Platz hat (H10)
+      const freiFuerZweit = new Set(stunden
+        .filter((s) => Index.STATUS.fachunterricht(s) && (s.lehrkraefte?.length || 0) < e.maxLehrkraefteProKlasseUndSlot)
+        .map((s) => S(s.tag, s.stunde)));
+      for (const l of z.lehrkraefte) {
+        const info = lehrer.get(l.id);
+        const ist = info?.slots.size || 0;
+        const luecke = Math.max(0, Math.min(l.sollStunden - ix.reserve(l), l.maxStunden) - ist);
+        if (!luecke) continue;
+        let moeglich = 0;
+        for (const slot of freiFuerZweit) {
+          const [tag, st] = slot.split('|');
+          if (!info?.slots.has(slot) && !ix.lehrkraftGesperrt(l.id, tag, Number(st))) moeglich++;
+        }
+        const k5 = Math.min(luecke, moeglich);
+        ziel('K5', k5, `${n.lehrkraft(l.id)}: ${ist} von ${l.sollStunden} Stunden (Reserve ${ix.reserve(l)}), ${k5} weitere als Zweitbesetzung möglich`);
+      }
+    }
+
+    /* ---------- W1: kompakter Schultag ---------- */
+    const erste = ix.stunden[0];
+    const belegteWoche = new Map();
+    for (const s of stunden) if (Index.STATUS.belegt(s)) belegteWoche.set(s.klasse, (belegteWoche.get(s.klasse) || 0) + 1);
+    for (const [k, idx] of proKlasseTag) {
+      const [klasse, tag] = k.split('|');
+      const nr = idx.map((i) => stunden[i].stunde);
+      const start = Math.min(...nr);
+      const ende = Math.max(...nr);
+      const spaet = start - erste;
+      w('W1', spaet, `${n.klasse(klasse)} beginnt am ${tag} erst zur ${start}. Stunde`);
+      if (woche) {
+        const zielEnde = erste - 1 + Math.ceil(belegteWoche.get(klasse) / ix.tage.length);
+        const lang = Math.max(0, ende - zielEnde);
+        w('W1', lang, `${n.klasse(klasse)} endet am ${tag} erst nach der ${ende}. Stunde (Ziel: ${zielEnde}.)`);
+      }
+    }
+
+    /* ---------- W2, W7, W8: Lehrkräfte ---------- */
+    for (const l of z.lehrkraefte) {
+      const info = lehrer.get(l.id);
+      const ist = info?.slots.size || 0;
+      for (const [tag, st] of info?.proTag || []) {
+        const luecken = Math.max(...st) - Math.min(...st) + 1 - st.size;
+        w('W2', luecken, `${n.lehrkraft(l.id)} hat am ${tag} ${luecken} Leerstunde(n)`);
+      }
+      if (woche && ist) {
+        const proTag = ix.tage.map((t) => info.proTag.get(t)?.size || 0);
+        const mittel = ist / ix.tage.length;
+        const abweichung = rund(proTag.reduce((s, h) => s + Math.abs(h - mittel), 0));
+        w('W7', abweichung, `${n.lehrkraft(l.id)}: Tageslast ${proTag.join('/')} (Mittel ${rund(mittel)})`);
+      }
+      if (woche) w('W8', Math.max(0, l.minStunden - ist), `${n.lehrkraft(l.id)}: ${ist} Stunden, Mindestens ${l.minStunden}`);
+    }
+
+    /* ---------- W3, W5: Doppelstunden und Verteilung ---------- */
+    const proKlasseFachTag = Regeln.gruppiere(stunden, (s) => (s.fach && Index.STATUS.abgedeckt(s) ? S(s.klasse, s.fach, s.tag) : null));
+    const paare = new Map(); // Klasse|Fach → Anzahl Doppelstunden
+    for (const [k, idx] of proKlasseFachTag) {
+      const [klasse, fach, tag] = k.split('|');
+      const f = ix.faecher.get(fach);
+      const folgen = Regeln.laeufe(idx.map((i) => stunden[i].stunde));
+      // Doppelstunden: Paare (s, s+1) mit erlaubtem Beginn, nicht überlappend
+      let p = 0;
+      for (const folge of folgen) {
+        for (let i = 0; i + 1 < folge.length;) {
+          if (ix.doppelstundenStart.has(folge[i])) { p++; i += 2; } else i++;
+        }
+      }
+      paare.set(S(klasse, fach), (paare.get(S(klasse, fach)) || 0) + p);
+      const maxBlock = f?.blockbar ? 2 : 1;
+      const zuviel = (folgen.length - 1) + folgen.reduce((s, folge) => s + Math.max(0, folge.length - maxBlock), 0);
+      w('W5', zuviel, `${n.klasse(klasse)} hat am ${tag} ${idx.length} Stunden ${n.fach(fach)} in ${folgen.length} Block/Blöcken`);
+    }
+    if (woche) {
+      for (const k of z.klassen) {
+        for (const t of k.stundentafel) {
+          if (!t.doppelt || !ix.faecher.get(t.fach)?.blockbar) continue;
+          const gewuenscht = Math.floor(t.stunden / 2);
+          const fehlt = Math.max(0, gewuenscht - (paare.get(S(k.id, t.fach)) || 0));
+          w('W3', fehlt, `${n.klasse(k.id)} ${n.fach(t.fach)}: ${fehlt} von ${gewuenscht} gewünschten Doppelstunden fehlen`);
+        }
+      }
+    }
+
+    /* ---------- W4: Hauptfächer vormittags, Sport nicht nach der Pause ---------- */
+    for (const s of stunden) {
+      if (!s.fach || !Index.STATUS.abgedeckt(s)) continue;
+      const f = ix.faecher.get(s.fach);
+      if (f?.hauptfach && !ix.istVormittag(s.stunde)) w('W4', 1, `${n.klasse(s.klasse)} ${n.slot(s.tag, s.stunde)} Stunde: Hauptfach ${n.fach(s.fach)} am Nachmittag`);
+      if ((f?.raumtyp === 'turnhalle' || f?.raumtyp === 'schwimmhalle') && s.stunde !== erste && ix.pauseVor.has(s.stunde)) {
+        w('W4', 1, `${n.klasse(s.klasse)} ${n.slot(s.tag, s.stunde)} Stunde: ${n.fach(s.fach)} direkt nach der Pause`);
+      }
+    }
+
+    /* ---------- W6: Raumwechsel und Heimatraum ---------- */
+    for (const [k, idx] of proKlasseTag) {
+      const [klasse, tag] = k.split('|');
+      const heimat = ix.klassen.get(klasse)?.heimatraum;
+      const folge = idx.map((i) => stunden[i]).filter((s) => s.raum && Index.STATUS.mitRaum(s)).sort((a, b) => a.stunde - b.stunde);
+      let wechsel = 0;
+      for (let i = 1; i < folge.length; i++) if (folge[i].raum !== folge[i - 1].raum) wechsel++;
+      w('W6', wechsel, `${n.klasse(klasse)} wechselt am ${tag} ${wechsel}-mal den Raum`);
+      for (const s of folge) {
+        if (heimat && s.raum !== heimat && s.fach && !ix.faecher.get(s.fach)?.raumtyp) {
+          w('W6', 1, `${n.klasse(klasse)} ${n.slot(tag, s.stunde)} Stunde ${n.fach(s.fach)} in ${n.raum(s.raum)} statt im Heimatraum`);
+        }
+      }
+    }
+
+    /* ---------- W9, W10: Zweitbesetzung ---------- */
+    const zweit = stunden.filter((s) => (s.lehrkraefte?.length || 0) > 1 && Index.STATUS.fachunterricht(s));
+    if (zweit.length) {
+      const sch = z.klassen.map((k) => k.schueler);
+      const stu = z.klassen.map((k) => k.stufe);
+      const norm = (x, min, max) => (max > min ? (x - min) / (max - min) : 0.5); // gleiche Werte: neutral
+      const [sMin, sMax, tMin, tMax] = [Math.min(...sch), Math.max(...sch), Math.min(...stu), Math.max(...stu)];
+      const jeKlasseFach = new Map();
+      for (const s of zweit) {
+        const k = ix.klassen.get(s.klasse);
+        const knapp = s.fach ? 1 / Math.max(1, ix.anzahlQualifizierte(s.fach, k.stufe)) : 0;
+        const prio = (norm(k.schueler, sMin, sMax) + (1 - norm(k.stufe, tMin, tMax)) + knapp) / 3;
+        w('W9', rund(1 - prio), `${n.klasse(s.klasse)} ${n.slot(s.tag, s.stunde)} Stunde: Zweitbesetzung ${n.lehrkraft(s.lehrkraefte[1])} (Priorität ${rund(prio)})`);
+        const kf = S(s.klasse, s.fach);
+        if (!jeKlasseFach.has(kf)) jeKlasseFach.set(kf, new Set());
+        jeKlasseFach.get(kf).add(s.lehrkraefte[1]);
+      }
+      for (const [kf, l] of jeKlasseFach) {
+        const [klasse, fach] = kf.split('|');
+        w('W10', l.size - 1, `${n.klasse(klasse)} ${n.fach(fach)}: ${l.size} verschiedene Zweitlehrkräfte`);
+      }
+    }
+
+    /* ---------- W11, W12: Aufsichten ---------- */
+    const aufsichtJe = Regeln.gruppiere(aufsichten, (a) => a.lehrkraft);
+    if (woche) {
+      for (const l of z.lehrkraefte) {
+        const ist = aufsichtJe.get(l.id)?.length || 0;
+        w('W11', Math.max(0, l.aufsichtenProWoche - ist), `${n.lehrkraft(l.id)}: ${ist} von ${l.aufsichtenProWoche} Aufsichten`);
+      }
+    }
+    for (const a of aufsichten) {
+      const st = lehrer.get(a.lehrkraft)?.proTag.get(a.tag) || new Set();
+      const angrenzend = a.vorStunde === erste ? st.has(erste) : st.has(a.vorStunde - 1) || st.has(a.vorStunde);
+      if (!angrenzend) w('W12', 1, `${n.lehrkraft(a.lehrkraft)}: ${n.pause(a.tag, a.vorStunde)} ohne angrenzenden eigenen Unterricht`);
+    }
+    for (const [k, idx] of Regeln.gruppiere(aufsichten, (a) => S(a.lehrkraft, a.tag))) {
+      const [l, tag] = k.split('|');
+      w('W12', idx.length - 1, `${n.lehrkraft(l)} hat am ${tag} ${idx.length} Aufsichten`);
+    }
+
+    /* ---------- K6 und Ergebnis ---------- */
+    for (const k of WEICH) {
+      weich[k].anzahl = rund(weich[k].anzahl);
+      weich[k].beitrag = rund(weich[k].anzahl * weich[k].gewicht);
+      ziele.K6.wert += weich[k].beitrag;
+    }
+    for (const k of ZIELE) ziele[k].wert = rund(ziele[k].wert);
+    return { vektor: ZIELE.map((k) => ziele[k].wert), ziele, weich };
+  }
+
+  /** Lexikografischer Vergleich: < 0, wenn a besser (kleiner) ist als b. */
+  function vergleiche(a, b) {
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+      const d = (a[i] || 0) - (b[i] || 0);
+      if (Math.abs(d) > 1e-9) return d;
+    }
+    return 0;
+  }
+
+  /** Lesbare Kurzform, z. B. „K1 0 · K1A 0 · K2 3 · … · K6 128.5“. */
+  function formatiere(vektor) {
+    return ZIELE.map((k, i) => `${k} ${vektor[i]}`).join(' · ');
+  }
+
+  return { ZIELE, ZIELTITEL, WEICH, WTITEL, bewerte, vergleiche, formatiere };
+})();
+
 /* ---- src/kern/80-io.js ---- */
 /* ==========================================================================
  * Modul Io (Import/Export)
@@ -1168,6 +1922,9 @@ const Kern = Object.freeze({
   Hilfen,
   Modell,
   Schema,
+  Index,
+  Regeln,
+  Kosten,
   Io,
 });
 </script>
@@ -1407,6 +2164,7 @@ const DatenReiter = (() => {
     ];
     const dl = panel.querySelector('#daten-uebersicht');
     dl.replaceChildren(...zeilen.flatMap(([k, v]) => [el('dt', { text: k }), el('dd', { text: String(v), 'data-feld': k })]));
+    dl.append(...planpruefung(d));
     const stand = panel.querySelector('#daten-speicherstand');
     const exportText = App.zustand.letzterExport ? 'Zuletzt exportiert: ' + formatiere(App.zustand.letzterExport) : 'Noch nicht exportiert.';
     stand.replaceChildren(
@@ -1415,6 +2173,29 @@ const DatenReiter = (() => {
       App.zustand.geaendert
         ? el('strong', { class: 'warnung-text', text: '⚠ Ungespeicherte Änderungen' })
         : el('span', { text: 'Keine ungespeicherten Änderungen' }));
+  }
+
+  /** Prüfung des Regelplans: harte Regeln (gültig/ungültig) und Kostenvektor (§3, §4). */
+  function planpruefung(d) {
+    const el = App.el;
+    if (!(d.plan?.regelplan || []).length) return [];
+    let verstoesse;
+    let bewertung;
+    try {
+      verstoesse = Kern.Regeln.pruefeHart(d);
+      bewertung = Kern.Kosten.bewerte(d, undefined, { mitPosten: false });
+    } catch (e) {
+      return [el('dt', { text: 'Regelplan' }), el('dd', { class: 'warnung-text', text: '⚠ Prüfung nicht möglich: ' + e.message })];
+    }
+    const zahl = Kern.Regeln.zaehle(verstoesse);
+    const status = verstoesse.length
+      ? el('dd', { 'data-feld': 'Regelplan', class: 'fehler-text', title: verstoesse.slice(0, 20).map((v) => v.regel + ': ' + v.text).join('\n') },
+        `⚠ ungültig – ${verstoesse.length} Verstoß/Verstöße gegen harte Regeln (${Object.entries(zahl).map(([r, n]) => `${r} ×${n}`).join(', ')})`)
+      : el('dd', { 'data-feld': 'Regelplan', text: '✓ gültig – keine Verstöße gegen harte Regeln' });
+    return [
+      el('dt', { text: 'Regelplan' }), status,
+      el('dt', { text: 'Kostenvektor' }), el('dd', { 'data-feld': 'Kostenvektor', text: Kern.Kosten.formatiere(bewertung.vektor) }),
+    ];
   }
 
   function formatiere(zeitpunkt) {

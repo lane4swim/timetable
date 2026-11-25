@@ -84,6 +84,7 @@ const DatenReiter = (() => {
     ];
     const dl = panel.querySelector('#daten-uebersicht');
     dl.replaceChildren(...zeilen.flatMap(([k, v]) => [el('dt', { text: k }), el('dd', { text: String(v), 'data-feld': k })]));
+    dl.append(...planpruefung(d));
     const stand = panel.querySelector('#daten-speicherstand');
     const exportText = App.zustand.letzterExport ? 'Zuletzt exportiert: ' + formatiere(App.zustand.letzterExport) : 'Noch nicht exportiert.';
     stand.replaceChildren(
@@ -92,6 +93,29 @@ const DatenReiter = (() => {
       App.zustand.geaendert
         ? el('strong', { class: 'warnung-text', text: '⚠ Ungespeicherte Änderungen' })
         : el('span', { text: 'Keine ungespeicherten Änderungen' }));
+  }
+
+  /** Prüfung des Regelplans: harte Regeln (gültig/ungültig) und Kostenvektor (§3, §4). */
+  function planpruefung(d) {
+    const el = App.el;
+    if (!(d.plan?.regelplan || []).length) return [];
+    let verstoesse;
+    let bewertung;
+    try {
+      verstoesse = Kern.Regeln.pruefeHart(d);
+      bewertung = Kern.Kosten.bewerte(d, undefined, { mitPosten: false });
+    } catch (e) {
+      return [el('dt', { text: 'Regelplan' }), el('dd', { class: 'warnung-text', text: '⚠ Prüfung nicht möglich: ' + e.message })];
+    }
+    const zahl = Kern.Regeln.zaehle(verstoesse);
+    const status = verstoesse.length
+      ? el('dd', { 'data-feld': 'Regelplan', class: 'fehler-text', title: verstoesse.slice(0, 20).map((v) => v.regel + ': ' + v.text).join('\n') },
+        `⚠ ungültig – ${verstoesse.length} Verstoß/Verstöße gegen harte Regeln (${Object.entries(zahl).map(([r, n]) => `${r} ×${n}`).join(', ')})`)
+      : el('dd', { 'data-feld': 'Regelplan', text: '✓ gültig – keine Verstöße gegen harte Regeln' });
+    return [
+      el('dt', { text: 'Regelplan' }), status,
+      el('dt', { text: 'Kostenvektor' }), el('dd', { 'data-feld': 'Kostenvektor', text: Kern.Kosten.formatiere(bewertung.vektor) }),
+    ];
   }
 
   function formatiere(zeitpunkt) {

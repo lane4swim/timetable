@@ -167,6 +167,9 @@ test('Stammdaten-Import, zu dem der Plan nicht passt: Angebot „Plan verwerfen�
   await importiere(schreibe('mitplan.json', mitPlan));
   await meldung().filter({ hasText: 'Importiert' }).waitFor();
   assert.equal(await feld('Stunden im Regelplan'), '1');
+  // Prüfung des Regelplans in der Übersicht: gültig, Kostenvektor angezeigt
+  assert.match(await feld('Regelplan'), /✓ gültig/);
+  assert.match(await feld('Kostenvektor'), /^K1 \d+ · K1A \d+ · K2 0 · K3 0 · K4 0 · K5 \d+ · K6 [\d.]+$/);
 
   const fremd = JSON.parse(readFileSync(join(DATEN, 'gross.json'), 'utf8'));
   fremd.teil = 'stammdaten';
@@ -218,4 +221,21 @@ test('ungespeicherte Änderungen: Anzeige und Warnung beim Schließen (beforeunl
   await seite.evaluate(() => window.Stundenplan.App.markiereGeaendert());
   await Promise.all([seite.waitForEvent('download'), seite.click('#export-plan')]);
   assert.equal(await wuerdeWarnen(), true);
+});
+
+test('Regelplan mit Verstoß wird als ungültig markiert (Symbol und Regelnummer, nicht nur Farbe)', async () => {
+  const d = JSON.parse(readFileSync(join(DATEN, 'klein.json'), 'utf8'));
+  const [k1, k2] = d.klassen;
+  const z1 = d.zuordnungen.find((x) => x.klasse === k1.id && x.rolle === 'haupt');
+  const z2 = d.zuordnungen.find((x) => x.klasse === k2.id && x.rolle === 'haupt');
+  // dieselbe Lehrkraft zur selben Zeit in zwei Klassen (H1)
+  d.plan.regelplan = [
+    { klasse: k1.id, fach: z1.fach, lehrkraefte: [z1.lehrkraft], raum: k1.heimatraum, tag: 'Mo', stunde: 1, status: 'regulaer' },
+    { klasse: k2.id, fach: z2.fach, lehrkraefte: [z1.lehrkraft], raum: k2.heimatraum, tag: 'Mo', stunde: 1, status: 'vertreten' },
+  ];
+  await importiere(schreibe('ungueltig.json', d));
+  await meldung().filter({ hasText: 'Importiert' }).waitFor();
+  const text = await feld('Regelplan');
+  assert.match(text, /⚠ ungültig/);
+  assert.match(text, /H1 ×1/);
 });

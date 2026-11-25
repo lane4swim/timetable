@@ -83,6 +83,7 @@ body { margin: 0; background: var(--hintergrund); color: var(--text); min-width:
 .uebersicht dt { color: var(--text-leise); }
 .uebersicht dd { margin: 0; font-variant-numeric: tabular-nums; }
 .warnung-text { color: var(--warnung); font-weight: 600; }
+.fehler-text { color: var(--fehler); font-weight: 600; }
 
 .ablage {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;

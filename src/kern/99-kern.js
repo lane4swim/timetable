@@ -8,5 +8,8 @@ const Kern = Object.freeze({
   Hilfen,
   Modell,
   Schema,
+  Index,
+  Regeln,
+  Kosten,
   Io,
 });
