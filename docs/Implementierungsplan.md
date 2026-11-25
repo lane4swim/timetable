@@ -31,7 +31,7 @@ timetable/
 │   │   ├── 10-modell.js        # Leerer Zustand, Fabriken, Indizes (Slot-Belegung)
 │   │   ├── 20-schema.js        # Schemabeschreibung, Validierung mit Pfaden, Migrationen
 │   │   ├── 30-regeln.js        # Harte Regeln H1–H14 (Prüfung + Erklärung)
-│   │   ├── 40-kosten.js        # Kostenvektor K1–K6, weiche Regeln W1–W10, lexikografischer Vergleich
+│   │   ├── 40-kosten.js        # Kostenvektor K1, K1A, K2–K6, weiche Regeln W1–W12, lexikografischer Vergleich
 │   │   ├── 50-bedarf.js        # Bedarfsermittlung, Vorprüfung, Min-Cost-Flow
 │   │   ├── 60-planer.js        # Konstruktion, Zweitbesetzung, Nachoptimierung (SA)
 │   │   ├── 65-aufsicht.js      # Pausenaufsichten: Zuordnung, Vertretung
