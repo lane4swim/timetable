@@ -260,7 +260,14 @@ Diese Punkte sollten vor bzw. während M1 bestätigt werden; bis dahin gelten di
     - *Zweitbesetzung nach der Optimierung:* Die Nachoptimierung ordnet nur den Hauptunterricht; danach werden Zweitbesetzungen vergeben (Priorität W9, Beständigkeit W10, möglichst angrenzend an eigene Stunden) und zuletzt die Aufsichten.
     - *Reproduzierbarkeit:* Die Zahl der Optimierungsschritte ist fest (3000 je Stunde, höchstens 4 Mio.). Greift vorher das Zeitbudget, wird das im Ergebnis vermerkt.
     - *Nicht unterstützt:* Klassen mit gemeinsamem Heimatraum; Tausch von Lehrkräften zwischen Klassen in der Optimierung.
-20. **Offene fachliche Fragen** (Bundesland, Obergrenzen für Gäste, PDF/CSV-Export, Priorität der Zweitbesetzung): werden konfigurierbar gehalten bzw. sind nicht Teil der ersten Version; CSV-Export ließe sich in M7 ergänzen.
+20. **Festlegungen aus M3 und M5 (Bedienung):**
+    - *Kurzschreibweisen* in Tabellen: Qualifikationen „MA 1–4; DE 5–10“ (ohne Stufen: 1–13), Sperrzeiten „Fr 5–6; Mo 1, 3“, Nachbarräume als Raumnamen (wird symmetrisch gepflegt).
+    - *Jede Bearbeitung* wird vor der Übernahme vollständig geprüft (Schema und Querprüfungen); harte Regeln des Plans (H1–H14) blockieren dagegen nicht, sondern werden angezeigt und markieren den Plan als ungültig (§4).
+    - *Verlauf:* 100 Schritte; auch Import, Zurücksetzen und „Plan erstellen“ lassen sich rückgängig machen. Strg+Z/Y wirken außerhalb von Eingabefeldern (dort gilt das Rückgängig des Browsers).
+    - *Zuordnung:* In der Matrix ist je Klasse und Fach eine Zweitlehrkraft einstellbar; mehrere sind im JSON möglich, die Eingabe ersetzt sie. Eine Lehrkraft wechselt automatisch die Rolle, wenn sie in der anderen Spalte eingetragen wird.
+    - *Zeitraster:* Stunden werden am Tagesende angehängt; entfernt werden kann nur die letzte und nur, wenn sie nicht verwendet wird.
+    - *Plan-Ansicht:* Verschieben auf einen belegten Slot derselben Klasse tauscht beide Stunden (Lücken entstehen so nicht); Ablegen auf einen freien Slot verschiebt. Zweitbesetzung nur in Unterrichtsstunden mit Hauptlehrkraft. Die Plan-Ansicht zeigt den Regelplan; datumsgenaue Vertretungen folgen in M6.
+21. **Offene fachliche Fragen** (Bundesland, Obergrenzen für Gäste, PDF/CSV-Export, Priorität der Zweitbesetzung): werden konfigurierbar gehalten bzw. sind nicht Teil der ersten Version; CSV-Export ließe sich in M7 ergänzen.
 
 Neue optionale Felder ändern `schemaVersion: 1` nicht, da unbekannte Felder ohnehin erhalten bleiben und alle neuen Felder Standardwerte haben.
 
@@ -272,8 +279,10 @@ Neue optionale Felder ändern `schemaVersion: 1` nicht, da unbekannte Felder ohn
 | M1 Daten & Persistenz | erledigt (25.11.2026): Module `Schema` (deklaratives Schema, Validator mit Pfaden, Querprüfungen, Standardwerte, kanonische Reihenfolge, Migrationsrahmen) und `Io` (Export gesamt/Stammdaten/Plan, atomarer Import, Teil-Import); Reiter „Daten“ mit Dateiauswahl, Drag-and-drop, Rückfrage mit Export-Angebot, Fehlerliste mit Pfad, Zurücksetzen, Speicherstand und `beforeunload`-Warnung. Abnahme 1 und 7 automatisiert (Kern und Browser) |
 | M2 Regeln & Kosten | erledigt (25.11.2026): Module `Index` (Nachschlagestrukturen), `Regeln` (H1–H14 für Wochen- und Tagesplan, Verstöße mit betroffenen Einträgen) und `Kosten` (Vektor K1, K1A, K2–K6 mit W1–W12 und Einzelposten); von Hand nachgerechnete Testschule; Reiter „Daten“ zeigt Gültigkeit und Kostenvektor des Regelplans |
 | M4 Planer | erledigt (25.11.2026): Module `Fluss` (Minimalkosten-Maximalfluss) und `Planer` (Bedarf, Vorprüfung, Zuweisung mit unterer Ausfall-Schranke, Konstruktion mit lückenlosen Klassentagen und Tabu-Konfliktsuche, Simulated Annealing, Räume, Zweitbesetzung, Aufsichten); Worker-Protokoll mit Fortschritt und Abbruch; Reiter „Planung“ mit Optionen, Gewichten und Ergebnis. Großer Datensatz (30 Klassen, 60 Lehrkräfte) in ca. 3 s. Abnahme 2, 3, 4, 8, 12 automatisiert |
-| M3 Stammdaten-UI | als Nächstes |
+| M3 Stammdaten-UI | erledigt (25.11.2026): Rückgängig/Wiederholen (100 Schritte, Strg+Z/Y), jede Bearbeitung geprüft über `App.aendere`; Modul `Verweise`; bearbeitbare Tabellen (Enter/↑/↓/Esc) für Lehrkräfte, Fächer, Räume, Klassen, Zeitraster mit Pausen, Schule; Löschen gesperrt mit Verweisliste; Matrix Klasse × Fach mit Soll/Ist-Warnungen |
+| M5 Plan-Ansicht | erledigt (25.11.2026): Modul `Bearbeitung`; Wochenraster Klasse/Lehrkraft/Raum/Aufsicht mit Pausenzeilen; Drag-and-drop und Tastatur (aufnehmen, bewegen, ablegen, Entf); Konflikte rot mit ⚠ und Regelnummer, Konfliktliste mit Sprung; Zweitbesetzung aus „Freie Kontingente“, Aufsichten aus „Aufsichtssoll offen“; Druckansicht je Entität oder alle; Reaktionszeit im großen Plan deutlich unter 100 ms |
+| M6 Vertretung | als Nächstes |
 
 ## 10. Nächster Schritt
 
-Die Annahmen in Abschnitt 8 sind bestätigt (25.11.2026). Als Nächstes folgen **M3** (Stammdaten und Zuordnung bearbeiten, Rückgängig/Wiederholen) und **M5** (Plan-Ansicht mit Drag-and-drop).
+Die Annahmen in Abschnitt 8 sind bestätigt (25.11.2026). Als Nächstes folgen **M6** (datumsgenaue Vertretung mit Eskalationskette und Aufsichtsvertretung) und **M7** (Bericht, Barrierefreiheit, Browsertests).

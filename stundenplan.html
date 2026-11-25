@@ -35,6 +35,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; background: var(--hintergrund); color: var(--text); min-width: 1280px; }
 
 .kopf {
@@ -170,11 +171,67 @@ body.ablage-aktiv::after {
 .matrix-zelle.warnung { box-shadow: inset 0 0 0 2px var(--warnung); }
 .marke { display: inline-block; font-size: .75rem; font-weight: 600; color: var(--warnung); }
 
+/* ------------------------------- Plan ------------------------------------- */
+.plan-werkzeuge { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 8px; }
+.plan-werkzeuge .umschalter { margin: 0; }
+.feld-zeile { display: flex; align-items: center; gap: 8px; }
+.feld-zeile select { font: inherit; padding: 4px 8px; border: 1px solid var(--linie-kraeftig); border-radius: var(--radius); min-width: 14em; }
+.ansage { min-height: 1.45em; margin: 4px 0 8px; font-weight: 600; }
+.plan-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.plan-raster-rahmen { overflow-x: auto; }
+.raster { border-collapse: collapse; width: 100%; table-layout: fixed; }
+.raster th, .raster td { border: 1px solid var(--linie); vertical-align: top; }
+.raster thead th { background: var(--hintergrund); padding: 4px; }
+.raster-ecke { width: 7.5em; }
+.raster tbody th { text-align: left; padding: 4px 6px; font-weight: 600; background: var(--hintergrund); }
+.stunde-nr { display: block; }
+.stunde-zeit { display: block; font-weight: 400; font-size: .8rem; color: var(--text-leise); }
+.zelle { height: 64px; padding: 3px; }
+.zelle:focus { outline: 3px solid var(--fokus); outline-offset: -3px; }
+.zelle.ziel, .zelle.aufgenommen-ziel { background: #e5eefc; box-shadow: inset 0 0 0 2px var(--akzent); }
+.pausenzeile th, .pausenzeile td { background: #f0f2f5; font-size: .8rem; padding: 2px 4px; }
+.pausenzeile .zelle { height: auto; min-height: 22px; }
+.karte { background: #eaf1fb; border: 1px solid #b8cbe8; border-radius: 4px; padding: 2px 4px; font-size: .85rem; line-height: 1.3; cursor: grab; margin-bottom: 2px; }
+.karte.aufgenommen, .chip.aufgenommen { outline: 3px dashed var(--akzent); }
+.karte.konflikt { border: 2px solid var(--fehler); background: #fdecea; }
+.karte.status-aufgeteilt { background: #e6e6e6; border-color: #9a9a9a; color: #333; }
+.karte.status-entfaellt { background: #fff; border-style: dashed; color: var(--text-leise); }
+.karte.status-vertreten, .karte.status-doppeltBetreut, .karte.status-aufsicht { background: #fff4e0; border-color: #d9a650; }
+.karte-lehrer, .karte-raum { font-size: .8rem; color: var(--text-leise); }
+.karte-lehrer .zweit { color: var(--text); }
+.konflikt-marke { color: var(--fehler); font-weight: 700; font-size: .78rem; }
+.zweit-hinweis, .status-marke { font-size: .8rem; color: var(--text-leise); }
+.gaeste { display: inline-block; font-size: .78rem; background: #eee; border-radius: 3px; padding: 0 4px; }
+.mini { font: inherit; font-size: .8rem; line-height: 1; padding: 0 3px; border: 1px solid var(--linie-kraeftig); border-radius: 3px; background: #fff; cursor: pointer; }
+.chip { display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: .82rem; padding: 1px 6px; margin: 1px 3px 1px 0; border-radius: 10px; border: 1px solid #b8cbe8; background: #eaf1fb; color: var(--text); cursor: grab; }
+.chip.konflikt { border: 2px solid var(--fehler); background: #fdecea; }
+.chip.quelle { cursor: grab; }
+.bedarf { font-size: .78rem; color: var(--text-leise); margin-left: 4px; }
+.bedarf.fehlt { color: var(--fehler); font-weight: 700; }
+.plan-seite { border-left: 1px solid var(--linie); padding-left: 12px; }
+.seiten-block h3 { font-size: .95rem; margin: 0 0 6px; }
+.seiten-block { margin-bottom: 16px; }
+.konfliktliste { list-style: none; padding-left: 0; margin: 4px 0; max-height: 280px; overflow: auto; font-size: .85rem; }
+.link { font: inherit; background: none; border: none; padding: 0; color: var(--akzent); text-align: left; cursor: pointer; text-decoration: underline; }
+.legende { padding-left: 16px; font-size: .85rem; margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+#druckbereich { display: none; }
+
 /* Fokus immer sichtbar, unabhängig von Farbe des Elements */
 :focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; }
 
 @media print {
   body { background: #fff; min-width: 0; }
+  /* Druckansicht des Plans: nur der vorbereitete Druckbereich */
+  body:has(#druckbereich > *) > *:not(#druckbereich) { display: none !important; }
+  #druckbereich { display: block; }
+  .druckseite { break-after: page; }
+  .druckseite:last-child { break-after: auto; }
+  .druckseite h2 { font-size: 14pt; margin: 0 0 2pt; }
+  .raster { width: 100%; font-size: 9pt; }
+  .raster th, .raster td { border: 1px solid #555; }
+  .karte { border: 1px solid #777; background: #fff !important; }
+  .zelle { height: auto; }
   .kopf, .reiterleiste, .fuss, .dialog { display: none; }
   .panel { border: none; padding: 0; min-height: 0; }
   .panel[hidden] { display: none; }
@@ -2930,6 +2987,108 @@ const Planer = (() => {
   return { starte, plane };
 })();
 
+/* ---- src/kern/65-bearbeitung.js ---- */
+/* ==========================================================================
+ * Modul Bearbeitung
+ * Manuelle Änderungen am Regelplan (§7 Plan-Ansicht): Stunden verschieben,
+ * Zweitbesetzung setzen/entfernen, Aufsichten verschieben/hinzufügen/entfernen.
+ * Alle Funktionen verändern den übergebenen Zustand (in der Oberfläche eine
+ * Kopie innerhalb von App.aendere) und liefern eine Beschreibung für den
+ * Verlauf oder einen Fehlertext. Harte Regeln werden NICHT erzwungen: Die
+ * Oberfläche zeigt Verstöße an und markiert den Plan als ungültig (§4).
+ * ========================================================================== */
+const Bearbeitung = (() => {
+  'use strict';
+
+  const name = (z, sammlung, id, feld = 'name') => z[sammlung].find((x) => x.id === id)?.[feld] || id;
+
+  /**
+   * Verschiebt Stunde `index` der Klasse auf (tag, stunde). Hat die Klasse dort
+   * bereits eine Stunde, tauschen beide ihre Plätze.
+   * @returns {{text: string}|{fehler: string}}
+   */
+  function verschiebeStunde(z, index, tag, stunde) {
+    const plan = z.plan.regelplan;
+    const s = plan[index];
+    if (!s) return { fehler: 'Diese Stunde gibt es nicht mehr.' };
+    if (!z.zeitraster.tage.includes(tag) || !z.zeitraster.stunden.some((x) => x.nr === stunde)) return { fehler: 'Dieser Zeitslot liegt nicht im Zeitraster.' };
+    if (s.tag === tag && s.stunde === stunde) return { fehler: 'Die Stunde liegt bereits dort.' };
+    const andere = plan.findIndex((x, i) => i !== index && x.klasse === s.klasse && x.tag === tag && x.stunde === stunde);
+    const text = `${name(z, 'klassen', s.klasse)} ${name(z, 'faecher', s.fach, 'kuerzel')} ${s.tag} ${s.stunde}. → ${tag} ${stunde}.`;
+    if (andere >= 0) {
+      plan[andere].tag = s.tag;
+      plan[andere].stunde = s.stunde;
+    }
+    s.tag = tag;
+    s.stunde = stunde;
+    return { text: andere >= 0 ? `${text} (getauscht mit ${name(z, 'faecher', plan[andere].fach, 'kuerzel')})` : text };
+  }
+
+  /** Setzt (oder entfernt mit null) die Zweitbesetzung einer Stunde. */
+  function setzeZweit(z, index, lehrkraft) {
+    const s = z.plan.regelplan[index];
+    if (!s) return { fehler: 'Diese Stunde gibt es nicht mehr.' };
+    const wo = `${name(z, 'klassen', s.klasse)} ${s.tag} ${s.stunde}.`;
+    if (lehrkraft === null) {
+      if (s.lehrkraefte.length < 2) return { fehler: 'Die Stunde hat keine Zweitbesetzung.' };
+      const alt = s.lehrkraefte[1];
+      s.lehrkraefte = s.lehrkraefte.slice(0, 1);
+      return { text: `Zweitbesetzung ${name(z, 'lehrkraefte', alt, 'kuerzel')} aus ${wo} entfernt` };
+    }
+    if (!(s.status === 'regulaer' || s.status === 'vertreten') || !s.lehrkraefte.length) return { fehler: 'Eine Zweitbesetzung ist nur in Unterrichtsstunden mit Hauptlehrkraft möglich.' };
+    if (s.lehrkraefte[0] === lehrkraft) return { fehler: 'Die Lehrkraft ist bereits Hauptlehrkraft dieser Stunde.' };
+    if (z.einstellungen.maxLehrkraefteProKlasseUndSlot < 2) return { fehler: 'Laut Einstellung ist nur eine Lehrkraft je Klasse und Stunde erlaubt.' };
+    s.lehrkraefte = [s.lehrkraefte[0], lehrkraft];
+    return { text: `${name(z, 'lehrkraefte', lehrkraft, 'kuerzel')} als Zweitbesetzung in ${wo}` };
+  }
+
+  function verschiebeAufsicht(z, index, tag, vorStunde) {
+    const a = z.plan.aufsichten[index];
+    if (!a) return { fehler: 'Diese Aufsicht gibt es nicht mehr.' };
+    if (a.tag === tag && a.vorStunde === vorStunde) return { fehler: 'Die Aufsicht liegt bereits dort.' };
+    if (z.plan.aufsichten.some((x, i) => i !== index && x.tag === tag && x.vorStunde === vorStunde && x.lehrkraft === a.lehrkraft)) return { fehler: 'Die Lehrkraft hat in dieser Pause bereits Aufsicht.' };
+    const text = `Aufsicht ${name(z, 'lehrkraefte', a.lehrkraft, 'kuerzel')} ${a.tag} vor ${a.vorStunde}. → ${tag} vor ${vorStunde}.`;
+    a.tag = tag;
+    a.vorStunde = vorStunde;
+    return { text };
+  }
+
+  function neueAufsicht(z, tag, vorStunde, lehrkraft) {
+    if (z.plan.aufsichten.some((x) => x.tag === tag && x.vorStunde === vorStunde && x.lehrkraft === lehrkraft)) return { fehler: 'Die Lehrkraft hat in dieser Pause bereits Aufsicht.' };
+    z.plan.aufsichten.push({ tag, vorStunde, lehrkraft });
+    return { text: `Aufsicht ${name(z, 'lehrkraefte', lehrkraft, 'kuerzel')} ${tag} vor ${vorStunde}. eingeteilt` };
+  }
+
+  function entferneAufsicht(z, index) {
+    const a = z.plan.aufsichten[index];
+    if (!a) return { fehler: 'Diese Aufsicht gibt es nicht mehr.' };
+    z.plan.aufsichten.splice(index, 1);
+    return { text: `Aufsicht ${name(z, 'lehrkraefte', a.lehrkraft, 'kuerzel')} ${a.tag} vor ${a.vorStunde}. entfernt` };
+  }
+
+  /**
+   * Lehrkräfte mit ungenutztem Kontingent für Zweitbesetzung (§7):
+   * min(Soll − Reserve, Höchstgrenze) − Ist > 0.
+   */
+  function freieKontingente(z) {
+    const ix = Index.erstelle(z);
+    const stunden = Regeln.lehrkraftStunden(z.plan.regelplan);
+    return z.lehrkraefte.map((l) => {
+      const ist = stunden.get(l.id)?.slots.size || 0;
+      return { lehrkraft: l.id, ist, frei: Math.min(l.sollStunden - ix.reserve(l), l.maxStunden) - ist };
+    }).filter((x) => x.frei > 0);
+  }
+
+  /** Lehrkräfte, deren Aufsichtssoll noch nicht erfüllt ist. */
+  function offeneAufsichten(z) {
+    const zahl = new Map();
+    for (const a of z.plan.aufsichten) zahl.set(a.lehrkraft, (zahl.get(a.lehrkraft) || 0) + 1);
+    return z.lehrkraefte.map((l) => ({ lehrkraft: l.id, offen: l.aufsichtenProWoche - (zahl.get(l.id) || 0) })).filter((x) => x.offen > 0);
+  }
+
+  return { verschiebeStunde, setzeZweit, verschiebeAufsicht, neueAufsicht, entferneAufsicht, freieKontingente, offeneAufsichten };
+})();
+
 /* ---- src/kern/80-io.js ---- */
 /* ==========================================================================
  * Modul Io (Import/Export)
@@ -3058,6 +3217,7 @@ const Kern = Object.freeze({
   Kosten,
   Fluss,
   Planer,
+  Bearbeitung,
   Io,
 });
 </script>
@@ -4511,6 +4671,464 @@ const PlanungReiter = (() => {
   return { baue, erstelle, abbrechen };
 })();
 
+/* ---- src/ui/50-plan.js ---- */
+/* ==========================================================================
+ * Modul PlanReiter (Oberfläche, Reiter „Plan“)
+ * Wochenraster des Regelplans (§7) mit Umschalter Klasse / Lehrkraft / Raum /
+ * Aufsicht. Pausen stehen als schmale Zeilen zwischen den Stunden.
+ *   - Drag-and-drop: Stunde verschieben (in der Klasse tauschen), Aufsicht
+ *     verschieben, Lehrkraft aus „Freie Kontingente“ als Zweitbesetzung bzw.
+ *     aus „Aufsichtssoll offen“ als Aufsicht ablegen
+ *   - Tastatur: Pfeiltasten wählen die Zelle, Enter/Leertaste nimmt auf bzw.
+ *     legt ab, Esc bricht ab, Entf entfernt Zweitbesetzung bzw. Aufsicht
+ *   - Konflikte: rot umrandet, mit ⚠ und Regelnummer (nie nur Farbe)
+ *   - Druckansicht je Klasse und Lehrkraft (einzeln oder alle)
+ * ========================================================================== */
+const PlanReiter = (() => {
+  'use strict';
+  const MIME = 'application/x-stundenplan';
+  let panel = null;
+  let sichtbar = () => {};
+  const ansicht = { art: 'klasse', id: null };
+  let aufgenommen = null; // { art: 'stunde'|'aufsicht'|'zweit'|'aufsichtNeu', index?, lehrkraft? }
+  let aktiv = { zeile: 0, spalte: 0 };
+  let letzteDauerMs = 0;
+
+  const ARTEN = [['klasse', 'Klasse'], ['lehrkraft', 'Lehrkraft'], ['raum', 'Raum'], ['aufsicht', 'Aufsicht']];
+
+  /* ------------------------------ Aufbau ------------------------------- */
+
+  function baue(ziel) {
+    panel = ziel;
+    const el = App.el;
+    panel.append(
+      el('div', { class: 'plan-werkzeuge' },
+        el('div', { class: 'umschalter', role: 'group', 'aria-label': 'Ansicht' },
+          ...ARTEN.map(([art, titel]) => el('button', { type: 'button', class: 'knopf', id: 'ansicht-' + art, 'aria-pressed': String(art === ansicht.art), text: titel, onclick: () => wechsle(art) }))),
+        el('label', { class: 'feld-zeile' }, el('span', { id: 'plan-auswahl-titel', text: 'Klasse' }),
+          el('select', { id: 'plan-auswahl', 'aria-labelledby': 'plan-auswahl-titel', onchange: (e) => { ansicht.id = e.target.value; render(); } })),
+        el('button', { type: 'button', class: 'knopf', id: 'plan-drucken', text: 'Drucken', onclick: () => drucke(false) }),
+        el('button', { type: 'button', class: 'knopf', id: 'plan-drucken-alle', text: 'Alle drucken', onclick: () => drucke(true) })),
+      el('p', { class: 'hinweis', text: 'Ziehen Sie Stunden auf andere Zeitslots (in der Klasse wird getauscht). Tastatur: Pfeiltasten, Enter zum Aufnehmen und Ablegen, Esc zum Abbrechen, Entf entfernt Zweitbesetzung oder Aufsicht.' }),
+      el('p', { id: 'plan-ansage', class: 'ansage', 'aria-live': 'polite' }),
+      el('div', { class: 'plan-layout' },
+        el('div', { class: 'plan-raster-rahmen', id: 'plan-raster-rahmen' }),
+        el('aside', { class: 'plan-seite', id: 'plan-seite', 'aria-label': 'Konflikte und freie Lehrkräfte' })),
+    );
+    if (!document.getElementById('druckbereich')) document.body.append(el('div', { id: 'druckbereich' }));
+    window.addEventListener('afterprint', () => document.getElementById('druckbereich').replaceChildren());
+    sichtbar = App.beobachteSichtbar(panel, render);
+    render();
+  }
+
+  function wechsle(art, id) {
+    ansicht.art = art;
+    ansicht.id = id ?? null;
+    aufgenommen = null;
+    aktiv = { zeile: 0, spalte: 0 };
+    for (const [a] of ARTEN) panel.querySelector('#ansicht-' + a).setAttribute('aria-pressed', String(a === art));
+    render();
+  }
+
+  const listeFuer = (d, art) => (art === 'klasse' ? d.klassen.map((k) => [k.id, k.name])
+    : art === 'lehrkraft' ? d.lehrkraefte.map((l) => [l.id, `${l.kuerzel} – ${l.name}`])
+      : art === 'raum' ? d.raeume.map((r) => [r.id, r.name]) : []);
+
+  /* --------------------------- Daten aufbereiten ----------------------- */
+
+  /** Konflikte je Stunde/Aufsicht und Gäste aus Aufteilungen. */
+  function analysiere(d) {
+    const verstoesse = Kern.Regeln.pruefeHart(d);
+    const stundeRegeln = new Map();
+    const aufsichtRegeln = new Map();
+    const texte = new Map();
+    for (const v of verstoesse) {
+      for (const i of v.stunden) { if (!stundeRegeln.has(i)) stundeRegeln.set(i, new Set()); stundeRegeln.get(i).add(v.regel); texte.set('s' + i, [...(texte.get('s' + i) || []), `${v.regel}: ${v.text}`]); }
+      for (const i of v.aufsichten) { if (!aufsichtRegeln.has(i)) aufsichtRegeln.set(i, new Set()); aufsichtRegeln.get(i).add(v.regel); texte.set('a' + i, [...(texte.get('a' + i) || []), `${v.regel}: ${v.text}`]); }
+    }
+    const gaeste = new Map(); // Klasse|Tag|Stunde → Anzahl
+    for (const s of d.plan.regelplan) {
+      if (s.status !== 'aufgeteilt') continue;
+      for (const v of s.verteilung || []) { const k = `${v.zielKlasse}|${s.tag}|${s.stunde}`; gaeste.set(k, (gaeste.get(k) || 0) + v.anzahl); }
+    }
+    return { verstoesse, stundeRegeln, aufsichtRegeln, texte, gaeste };
+  }
+
+  /* ------------------------------ Darstellung -------------------------- */
+
+  function render() {
+    const t0 = performance.now();
+    const d = App.zustand.daten;
+    const ix = Kern.Index.erstelle(d);
+    const liste = listeFuer(d, ansicht.art);
+    if (ansicht.art !== 'aufsicht' && !liste.some(([id]) => id === ansicht.id)) ansicht.id = liste[0]?.[0] ?? null;
+    const auswahl = panel.querySelector('#plan-auswahl');
+    panel.querySelector('#plan-auswahl-titel').textContent = ARTEN.find(([a]) => a === ansicht.art)[1];
+    auswahl.closest('label').hidden = ansicht.art === 'aufsicht';
+    auswahl.replaceChildren(...liste.map(([id, text]) => App.el('option', { value: id, text, selected: id === ansicht.id })));
+    panel.querySelector('#plan-drucken-alle').textContent = ansicht.art === 'lehrkraft' ? 'Alle Lehrkräfte drucken' : ansicht.art === 'raum' ? 'Alle Räume drucken' : ansicht.art === 'aufsicht' ? 'Aufsichtsplan drucken' : 'Alle Klassen drucken';
+
+    const info = analysiere(d);
+    const rahmen = panel.querySelector('#plan-raster-rahmen');
+    const imRaster = rahmen.contains(document.activeElement);
+    if (!d.plan.regelplan.length && ansicht.art !== 'aufsicht') {
+      rahmen.replaceChildren(App.el('p', { class: 'leise', id: 'plan-leer', text: 'Noch kein Regelplan – bitte im Reiter „Planung“ erstellen oder im Reiter „Daten“ importieren.' }));
+    } else if (!ix.tage.length) {
+      rahmen.replaceChildren();
+    } else {
+      rahmen.replaceChildren(raster(d, ix, info, ansicht.art, ansicht.id, false));
+    }
+    renderSeite(d, ix, info);
+    setzeAktiv(imRaster);
+    letzteDauerMs = performance.now() - t0;
+    panel.dataset.renderMs = letzteDauerMs.toFixed(1);
+  }
+
+  /** Erzeugt das Wochenraster (Bildschirm oder Druck). */
+  function raster(d, ix, info, art, id, fuerDruck) {
+    const el = App.el;
+    const pausen = new Map(ix.pausen.map((p) => [p.vorStunde, p]));
+    const titel = art === 'aufsicht' ? 'Aufsichtsplan' : `Stundenplan ${ARTEN.find(([a]) => a === art)[1]} ${listeFuer(d, art).find(([x]) => x === id)?.[1] || ''}`;
+    const tabelle = el('table', { class: 'raster', role: fuerDruck ? null : 'grid', 'aria-label': titel, 'data-art': art });
+    tabelle.append(el('thead', {}, el('tr', {}, el('th', { scope: 'col', class: 'raster-ecke', text: art === 'aufsicht' ? 'Pause' : 'Stunde' }), ...ix.tage.map((t) => el('th', { scope: 'col', text: t })))));
+    const koerper = el('tbody');
+    const eintraege = d.plan.regelplan.map((s, i) => [s, i]).filter(([s]) => art === 'klasse' ? s.klasse === id
+      : art === 'lehrkraft' ? s.lehrkraefte.includes(id) : art === 'raum' ? s.raum === id : false);
+    const proSlot = new Map();
+    for (const [s, i] of eintraege) { const k = s.tag + '|' + s.stunde; if (!proSlot.has(k)) proSlot.set(k, []); proSlot.get(k).push(i); }
+    const aufsichtenJe = new Map();
+    d.plan.aufsichten.forEach((a, i) => { if (art === 'lehrkraft' && a.lehrkraft !== id) return; const k = a.tag + '|' + a.vorStunde; if (!aufsichtenJe.has(k)) aufsichtenJe.set(k, []); aufsichtenJe.get(k).push(i); });
+    const klassenDa = new Set(d.plan.regelplan.filter((s) => s.status !== 'entfaellt').map((s) => s.tag + '|' + s.stunde));
+
+    for (const st of d.zeitraster.stunden) {
+      const p = pausen.get(st.nr);
+      if (p && (art === 'aufsicht' || art === 'lehrkraft' || art === 'klasse' || art === 'raum')) {
+        const tr = el('tr', { class: 'pausenzeile' }, el('th', { scope: 'row', text: `${p.name || 'Pause'}${art === 'aufsicht' ? ` (vor ${st.nr}.) · Bedarf ${p.aufsichten}` : ''}` }));
+        for (const tag of ix.tage) {
+          const td = el('td', { 'data-tag': tag, 'data-pause': String(st.nr), class: 'zelle pause' });
+          if (art === 'aufsicht' || art === 'lehrkraft') {
+            for (const i of aufsichtenJe.get(tag + '|' + st.nr) || []) td.append(aufsichtChip(d, info, i, fuerDruck));
+            if (art === 'aufsicht') {
+              const ist = (aufsichtenJe.get(tag + '|' + st.nr) || []).length;
+              const bedarf = klassenDa.has(tag + '|' + st.nr) ? p.aufsichten : 0;
+              td.append(el('span', { class: 'bedarf' + (ist < bedarf ? ' fehlt' : ''), title: ist < bedarf ? 'Aufsicht unbesetzt (Ziel 1A)' : null, text: `${ist < bedarf ? '⚠ ' : ''}${ist}/${bedarf}` }));
+            }
+          }
+          if (!fuerDruck) zielZelle(td);
+          tr.append(td);
+        }
+        koerper.append(tr);
+      }
+      if (art === 'aufsicht') continue;
+      const tr = el('tr', {}, el('th', { scope: 'row' }, el('span', { class: 'stunde-nr', text: `${st.nr}.` }), el('span', { class: 'stunde-zeit', text: `${st.von}–${st.bis}` })));
+      for (const tag of ix.tage) {
+        const td = el('td', { 'data-tag': tag, 'data-stunde': String(st.nr), class: 'zelle' });
+        for (const i of proSlot.get(tag + '|' + st.nr) || []) td.append(karte(d, ix, info, art, id, i, fuerDruck));
+        if (art === 'klasse') {
+          const g = info.gaeste.get(`${id}|${tag}|${st.nr}`);
+          if (g) td.append(el('span', { class: 'gaeste', text: `+ ${g} Gäste` }));
+        }
+        if (!fuerDruck) zielZelle(td);
+        tr.append(td);
+      }
+      koerper.append(tr);
+    }
+    tabelle.append(koerper);
+    return tabelle;
+  }
+
+  /** Karte einer Unterrichtsstunde. */
+  function karte(d, ix, info, art, id, i, fuerDruck) {
+    const el = App.el;
+    const s = d.plan.regelplan[i];
+    const n = ix.name;
+    const regeln = info.stundeRegeln.get(i);
+    const k = el('div', {
+      class: 'karte' + (regeln ? ' konflikt' : '') + ' status-' + s.status, 'data-index': String(i),
+      draggable: fuerDruck ? null : 'true', title: regeln ? info.texte.get('s' + i).join('\n') : null,
+    });
+    const fach = s.fach ? n.fach(s.fach) : '–';
+    const statusText = { vertreten: 'vertreten', doppeltBetreut: '⇄', aufgeteilt: 'aufgeteilt', entfaellt: 'entfällt', aufsicht: 'Aufsicht' }[s.status];
+    if (art === 'klasse') {
+      k.append(el('strong', { text: fach }));
+    } else {
+      k.append(el('strong', { text: n.klasse(s.klasse) }), document.createTextNode(' ' + fach));
+    }
+    if (art === 'lehrkraft' && s.lehrkraefte[1] === id) k.append(el('span', { class: 'zweit-hinweis', text: ' (2.)' }));
+    if (statusText) k.append(el('span', { class: 'status-marke', text: ' ' + statusText }));
+    if (s.status === 'doppeltBetreut' && s.mitKlasse) k.append(el('span', { class: 'status-marke', text: ` mit ${n.klasse(s.mitKlasse)}` }));
+    // Lehrkräfte (in der Lehrkraft-Ansicht die jeweils andere)
+    const lehrer = el('div', { class: 'karte-lehrer' });
+    s.lehrkraefte.forEach((l, rolle) => {
+      if (art === 'lehrkraft' && l === id) return;
+      const span = el('span', { class: rolle ? 'zweit' : 'haupt', text: (rolle ? '+' : '') + n.lehrkraft(l) });
+      lehrer.append(span, document.createTextNode(' '));
+      if (rolle && !fuerDruck && art === 'klasse') {
+        lehrer.append(el('button', { type: 'button', class: 'mini', tabindex: '-1', 'aria-label': `Zweitbesetzung ${n.lehrkraft(l)} entfernen`, title: 'Zweitbesetzung entfernen', text: '×', onclick: (e) => { e.stopPropagation(); fuehreAus({ art: 'zweitWeg', index: i }); } }));
+      }
+    });
+    if (lehrer.childNodes.length) k.append(lehrer);
+    if (art !== 'raum' && s.raum) k.append(el('div', { class: 'karte-raum', text: n.raum(s.raum) }));
+    if (regeln) k.append(el('div', { class: 'konflikt-marke', text: '⚠ ' + [...regeln].join(' ') }));
+    if (!fuerDruck) {
+      k.addEventListener('dragstart', (e) => { e.dataTransfer.setData(MIME, JSON.stringify({ art: 'stunde', index: i })); e.dataTransfer.effectAllowed = 'move'; });
+    }
+    return k;
+  }
+
+  function aufsichtChip(d, info, i, fuerDruck) {
+    const el = App.el;
+    const a = d.plan.aufsichten[i];
+    const regeln = info.aufsichtRegeln.get(i);
+    const chip = el('span', {
+      class: 'chip' + (regeln ? ' konflikt' : ''), 'data-aufsicht': String(i), draggable: fuerDruck ? null : 'true',
+      title: regeln ? info.texte.get('a' + i).join('\n') : null,
+    }, ansicht.art === 'lehrkraft' && !fuerDruck ? 'Aufsicht' : (d.lehrkraefte.find((l) => l.id === a.lehrkraft)?.kuerzel || a.lehrkraft));
+    if (regeln) chip.append(el('span', { class: 'konflikt-marke', text: ' ⚠ ' + [...regeln].join(' ') }));
+    if (!fuerDruck) {
+      chip.append(el('button', { type: 'button', class: 'mini', tabindex: '-1', 'aria-label': 'Aufsicht entfernen', title: 'Aufsicht entfernen', text: '×', onclick: (e) => { e.stopPropagation(); fuehreAus({ art: 'aufsichtWeg', index: i }); } }));
+      chip.addEventListener('dragstart', (e) => { e.dataTransfer.setData(MIME, JSON.stringify({ art: 'aufsicht', index: i })); e.dataTransfer.effectAllowed = 'move'; });
+    }
+    return chip;
+  }
+
+  /** Macht eine Zelle zum Ablageziel und zur Tastatur-Zelle. */
+  function zielZelle(td) {
+    td.setAttribute('role', 'gridcell');
+    td.tabIndex = -1;
+    td.addEventListener('dragover', (e) => {
+      if (!Array.from(e.dataTransfer.types).includes(MIME)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      td.classList.add('ziel');
+    });
+    td.addEventListener('dragleave', () => td.classList.remove('ziel'));
+    td.addEventListener('drop', (e) => {
+      const roh = e.dataTransfer.getData(MIME);
+      if (!roh) return;
+      e.preventDefault();
+      td.classList.remove('ziel');
+      const nutzlast = JSON.parse(roh);
+      const karte = e.target.closest?.('.karte');
+      lege(nutzlast, td, karte ? Number(karte.dataset.index) : null);
+    });
+    td.addEventListener('click', () => { const r = koordinaten(td); if (r) { aktiv = r; setzeAktiv(true); } });
+    td.addEventListener('focus', () => { const r = koordinaten(td); if (r && (r.zeile !== aktiv.zeile || r.spalte !== aktiv.spalte)) { aktiv = r; setzeAktiv(false); } });
+    td.addEventListener('keydown', tasten);
+  }
+
+  function renderSeite(d, ix, info) {
+    const el = App.el;
+    const seite = panel.querySelector('#plan-seite');
+    const v = info.verstoesse;
+    const konflikte = el('section', { class: 'seiten-block', id: 'plan-konflikte' },
+      el('h3', { text: v.length ? `⚠ Konflikte (${v.length})` : '✓ Keine Verstöße gegen harte Regeln' }));
+    if (v.length) {
+      konflikte.append(el('p', { class: 'fehler-text', text: 'Der Regelplan ist ungültig. Klicken Sie auf einen Eintrag, um ihn anzuzeigen.' }),
+        el('ul', { class: 'konfliktliste' }, ...v.slice(0, 100).map((x) => el('li', {}, el('button', {
+          type: 'button', class: 'link', onclick: () => zeigeVerstoss(x),
+        }, el('strong', { text: x.regel }), ' ' + x.text)))));
+    }
+    const frei = Kern.Bearbeitung.freieKontingente(d);
+    const offen = Kern.Bearbeitung.offeneAufsichten(d);
+    const kontingente = el('section', { class: 'seiten-block', id: 'plan-frei' },
+      el('h3', { text: 'Freie Kontingente (Zweitbesetzung)' }),
+      el('p', { class: 'leise', text: 'Auf eine Stunde ziehen oder mit Enter aufnehmen.' }),
+      frei.length ? el('div', { class: 'chips' }, ...frei.map((f) => quelle(d, f.lehrkraft, `noch ${f.frei}`, 'zweit'))) : el('p', { class: 'leise', text: 'Keine.' }));
+    const aufsicht = el('section', { class: 'seiten-block', id: 'plan-aufsicht-offen' },
+      el('h3', { text: 'Aufsichtssoll offen' }),
+      offen.length ? el('div', { class: 'chips' }, ...offen.map((f) => quelle(d, f.lehrkraft, `noch ${f.offen}`, 'aufsichtNeu'))) : el('p', { class: 'leise', text: 'Keine.' }));
+    const legende = el('section', { class: 'seiten-block' }, el('h3', { text: 'Zeichen' }),
+      el('ul', { class: 'legende' }, ...[['⚠ H1', 'Verstoß gegen harte Regel (Nummer)'], ['+KÜR', 'Zweitbesetzung'], ['(2.)', 'Lehrkraft ist hier Zweitbesetzung'], ['⇄', 'Doppelbetreuung'], ['aufgeteilt / + n Gäste', 'Aufteilung einer Klasse']]
+        .map(([z, t]) => el('li', {}, el('strong', { text: z }), ' – ' + t))));
+    const teile = [konflikte];
+    if (ansicht.art !== 'aufsicht') teile.push(kontingente);
+    if (ansicht.art === 'aufsicht' || ansicht.art === 'lehrkraft') teile.push(aufsicht);
+    teile.push(legende);
+    seite.replaceChildren(...teile);
+  }
+
+  function quelle(d, lehrkraft, zusatz, art) {
+    const l = d.lehrkraefte.find((x) => x.id === lehrkraft);
+    const chip = App.el('button', {
+      type: 'button', class: 'chip quelle', draggable: 'true', 'data-quelle': art, 'data-lehrkraft': lehrkraft,
+      'aria-label': `${l.kuerzel} (${l.name}) ${zusatz} – aufnehmen`, text: `${l.kuerzel} · ${zusatz}`,
+      onclick: () => { aufgenommen = { art, lehrkraft }; ansage(`${l.kuerzel} aufgenommen – Zielzelle mit den Pfeiltasten wählen und Enter drücken (Esc bricht ab).`); setzeAktiv(true); },
+    });
+    chip.addEventListener('dragstart', (e) => { e.dataTransfer.setData(MIME, JSON.stringify({ art, lehrkraft })); e.dataTransfer.effectAllowed = 'copy'; });
+    return chip;
+  }
+
+  function zeigeVerstoss(v) {
+    const d = App.zustand.daten;
+    if (v.stunden.length) {
+      const s = d.plan.regelplan[v.stunden[0]];
+      const art = v.regel === 'H3' || v.regel === 'H5' || v.regel === 'H6' ? 'raum' : v.regel === 'H1' || v.regel === 'H4' || v.regel === 'H7' || v.regel === 'H11' ? 'lehrkraft' : 'klasse';
+      const id = art === 'raum' && s.raum ? s.raum : art === 'lehrkraft' ? s.lehrkraefte[0] : s.klasse;
+      wechsle(id ? art : 'klasse', id || s.klasse);
+      fokussiereSlot(s.tag, s.stunde);
+    } else if (v.aufsichten.length) {
+      const a = d.plan.aufsichten[v.aufsichten[0]];
+      wechsle('aufsicht');
+      fokussiereSlot(a.tag, null, a.vorStunde);
+    }
+    ansage(`${v.regel}: ${v.text}`);
+  }
+
+  /* ------------------------------ Aktionen ----------------------------- */
+
+  /** Legt eine Nutzlast auf einer Zelle ab. */
+  function lege(nutzlast, td, kartenIndex) {
+    const tag = td.dataset.tag;
+    const stunde = td.dataset.stunde ? Number(td.dataset.stunde) : null;
+    const pause = td.dataset.pause ? Number(td.dataset.pause) : null;
+    if (nutzlast.art === 'stunde') {
+      if (stunde === null) return ansage('Stunden können nur auf Stunden-Zellen abgelegt werden.');
+      return fuehreAus({ art: 'stunde', index: nutzlast.index, tag, stunde });
+    }
+    if (nutzlast.art === 'zweit') {
+      const index = kartenIndex ?? (td.querySelector('.karte') ? Number(td.querySelector('.karte').dataset.index) : null);
+      if (index === null) return ansage('Bitte auf eine Unterrichtsstunde ablegen.');
+      return fuehreAus({ art: 'zweit', index, lehrkraft: nutzlast.lehrkraft });
+    }
+    if (pause === null) return ansage('Aufsichten können nur auf Pausen-Zellen abgelegt werden.');
+    if (nutzlast.art === 'aufsicht') return fuehreAus({ art: 'aufsicht', index: nutzlast.index, tag, vorStunde: pause });
+    if (nutzlast.art === 'aufsichtNeu') return fuehreAus({ art: 'aufsichtNeu', lehrkraft: nutzlast.lehrkraft, tag, vorStunde: pause });
+    return undefined;
+  }
+
+  /** Führt eine Bearbeitung über App.aendere aus (rückgängig machbar). */
+  function fuehreAus(aktion) {
+    const B = Kern.Bearbeitung;
+    let r = null;
+    const ergebnis = App.aendere(() => r.text, (d) => {
+      r = aktion.art === 'stunde' ? B.verschiebeStunde(d, aktion.index, aktion.tag, aktion.stunde)
+        : aktion.art === 'zweit' ? B.setzeZweit(d, aktion.index, aktion.lehrkraft)
+          : aktion.art === 'zweitWeg' ? B.setzeZweit(d, aktion.index, null)
+            : aktion.art === 'aufsicht' ? B.verschiebeAufsicht(d, aktion.index, aktion.tag, aktion.vorStunde)
+              : aktion.art === 'aufsichtNeu' ? B.neueAufsicht(d, aktion.tag, aktion.vorStunde, aktion.lehrkraft)
+                : B.entferneAufsicht(d, aktion.index);
+      if (r.fehler) return false;
+    });
+    aufgenommen = null;
+    if (r?.fehler) { ansage('⚠ ' + r.fehler); return false; }
+    if (!ergebnis.ok) { ansage('⚠ Änderung nicht möglich: ' + (ergebnis.fehler[0]?.meldung || '')); return false; }
+    const v = Kern.Regeln.pruefeHart(App.zustand.daten).length;
+    const satz = r.text.endsWith('.') ? r.text : r.text + '.';
+    ansage(`${satz}${v ? ` Der Plan hat jetzt ${v === 1 ? 'einen Verstoß' : v + ' Verstöße'} gegen harte Regeln.` : ''}`);
+    return true;
+  }
+
+  function ansage(text) {
+    panel.querySelector('#plan-ansage').textContent = text;
+  }
+
+  /* ------------------------------ Tastatur ----------------------------- */
+
+  function zellen() {
+    const tabelle = panel.querySelector('.raster');
+    return tabelle ? [...tabelle.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('td')]) : [];
+  }
+  function koordinaten(td) {
+    const z = zellen();
+    for (let r = 0; r < z.length; r++) { const c = z[r].indexOf(td); if (c >= 0) return { zeile: r, spalte: c }; }
+    return null;
+  }
+  function setzeAktiv(fokus) {
+    const z = zellen();
+    if (!z.length) return;
+    aktiv.zeile = Math.max(0, Math.min(aktiv.zeile, z.length - 1));
+    aktiv.spalte = Math.max(0, Math.min(aktiv.spalte, z[aktiv.zeile].length - 1));
+    z.flat().forEach((td) => { td.tabIndex = -1; td.classList.remove('aufgenommen-ziel'); });
+    const td = z[aktiv.zeile][aktiv.spalte];
+    td.tabIndex = 0;
+    if (aufgenommen) td.classList.add('aufgenommen-ziel');
+    panel.querySelectorAll('.aufgenommen').forEach((x) => x.classList.remove('aufgenommen'));
+    if (aufgenommen?.art === 'stunde') panel.querySelector(`.karte[data-index="${aufgenommen.index}"]`)?.classList.add('aufgenommen');
+    if (aufgenommen?.art === 'aufsicht') panel.querySelector(`.chip[data-aufsicht="${aufgenommen.index}"]`)?.classList.add('aufgenommen');
+    if (fokus) td.focus();
+  }
+  function fokussiereSlot(tag, stunde, pause) {
+    const sel = stunde !== null && stunde !== undefined ? `td[data-tag="${tag}"][data-stunde="${stunde}"]` : `td[data-tag="${tag}"][data-pause="${pause}"]`;
+    const td = panel.querySelector('.raster ' + sel);
+    const k = td && koordinaten(td);
+    if (k) { aktiv = k; setzeAktiv(true); }
+  }
+
+  function tasten(e) {
+    const z = zellen();
+    const schritte = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
+    if (schritte[e.key]) {
+      e.preventDefault();
+      aktiv.zeile = Math.max(0, Math.min(z.length - 1, aktiv.zeile + schritte[e.key][0]));
+      aktiv.spalte = Math.max(0, Math.min(z[aktiv.zeile].length - 1, aktiv.spalte + schritte[e.key][1]));
+      setzeAktiv(true);
+      return;
+    }
+    const td = z[aktiv.zeile]?.[aktiv.spalte];
+    if (!td) return;
+    if (e.key === 'Escape') {
+      if (aufgenommen) { aufgenommen = null; ansage('Abgebrochen.'); setzeAktiv(true); }
+      return;
+    }
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (aufgenommen) {
+        const merke = { ...aktiv };
+        lege(aufgenommen, td, null);
+        aufgenommen = null;
+        aktiv = merke;
+        setzeAktiv(true);
+        return;
+      }
+      const k = td.querySelector('.karte');
+      const c = td.querySelector('.chip[data-aufsicht]');
+      if (k) { aufgenommen = { art: 'stunde', index: Number(k.dataset.index) }; ansage(`Stunde aufgenommen (${k.textContent.trim()}) – Ziel wählen und Enter drücken, Esc bricht ab.`); } else if (c) { aufgenommen = { art: 'aufsicht', index: Number(c.dataset.aufsicht) }; ansage('Aufsicht aufgenommen – Ziel-Pause wählen und Enter drücken, Esc bricht ab.'); } else ansage('Hier ist nichts zum Aufnehmen.');
+      setzeAktiv(true);
+      return;
+    }
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      const c = td.querySelector('.chip[data-aufsicht]');
+      const k = [...td.querySelectorAll('.karte')].find((x) => App.zustand.daten.plan.regelplan[Number(x.dataset.index)]?.lehrkraefte.length > 1);
+      const merke = { ...aktiv };
+      if (ansicht.art === 'klasse' && k) fuehreAus({ art: 'zweitWeg', index: Number(k.dataset.index) });
+      else if (c) fuehreAus({ art: 'aufsichtWeg', index: Number(c.dataset.aufsicht) });
+      else ansage('Hier gibt es keine Zweitbesetzung oder Aufsicht zum Entfernen.');
+      aktiv = merke;
+      setzeAktiv(true);
+    }
+  }
+
+  /* ------------------------------- Druck ------------------------------- */
+
+  /** Füllt den Druckbereich (eine oder alle Entitäten der Ansicht). */
+  function druckvorbereitung(alle) {
+    const d = App.zustand.daten;
+    const ix = Kern.Index.erstelle(d);
+    const info = analysiere(d);
+    const el = App.el;
+    const art = ansicht.art;
+    const ids = art === 'aufsicht' ? [null] : alle ? listeFuer(d, art).map(([id]) => id) : [ansicht.id];
+    const bereich = document.getElementById('druckbereich');
+    bereich.replaceChildren(...ids.map((id) => {
+      const t = raster(d, ix, info, art, id, true);
+      return el('section', { class: 'druckseite' },
+        el('h2', { text: `${t.getAttribute('aria-label')}` }),
+        el('p', { class: 'leise', text: `${d.schule?.name || ''} ${d.schule?.schuljahr || ''}`.trim() }),
+        t);
+    }));
+    return ids.length;
+  }
+
+  function drucke(alle) {
+    druckvorbereitung(alle);
+    window.print();
+  }
+
+  return { sichtbar: () => sichtbar(), baue, wechsle, druckvorbereitung, fuehreAus, dauer: () => letzteDauerMs };
+})();
+
 /* ---- src/ui/90-app.js ---- */
 /* ==========================================================================
  * Modul App (Oberfläche)
@@ -4525,7 +5143,7 @@ const App = (() => {
     { id: 'stammdaten', titel: 'Stammdaten', hinweis: 'Lehrkräfte, Fächer, Räume, Klassen und Zeitraster mit Pausen pflegen.', modul: () => StammdatenReiter },
     { id: 'zuordnung', titel: 'Zuordnung', hinweis: 'Stundentafeln sowie Haupt- und Zweitlehrkräfte je Klasse und Fach festlegen.', modul: () => ZuordnungReiter },
     { id: 'planung', titel: 'Planung', hinweis: 'Plan erstellen, Optionen einstellen, Kostenvektor verfolgen.', modul: () => PlanungReiter },
-    { id: 'plan', titel: 'Plan', hinweis: 'Wochenraster je Klasse, Lehrkraft, Raum oder Aufsicht.' },
+    { id: 'plan', titel: 'Plan', hinweis: 'Wochenraster je Klasse, Lehrkraft, Raum oder Aufsicht.', modul: () => PlanReiter },
     { id: 'ausfall', titel: 'Ausfall', hinweis: 'Abwesenheiten erfassen und datumsgenaue Vertretungen prüfen.' },
     { id: 'bericht', titel: 'Bericht', hinweis: 'Ausfall, Vertretungsquote, Auslastung und Aufsichten auswerten.' },
     { id: 'daten', titel: 'Daten', hinweis: 'JSON exportieren, importieren oder zurücksetzen.', modul: () => DatenReiter },
@@ -4607,7 +5225,7 @@ const App = (() => {
       const { fehler } = Kern.Schema.validiere(neu);
       if (fehler.length) return { ok: false, fehler };
     }
-    merke(beschreibung);
+    merke(typeof beschreibung === 'function' ? beschreibung() : beschreibung);
     zustand.daten = neu;
     zustand.geaendert = true;
     melde();
@@ -4750,7 +5368,7 @@ const App = (() => {
 })();
 
 // Zugriff für Tests und Fehlersuche in der Konsole.
-window.Stundenplan = { Kern, App, Rechenkern, DatenReiter, PlanungReiter, StammdatenReiter, ZuordnungReiter };
+window.Stundenplan = { Kern, App, Rechenkern, DatenReiter, PlanungReiter, StammdatenReiter, ZuordnungReiter, PlanReiter };
 document.addEventListener('DOMContentLoaded', App.start);
 </script>
 </body>
