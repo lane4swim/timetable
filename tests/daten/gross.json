@@ -165,6 +165,13 @@
       "blockbar": true
     },
     {
+      "id": "f-sw",
+      "name": "Schwimmen",
+      "kuerzel": "SW",
+      "raumtyp": "schwimmhalle",
+      "blockbar": true
+    },
+    {
       "id": "f-ph",
       "name": "Physik",
       "kuerzel": "PH",
@@ -205,7 +212,7 @@
     },
     {
       "id": "l-kra",
-      "name": "Mara Kranz",
+      "name": "Sami Kranz",
       "kuerzel": "KRA",
       "qualifikationen": [
         {
@@ -217,88 +224,32 @@
           "fach": "f-ma",
           "stufenVon": 5,
           "stufenBis": 10
+        },
+        {
+          "fach": "f-en",
+          "stufenVon": 5,
+          "stufenBis": 10
         }
       ],
-      "sollStunden": 25,
-      "minStunden": 21,
-      "maxStunden": 27,
+      "sollStunden": 26,
+      "minStunden": 22,
+      "maxStunden": 28,
       "aufsichtenProWoche": 2,
       "gesperrt": [],
       "abwesenheiten": []
     },
     {
       "id": "l-osw",
-      "name": "Nils Oswald",
+      "name": "Sami Oswald",
       "kuerzel": "OSW",
       "qualifikationen": [
         {
-          "fach": "f-en",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-de",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-ma",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 25,
-      "minStunden": 21,
-      "maxStunden": 27,
-      "aufsichtenProWoche": 2,
-      "gesperrt": [],
-      "abwesenheiten": []
-    },
-    {
-      "id": "l-imh",
-      "name": "Nils Imhof",
-      "kuerzel": "IMH",
-      "qualifikationen": [
-        {
-          "fach": "f-de",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
           "fach": "f-ma",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
           "fach": "f-en",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 25,
-      "minStunden": 21,
-      "maxStunden": 27,
-      "aufsichtenProWoche": 2,
-      "gesperrt": [],
-      "abwesenheiten": []
-    },
-    {
-      "id": "l-hei",
-      "name": "Elif Heinz",
-      "kuerzel": "HEI",
-      "qualifikationen": [
-        {
-          "fach": "f-ma",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-en",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-de",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -311,15 +262,33 @@
       "abwesenheiten": []
     },
     {
-      "id": "l-fin",
-      "name": "Sami Fink",
-      "kuerzel": "FIN",
+      "id": "l-imh",
+      "name": "Zoe Imhof",
+      "kuerzel": "IMH",
       "qualifikationen": [
+        {
+          "fach": "f-de",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
         {
           "fach": "f-en",
           "stufenVon": 5,
           "stufenBis": 10
-        },
+        }
+      ],
+      "sollStunden": 26,
+      "minStunden": 22,
+      "maxStunden": 28,
+      "aufsichtenProWoche": 2,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-hei",
+      "name": "David Heinz",
+      "kuerzel": "HEI",
+      "qualifikationen": [
         {
           "fach": "f-ma",
           "stufenVon": 5,
@@ -327,6 +296,34 @@
         },
         {
           "fach": "f-de",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-en",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 25,
+      "minStunden": 21,
+      "maxStunden": 27,
+      "aufsichtenProWoche": 2,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-fin",
+      "name": "Ben Fink",
+      "kuerzel": "FIN",
+      "qualifikationen": [
+        {
+          "fach": "f-de",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-en",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -351,14 +348,9 @@
     },
     {
       "id": "l-isk",
-      "name": "Tara Iske",
+      "name": "Jonas Iske",
       "kuerzel": "ISK",
       "qualifikationen": [
-        {
-          "fach": "f-en",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
         {
           "fach": "f-ma",
           "stufenVon": 5,
@@ -368,27 +360,9 @@
           "fach": "f-sp",
           "stufenVon": 5,
           "stufenBis": 10
-        }
-      ],
-      "sollStunden": 20,
-      "minStunden": 16,
-      "maxStunden": 22,
-      "aufsichtenProWoche": 1,
-      "gesperrt": [],
-      "abwesenheiten": []
-    },
-    {
-      "id": "l-pet",
-      "name": "Olga Petri",
-      "kuerzel": "PET",
-      "qualifikationen": [
-        {
-          "fach": "f-de",
-          "stufenVon": 5,
-          "stufenBis": 10
         },
         {
-          "fach": "f-ma",
+          "fach": "f-en",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -412,9 +386,9 @@
       "teilzeitfaktor": 0.5
     },
     {
-      "id": "l-web",
-      "name": "Nils Weber",
-      "kuerzel": "WEB",
+      "id": "l-pet",
+      "name": "Anna Petri",
+      "kuerzel": "PET",
       "qualifikationen": [
         {
           "fach": "f-sp",
@@ -425,27 +399,27 @@
           "fach": "f-de",
           "stufenVon": 5,
           "stufenBis": 10
+        },
+        {
+          "fach": "f-en",
+          "stufenVon": 5,
+          "stufenBis": 10
         }
       ],
-      "sollStunden": 25,
-      "minStunden": 21,
-      "maxStunden": 27,
-      "aufsichtenProWoche": 2,
+      "sollStunden": 20,
+      "minStunden": 16,
+      "maxStunden": 22,
+      "aufsichtenProWoche": 1,
       "gesperrt": [],
       "abwesenheiten": []
     },
     {
-      "id": "l-mer",
-      "name": "Wim Mertens",
-      "kuerzel": "MER",
+      "id": "l-web",
+      "name": "David Weber",
+      "kuerzel": "WEB",
       "qualifikationen": [
         {
           "fach": "f-ma",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-en",
           "stufenVon": 5,
           "stufenBis": 10
         },
@@ -463,8 +437,47 @@
       "abwesenheiten": []
     },
     {
+      "id": "l-mer",
+      "name": "Lea Mertens",
+      "kuerzel": "MER",
+      "qualifikationen": [
+        {
+          "fach": "f-en",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-sp",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-de",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 14,
+      "minStunden": 10,
+      "maxStunden": 16,
+      "aufsichtenProWoche": 1,
+      "gesperrt": [
+        {
+          "tag": "Fr",
+          "stunden": [
+            5,
+            6,
+            7,
+            8
+          ]
+        }
+      ],
+      "abwesenheiten": [],
+      "teilzeitfaktor": 0.5
+    },
+    {
       "id": "l-mar",
-      "name": "Tara Marx",
+      "name": "Lukas Marx",
       "kuerzel": "MAR",
       "qualifikationen": [
         {
@@ -476,33 +489,27 @@
           "fach": "f-sp",
           "stufenVon": 5,
           "stufenBis": 10
-        }
-      ],
-      "sollStunden": 14,
-      "minStunden": 10,
-      "maxStunden": 16,
-      "aufsichtenProWoche": 1,
-      "gesperrt": [
+        },
         {
-          "tag": "Fr",
-          "stunden": [
-            5,
-            6,
-            7,
-            8
-          ]
+          "fach": "f-de",
+          "stufenVon": 5,
+          "stufenBis": 10
         }
       ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
+      "sollStunden": 26,
+      "minStunden": 22,
+      "maxStunden": 28,
+      "aufsichtenProWoche": 2,
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "l-bus",
-      "name": "Ben Busch",
+      "name": "Clara Busch",
       "kuerzel": "BUS",
       "qualifikationen": [
         {
-          "fach": "f-bi",
+          "fach": "f-ma",
           "stufenVon": 5,
           "stufenBis": 10
         },
@@ -512,35 +519,7 @@
           "stufenBis": 10
         },
         {
-          "fach": "f-de",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 20,
-      "minStunden": 16,
-      "maxStunden": 22,
-      "aufsichtenProWoche": 1,
-      "gesperrt": [],
-      "abwesenheiten": []
-    },
-    {
-      "id": "l-jae",
-      "name": "Jonas Jäger",
-      "kuerzel": "JAE",
-      "qualifikationen": [
-        {
-          "fach": "f-en",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-sp",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-ma",
+          "fach": "f-bi",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -564,8 +543,31 @@
       "teilzeitfaktor": 0.5
     },
     {
+      "id": "l-jae",
+      "name": "Nora Jäger",
+      "kuerzel": "JAE",
+      "qualifikationen": [
+        {
+          "fach": "f-sp",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-de",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 26,
+      "minStunden": 22,
+      "maxStunden": 28,
+      "aufsichtenProWoche": 2,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
       "id": "l-sei",
-      "name": "David Seidel",
+      "name": "Paul Seidel",
       "kuerzel": "SEI",
       "qualifikationen": [
         {
@@ -574,30 +576,7 @@
           "stufenBis": 10
         },
         {
-          "fach": "f-sp",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 25,
-      "minStunden": 21,
-      "maxStunden": 27,
-      "aufsichtenProWoche": 2,
-      "gesperrt": [],
-      "abwesenheiten": []
-    },
-    {
-      "id": "l-con",
-      "name": "Nora Conrad",
-      "kuerzel": "CON",
-      "qualifikationen": [
-        {
-          "fach": "f-ma",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-de",
+          "fach": "f-bi",
           "stufenVon": 5,
           "stufenBis": 10
         },
@@ -615,9 +594,9 @@
       "abwesenheiten": []
     },
     {
-      "id": "l-thi",
-      "name": "Zoe Thiel",
-      "kuerzel": "THI",
+      "id": "l-con",
+      "name": "Yara Conrad",
+      "kuerzel": "CON",
       "qualifikationen": [
         {
           "fach": "f-ku",
@@ -625,12 +604,12 @@
           "stufenBis": 10
         },
         {
-          "fach": "f-en",
+          "fach": "f-ma",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-de",
+          "fach": "f-bi",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -643,17 +622,45 @@
       "abwesenheiten": []
     },
     {
-      "id": "l-lor",
-      "name": "Wim Lorenz",
-      "kuerzel": "LOR",
+      "id": "l-thi",
+      "name": "Wim Thiel",
+      "kuerzel": "THI",
       "qualifikationen": [
         {
-          "fach": "f-ge",
+          "fach": "f-en",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
+          "fach": "f-ma",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-ge",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 25,
+      "minStunden": 21,
+      "maxStunden": 27,
+      "aufsichtenProWoche": 2,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-lor",
+      "name": "Malte Lorenz",
+      "kuerzel": "LOR",
+      "qualifikationen": [
+        {
           "fach": "f-ek",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-bi",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -667,73 +674,39 @@
     },
     {
       "id": "l-bra",
-      "name": "Lea Brandt",
+      "name": "Lukas Brandt",
       "kuerzel": "BRA",
       "qualifikationen": [
-        {
-          "fach": "f-bi",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-en",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
         {
           "fach": "f-de",
           "stufenVon": 5,
           "stufenBis": 10
-        }
-      ],
-      "sollStunden": 14,
-      "minStunden": 10,
-      "maxStunden": 16,
-      "aufsichtenProWoche": 1,
-      "gesperrt": [
-        {
-          "tag": "Fr",
-          "stunden": [
-            5,
-            6,
-            7,
-            8
-          ]
-        }
-      ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
-    },
-    {
-      "id": "l-voi",
-      "name": "Yara Voigt",
-      "kuerzel": "VOI",
-      "qualifikationen": [
-        {
-          "fach": "f-sp",
-          "stufenVon": 5,
-          "stufenBis": 10
         },
         {
-          "fach": "f-en",
+          "fach": "f-ma",
           "stufenVon": 5,
           "stufenBis": 10
         }
       ],
-      "sollStunden": 26,
-      "minStunden": 22,
-      "maxStunden": 28,
-      "aufsichtenProWoche": 2,
+      "sollStunden": 20,
+      "minStunden": 16,
+      "maxStunden": 22,
+      "aufsichtenProWoche": 1,
       "gesperrt": [],
       "abwesenheiten": []
     },
     {
-      "id": "l-pie",
-      "name": "Nora Pieper",
-      "kuerzel": "PIE",
+      "id": "l-voi",
+      "name": "Paul Voigt",
+      "kuerzel": "VOI",
       "qualifikationen": [
         {
-          "fach": "f-de",
+          "fach": "f-ge",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-sp",
           "stufenVon": 5,
           "stufenBis": 10
         },
@@ -741,9 +714,27 @@
           "fach": "f-mu",
           "stufenVon": 5,
           "stufenBis": 10
-        },
+        }
+      ],
+      "sollStunden": 25,
+      "minStunden": 21,
+      "maxStunden": 27,
+      "aufsichtenProWoche": 2,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-pie",
+      "name": "Vera Pieper",
+      "kuerzel": "PIE",
+      "qualifikationen": [
         {
           "fach": "f-ku",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-re",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -757,29 +748,24 @@
     },
     {
       "id": "l-lin",
-      "name": "Clara Lindner",
+      "name": "Anna Lindner",
       "kuerzel": "LIN",
       "qualifikationen": [
         {
-          "fach": "f-re",
+          "fach": "f-sp",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-ma",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-bi",
+          "fach": "f-mu",
           "stufenVon": 5,
           "stufenBis": 10
         }
       ],
-      "sollStunden": 20,
-      "minStunden": 16,
-      "maxStunden": 22,
-      "aufsichtenProWoche": 1,
+      "sollStunden": 26,
+      "minStunden": 22,
+      "maxStunden": 28,
+      "aufsichtenProWoche": 2,
       "gesperrt": [],
       "abwesenheiten": []
     },
@@ -789,41 +775,12 @@
       "kuerzel": "NOL",
       "qualifikationen": [
         {
-          "fach": "f-mu",
+          "fach": "f-bi",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-ek",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 14,
-      "minStunden": 10,
-      "maxStunden": 16,
-      "aufsichtenProWoche": 1,
-      "gesperrt": [
-        {
-          "tag": "Fr",
-          "stunden": [
-            5,
-            6,
-            7,
-            8
-          ]
-        }
-      ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
-    },
-    {
-      "id": "l-dor",
-      "name": "Hannes Dorn",
-      "kuerzel": "DOR",
-      "qualifikationen": [
-        {
-          "fach": "f-ku",
+          "fach": "f-ch",
           "stufenVon": 5,
           "stufenBis": 10
         },
@@ -833,20 +790,20 @@
           "stufenBis": 10
         }
       ],
-      "sollStunden": 25,
-      "minStunden": 21,
-      "maxStunden": 27,
+      "sollStunden": 26,
+      "minStunden": 22,
+      "maxStunden": 28,
       "aufsichtenProWoche": 2,
       "gesperrt": [],
       "abwesenheiten": []
     },
     {
-      "id": "l-poh",
-      "name": "Malte Pohl",
-      "kuerzel": "POH",
+      "id": "l-dor",
+      "name": "Greta Dorn",
+      "kuerzel": "DOR",
       "qualifikationen": [
         {
-          "fach": "f-ch",
+          "fach": "f-en",
           "stufenVon": 5,
           "stufenBis": 10
         },
@@ -864,46 +821,12 @@
       "abwesenheiten": []
     },
     {
-      "id": "l-gra",
-      "name": "Ida Graf",
-      "kuerzel": "GRA",
+      "id": "l-poh",
+      "name": "Mara Pohl",
+      "kuerzel": "POH",
       "qualifikationen": [
         {
-          "fach": "f-bi",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-ge",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 14,
-      "minStunden": 10,
-      "maxStunden": 16,
-      "aufsichtenProWoche": 1,
-      "gesperrt": [
-        {
-          "tag": "Fr",
-          "stunden": [
-            5,
-            6,
-            7,
-            8
-          ]
-        }
-      ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
-    },
-    {
-      "id": "l-zel",
-      "name": "Clara Zeller",
-      "kuerzel": "ZEL",
-      "qualifikationen": [
-        {
-          "fach": "f-en",
+          "fach": "f-de",
           "stufenVon": 5,
           "stufenBis": 10
         },
@@ -913,7 +836,63 @@
           "stufenBis": 10
         },
         {
+          "fach": "f-re",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 26,
+      "minStunden": 22,
+      "maxStunden": 28,
+      "aufsichtenProWoche": 2,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-gra",
+      "name": "Zoe Graf",
+      "kuerzel": "GRA",
+      "qualifikationen": [
+        {
+          "fach": "f-ch",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-ph",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
           "fach": "f-if",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 20,
+      "minStunden": 16,
+      "maxStunden": 22,
+      "aufsichtenProWoche": 1,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-zel",
+      "name": "Elif Zeller",
+      "kuerzel": "ZEL",
+      "qualifikationen": [
+        {
+          "fach": "f-ku",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-ge",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-ek",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -921,27 +900,27 @@
       "sollStunden": 25,
       "minStunden": 21,
       "maxStunden": 27,
-      "aufsichtenProWoche": 2,
+      "aufsichtenProWoche": 1,
       "gesperrt": [],
       "abwesenheiten": []
     },
     {
       "id": "l-sau",
-      "name": "Vera Sauer",
+      "name": "Hannes Sauer",
       "kuerzel": "SAU",
       "qualifikationen": [
         {
-          "fach": "f-de",
+          "fach": "f-re",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-ph",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
           "fach": "f-mu",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-sp",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -955,70 +934,8 @@
     },
     {
       "id": "l-now",
-      "name": "Nils Nowak",
+      "name": "Lukas Nowak",
       "kuerzel": "NOW",
-      "qualifikationen": [
-        {
-          "fach": "f-ge",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-re",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-ek",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 25,
-      "minStunden": 21,
-      "maxStunden": 27,
-      "aufsichtenProWoche": 2,
-      "gesperrt": [],
-      "abwesenheiten": []
-    },
-    {
-      "id": "l-klu",
-      "name": "Clara Kluge",
-      "kuerzel": "KLU",
-      "qualifikationen": [
-        {
-          "fach": "f-bi",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-ph",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 14,
-      "minStunden": 10,
-      "maxStunden": 16,
-      "aufsichtenProWoche": 1,
-      "gesperrt": [
-        {
-          "tag": "Fr",
-          "stunden": [
-            5,
-            6,
-            7,
-            8
-          ]
-        }
-      ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
-    },
-    {
-      "id": "l-ulr",
-      "name": "Mara Ulrich",
-      "kuerzel": "ULR",
       "qualifikationen": [
         {
           "fach": "f-if",
@@ -1026,12 +943,58 @@
           "stufenBis": 10
         },
         {
-          "fach": "f-mu",
+          "fach": "f-ma",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 26,
+      "minStunden": 22,
+      "maxStunden": 28,
+      "aufsichtenProWoche": 2,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-klu",
+      "name": "Paul Kluge",
+      "kuerzel": "KLU",
+      "qualifikationen": [
+        {
+          "fach": "f-ge",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-ma",
+          "fach": "f-ek",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-sp",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 20,
+      "minStunden": 16,
+      "maxStunden": 22,
+      "aufsichtenProWoche": 1,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-ulr",
+      "name": "Paul Ulrich",
+      "kuerzel": "ULR",
+      "qualifikationen": [
+        {
+          "fach": "f-ph",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-mu",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -1056,21 +1019,49 @@
     },
     {
       "id": "l-uhl",
-      "name": "David Uhl",
+      "name": "Ida Uhl",
       "kuerzel": "UHL",
       "qualifikationen": [
+        {
+          "fach": "f-bi",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-en",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-ch",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 20,
+      "minStunden": 16,
+      "maxStunden": 22,
+      "aufsichtenProWoche": 1,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-alb",
+      "name": "Emil Albers",
+      "kuerzel": "ALB",
+      "qualifikationen": [
+        {
+          "fach": "f-ek",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
         {
           "fach": "f-sp",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-re",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-ek",
+          "fach": "f-de",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -1083,12 +1074,40 @@
       "abwesenheiten": []
     },
     {
-      "id": "l-alb",
-      "name": "Malte Albers",
-      "kuerzel": "ALB",
+      "id": "l-tew",
+      "name": "David Tews",
+      "kuerzel": "TEW",
       "qualifikationen": [
         {
           "fach": "f-mu",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-en",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-ch",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 25,
+      "minStunden": 21,
+      "maxStunden": 27,
+      "aufsichtenProWoche": 2,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-bau",
+      "name": "Jonas Bauer",
+      "kuerzel": "BAU",
+      "qualifikationen": [
+        {
+          "fach": "f-ma",
           "stufenVon": 5,
           "stufenBis": 10
         },
@@ -1106,17 +1125,68 @@
       "abwesenheiten": []
     },
     {
-      "id": "l-tew",
-      "name": "Ida Tews",
-      "kuerzel": "TEW",
+      "id": "l-ste",
+      "name": "Zoe Stein",
+      "kuerzel": "STE",
       "qualifikationen": [
         {
-          "fach": "f-ma",
+          "fach": "f-ph",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-ph",
+          "fach": "f-sp",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 25,
+      "minStunden": 21,
+      "maxStunden": 27,
+      "aufsichtenProWoche": 2,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-wen",
+      "name": "Mara Wendt",
+      "kuerzel": "WEN",
+      "qualifikationen": [
+        {
+          "fach": "f-de",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-re",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-en",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 25,
+      "minStunden": 21,
+      "maxStunden": 27,
+      "aufsichtenProWoche": 1,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-raa",
+      "name": "Rosa Raabe",
+      "kuerzel": "RAA",
+      "qualifikationen": [
+        {
+          "fach": "f-ge",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-if",
           "stufenVon": 5,
           "stufenBis": 10
         },
@@ -1134,9 +1204,9 @@
       "abwesenheiten": []
     },
     {
-      "id": "l-bau",
-      "name": "Zoe Bauer",
-      "kuerzel": "BAU",
+      "id": "l-eng",
+      "name": "Tara Engel",
+      "kuerzel": "ENG",
       "qualifikationen": [
         {
           "fach": "f-bi",
@@ -1154,130 +1224,6 @@
           "stufenBis": 10
         }
       ],
-      "sollStunden": 14,
-      "minStunden": 10,
-      "maxStunden": 16,
-      "aufsichtenProWoche": 1,
-      "gesperrt": [
-        {
-          "tag": "Fr",
-          "stunden": [
-            5,
-            6,
-            7,
-            8
-          ]
-        }
-      ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
-    },
-    {
-      "id": "l-ste",
-      "name": "Malte Stein",
-      "kuerzel": "STE",
-      "qualifikationen": [
-        {
-          "fach": "f-en",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-ek",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-ph",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 20,
-      "minStunden": 16,
-      "maxStunden": 22,
-      "aufsichtenProWoche": 1,
-      "gesperrt": [],
-      "abwesenheiten": []
-    },
-    {
-      "id": "l-wen",
-      "name": "Vera Wendt",
-      "kuerzel": "WEN",
-      "qualifikationen": [
-        {
-          "fach": "f-ch",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-de",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 25,
-      "minStunden": 21,
-      "maxStunden": 27,
-      "aufsichtenProWoche": 2,
-      "gesperrt": [],
-      "abwesenheiten": []
-    },
-    {
-      "id": "l-raa",
-      "name": "Vera Raabe",
-      "kuerzel": "RAA",
-      "qualifikationen": [
-        {
-          "fach": "f-re",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-if",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-ek",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 14,
-      "minStunden": 10,
-      "maxStunden": 16,
-      "aufsichtenProWoche": 1,
-      "gesperrt": [
-        {
-          "tag": "Fr",
-          "stunden": [
-            5,
-            6,
-            7,
-            8
-          ]
-        }
-      ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
-    },
-    {
-      "id": "l-eng",
-      "name": "Sami Engel",
-      "kuerzel": "ENG",
-      "qualifikationen": [
-        {
-          "fach": "f-ge",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-ph",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
       "sollStunden": 26,
       "minStunden": 22,
       "maxStunden": 28,
@@ -1287,11 +1233,16 @@
     },
     {
       "id": "l-rot",
-      "name": "Hannes Roth",
+      "name": "Ben Roth",
       "kuerzel": "ROT",
       "qualifikationen": [
         {
-          "fach": "f-if",
+          "fach": "f-en",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-ch",
           "stufenVon": 5,
           "stufenBis": 10
         },
@@ -1310,47 +1261,8 @@
     },
     {
       "id": "l-zie",
-      "name": "Ben Ziegler",
+      "name": "Jonas Ziegler",
       "kuerzel": "ZIE",
-      "qualifikationen": [
-        {
-          "fach": "f-ek",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-bi",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-ma",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 14,
-      "minStunden": 10,
-      "maxStunden": 16,
-      "aufsichtenProWoche": 1,
-      "gesperrt": [
-        {
-          "tag": "Fr",
-          "stunden": [
-            5,
-            6,
-            7,
-            8
-          ]
-        }
-      ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
-    },
-    {
-      "id": "l-chr",
-      "name": "Yara Christ",
-      "kuerzel": "CHR",
       "qualifikationen": [
         {
           "fach": "f-sp",
@@ -1358,12 +1270,12 @@
           "stufenBis": 10
         },
         {
-          "fach": "f-bi",
+          "fach": "f-ek",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-re",
+          "fach": "f-sw",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -1376,24 +1288,52 @@
       "abwesenheiten": []
     },
     {
-      "id": "l-qua",
-      "name": "Ben Quast",
-      "kuerzel": "QUA",
+      "id": "l-chr",
+      "name": "Jonas Christ",
+      "kuerzel": "CHR",
       "qualifikationen": [
         {
-          "fach": "f-mu",
+          "fach": "f-re",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-ma",
+          "fach": "f-if",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-mu",
           "stufenVon": 5,
           "stufenBis": 10
         }
       ],
-      "sollStunden": 26,
-      "minStunden": 22,
-      "maxStunden": 28,
+      "sollStunden": 25,
+      "minStunden": 21,
+      "maxStunden": 27,
+      "aufsichtenProWoche": 2,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-qua",
+      "name": "Zoe Quast",
+      "kuerzel": "QUA",
+      "qualifikationen": [
+        {
+          "fach": "f-ch",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-ph",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 25,
+      "minStunden": 21,
+      "maxStunden": 27,
       "aufsichtenProWoche": 2,
       "gesperrt": [],
       "abwesenheiten": []
@@ -1404,58 +1344,12 @@
       "kuerzel": "ZAH",
       "qualifikationen": [
         {
-          "fach": "f-en",
+          "fach": "f-ma",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-de",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-ph",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 20,
-      "minStunden": 16,
-      "maxStunden": 22,
-      "aufsichtenProWoche": 1,
-      "gesperrt": [],
-      "abwesenheiten": []
-    },
-    {
-      "id": "l-hah",
-      "name": "Nora Hahn",
-      "kuerzel": "HAH",
-      "qualifikationen": [
-        {
-          "fach": "f-ek",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-bi",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 26,
-      "minStunden": 22,
-      "maxStunden": 28,
-      "aufsichtenProWoche": 2,
-      "gesperrt": [],
-      "abwesenheiten": []
-    },
-    {
-      "id": "l-ker",
-      "name": "Ugur Kern",
-      "kuerzel": "KER",
-      "qualifikationen": [
-        {
-          "fach": "f-ch",
+          "fach": "f-ge",
           "stufenVon": 5,
           "stufenBis": 10
         },
@@ -1468,27 +1362,45 @@
       "sollStunden": 25,
       "minStunden": 21,
       "maxStunden": 27,
-      "aufsichtenProWoche": 2,
+      "aufsichtenProWoche": 1,
       "gesperrt": [],
       "abwesenheiten": []
     },
     {
-      "id": "l-fre",
-      "name": "Clara Frey",
-      "kuerzel": "FRE",
+      "id": "l-hah",
+      "name": "Anna Hahn",
+      "kuerzel": "HAH",
       "qualifikationen": [
-        {
-          "fach": "f-re",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
         {
           "fach": "f-de",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-ph",
+          "fach": "f-ek",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 20,
+      "minStunden": 16,
+      "maxStunden": 22,
+      "aufsichtenProWoche": 1,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-ker",
+      "name": "Clara Kern",
+      "kuerzel": "KER",
+      "qualifikationen": [
+        {
+          "fach": "f-sw",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-if",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -1501,40 +1413,17 @@
       "abwesenheiten": []
     },
     {
-      "id": "l-cra",
-      "name": "Tara Cramer",
-      "kuerzel": "CRA",
+      "id": "l-fre",
+      "name": "Zoe Frey",
+      "kuerzel": "FRE",
       "qualifikationen": [
+        {
+          "fach": "f-mu",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
         {
           "fach": "f-ge",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-if",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 25,
-      "minStunden": 21,
-      "maxStunden": 27,
-      "aufsichtenProWoche": 2,
-      "gesperrt": [],
-      "abwesenheiten": []
-    },
-    {
-      "id": "l-yil",
-      "name": "Clara Yilmaz",
-      "kuerzel": "YIL",
-      "qualifikationen": [
-        {
-          "fach": "f-ma",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-de",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -1558,17 +1447,68 @@
       "teilzeitfaktor": 0.5
     },
     {
-      "id": "l-vog",
-      "name": "Zoe Vogt",
-      "kuerzel": "VOG",
+      "id": "l-cra",
+      "name": "Mara Cramer",
+      "kuerzel": "CRA",
       "qualifikationen": [
         {
-          "fach": "f-en",
+          "fach": "f-ku",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
+          "fach": "f-bi",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-en",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 20,
+      "minStunden": 16,
+      "maxStunden": 22,
+      "aufsichtenProWoche": 1,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-yil",
+      "name": "Nils Yilmaz",
+      "kuerzel": "YIL",
+      "qualifikationen": [
+        {
+          "fach": "f-bi",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-ek",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 25,
+      "minStunden": 21,
+      "maxStunden": 27,
+      "aufsichtenProWoche": 1,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-vog",
+      "name": "Sami Vogt",
+      "kuerzel": "VOG",
+      "qualifikationen": [
+        {
           "fach": "f-ph",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-ge",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -1593,16 +1533,16 @@
     },
     {
       "id": "l-vol",
-      "name": "Jonas Vollmer",
+      "name": "Rosa Vollmer",
       "kuerzel": "VOL",
       "qualifikationen": [
         {
-          "fach": "f-sp",
+          "fach": "f-mu",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-ku",
+          "fach": "f-sp",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -1610,61 +1550,50 @@
       "sollStunden": 25,
       "minStunden": 21,
       "maxStunden": 27,
-      "aufsichtenProWoche": 2,
+      "aufsichtenProWoche": 1,
       "gesperrt": [],
       "abwesenheiten": []
     },
     {
       "id": "l-reh",
-      "name": "Vera Rehm",
+      "name": "Mara Rehm",
       "kuerzel": "REH",
       "qualifikationen": [
         {
-          "fach": "f-bi",
+          "fach": "f-re",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-mu",
+          "fach": "f-en",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 20,
+      "minStunden": 16,
+      "maxStunden": 22,
+      "aufsichtenProWoche": 1,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-moh",
+      "name": "Wim Mohr",
+      "kuerzel": "MOH",
+      "qualifikationen": [
+        {
+          "fach": "f-if",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-ch",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
           "fach": "f-de",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 14,
-      "minStunden": 10,
-      "maxStunden": 16,
-      "aufsichtenProWoche": 1,
-      "gesperrt": [
-        {
-          "tag": "Fr",
-          "stunden": [
-            5,
-            6,
-            7,
-            8
-          ]
-        }
-      ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
-    },
-    {
-      "id": "l-moh",
-      "name": "Lukas Mohr",
-      "kuerzel": "MOH",
-      "qualifikationen": [
-        {
-          "fach": "f-mu",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-ma",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -1678,45 +1607,39 @@
     },
     {
       "id": "l-teu",
-      "name": "Ben Teuber",
+      "name": "Tara Teuber",
       "kuerzel": "TEU",
       "qualifikationen": [
         {
-          "fach": "f-ph",
+          "fach": "f-ma",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-de",
+          "fach": "f-ge",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-sw",
           "stufenVon": 5,
           "stufenBis": 10
         }
       ],
-      "sollStunden": 14,
-      "minStunden": 10,
-      "maxStunden": 16,
+      "sollStunden": 20,
+      "minStunden": 16,
+      "maxStunden": 22,
       "aufsichtenProWoche": 1,
-      "gesperrt": [
-        {
-          "tag": "Fr",
-          "stunden": [
-            5,
-            6,
-            7,
-            8
-          ]
-        }
-      ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
+      "gesperrt": [],
+      "abwesenheiten": []
     },
     {
       "id": "l-bue",
-      "name": "Sami Bühler",
+      "name": "Nils Bühler",
       "kuerzel": "BUE",
       "qualifikationen": [
         {
-          "fach": "f-if",
+          "fach": "f-ku",
           "stufenVon": 5,
           "stufenBis": 10
         },
@@ -1726,25 +1649,30 @@
           "stufenBis": 10
         },
         {
-          "fach": "f-ek",
+          "fach": "f-de",
           "stufenVon": 5,
           "stufenBis": 10
         }
       ],
-      "sollStunden": 25,
-      "minStunden": 21,
-      "maxStunden": 27,
+      "sollStunden": 26,
+      "minStunden": 22,
+      "maxStunden": 28,
       "aufsichtenProWoche": 2,
       "gesperrt": [],
       "abwesenheiten": []
     },
     {
       "id": "l-die",
-      "name": "Anna Dietz",
+      "name": "Ida Dietz",
       "kuerzel": "DIE",
       "qualifikationen": [
         {
-          "fach": "f-re",
+          "fach": "f-ph",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-ek",
           "stufenVon": 5,
           "stufenBis": 10
         },
@@ -1752,16 +1680,11 @@
           "fach": "f-en",
           "stufenVon": 5,
           "stufenBis": 10
-        },
-        {
-          "fach": "f-bi",
-          "stufenVon": 5,
-          "stufenBis": 10
         }
       ],
-      "sollStunden": 25,
-      "minStunden": 21,
-      "maxStunden": 27,
+      "sollStunden": 26,
+      "minStunden": 22,
+      "maxStunden": 28,
       "aufsichtenProWoche": 2,
       "gesperrt": [],
       "abwesenheiten": []
@@ -1777,12 +1700,12 @@
           "stufenBis": 10
         },
         {
-          "fach": "f-de",
+          "fach": "f-sp",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-ch",
+          "fach": "f-sw",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -1796,83 +1719,44 @@
     },
     {
       "id": "l-gae",
-      "name": "Lukas Gärtner",
+      "name": "Rosa Gärtner",
       "kuerzel": "GAE",
       "qualifikationen": [
         {
-          "fach": "f-ku",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-ek",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-en",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 25,
-      "minStunden": 21,
-      "maxStunden": 27,
-      "aufsichtenProWoche": 2,
-      "gesperrt": [],
-      "abwesenheiten": []
-    },
-    {
-      "id": "l-ott",
-      "name": "Olga Otten",
-      "kuerzel": "OTT",
-      "qualifikationen": [
-        {
-          "fach": "f-ph",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-bi",
-          "stufenVon": 5,
-          "stufenBis": 10
-        }
-      ],
-      "sollStunden": 14,
-      "minStunden": 10,
-      "maxStunden": 16,
-      "aufsichtenProWoche": 1,
-      "gesperrt": [
-        {
-          "tag": "Fr",
-          "stunden": [
-            5,
-            6,
-            7,
-            8
-          ]
-        }
-      ],
-      "abwesenheiten": [],
-      "teilzeitfaktor": 0.5
-    },
-    {
-      "id": "l-ort",
-      "name": "Zoe Ortmann",
-      "kuerzel": "ORT",
-      "qualifikationen": [
-        {
-          "fach": "f-ma",
-          "stufenVon": 5,
-          "stufenBis": 10
-        },
-        {
-          "fach": "f-sp",
+          "fach": "f-ch",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
           "fach": "f-de",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-re",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 20,
+      "minStunden": 16,
+      "maxStunden": 22,
+      "aufsichtenProWoche": 1,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-ott",
+      "name": "Emil Otten",
+      "kuerzel": "OTT",
+      "qualifikationen": [
+        {
+          "fach": "f-bi",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-ek",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -1885,22 +1769,50 @@
       "abwesenheiten": []
     },
     {
+      "id": "l-ort",
+      "name": "Hannes Ortmann",
+      "kuerzel": "ORT",
+      "qualifikationen": [
+        {
+          "fach": "f-en",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-mu",
+          "stufenVon": 5,
+          "stufenBis": 10
+        },
+        {
+          "fach": "f-sp",
+          "stufenVon": 5,
+          "stufenBis": 10
+        }
+      ],
+      "sollStunden": 25,
+      "minStunden": 21,
+      "maxStunden": 27,
+      "aufsichtenProWoche": 2,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
       "id": "l-abe",
-      "name": "Lea Abel",
+      "name": "Ben Abel",
       "kuerzel": "ABE",
       "qualifikationen": [
         {
-          "fach": "f-ek",
+          "fach": "f-sw",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-ch",
+          "fach": "f-ma",
           "stufenVon": 5,
           "stufenBis": 10
         },
         {
-          "fach": "f-en",
+          "fach": "f-de",
           "stufenVon": 5,
           "stufenBis": 10
         }
@@ -2390,6 +2302,22 @@
       "gesperrt": []
     },
     {
+      "id": "r-schwimmhalle1",
+      "name": "Schwimmhalle 1",
+      "typ": "schwimmhalle",
+      "kapazitaet": 35,
+      "nahe": [],
+      "gesperrt": [
+        {
+          "tag": "Mi",
+          "stunden": [
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
       "id": "r-nawi1",
       "name": "NaWi 1",
       "typ": "fachraum",
@@ -2423,7 +2351,7 @@
       "name": "5a",
       "stufe": 5,
       "schueler": 22,
-      "klassenlehrkraft": "l-mer",
+      "klassenlehrkraft": "l-kra",
       "heimatraum": "r-501",
       "stundentafel": [
         {
@@ -2480,6 +2408,11 @@
           "fach": "f-if",
           "stunden": 1,
           "doppelt": false
+        },
+        {
+          "fach": "f-sw",
+          "stunden": 2,
+          "doppelt": true
         }
       ]
     },
@@ -2488,7 +2421,7 @@
       "name": "5b",
       "stufe": 5,
       "schueler": 20,
-      "klassenlehrkraft": "l-con",
+      "klassenlehrkraft": "l-imh",
       "heimatraum": "r-502",
       "stundentafel": [
         {
@@ -2545,6 +2478,11 @@
           "fach": "f-if",
           "stunden": 1,
           "doppelt": false
+        },
+        {
+          "fach": "f-sw",
+          "stunden": 2,
+          "doppelt": true
         }
       ]
     },
@@ -2553,7 +2491,7 @@
       "name": "5c",
       "stufe": 5,
       "schueler": 24,
-      "klassenlehrkraft": "l-fre",
+      "klassenlehrkraft": "l-web",
       "heimatraum": "r-503",
       "stundentafel": [
         {
@@ -2610,6 +2548,11 @@
           "fach": "f-if",
           "stunden": 1,
           "doppelt": false
+        },
+        {
+          "fach": "f-sw",
+          "stunden": 2,
+          "doppelt": true
         }
       ]
     },
@@ -2618,7 +2561,7 @@
       "name": "5d",
       "stufe": 5,
       "schueler": 28,
-      "klassenlehrkraft": "l-jah",
+      "klassenlehrkraft": "l-mar",
       "heimatraum": "r-504",
       "stundentafel": [
         {
@@ -2675,6 +2618,11 @@
           "fach": "f-if",
           "stunden": 1,
           "doppelt": false
+        },
+        {
+          "fach": "f-sw",
+          "stunden": 2,
+          "doppelt": true
         }
       ]
     },
@@ -2683,7 +2631,7 @@
       "name": "5e",
       "stufe": 5,
       "schueler": 26,
-      "klassenlehrkraft": "l-ort",
+      "klassenlehrkraft": "l-jae",
       "heimatraum": "r-505",
       "stundentafel": [
         {
@@ -2740,6 +2688,11 @@
           "fach": "f-if",
           "stunden": 1,
           "doppelt": false
+        },
+        {
+          "fach": "f-sw",
+          "stunden": 2,
+          "doppelt": true
         }
       ]
     },
@@ -2748,7 +2701,7 @@
       "name": "6a",
       "stufe": 6,
       "schueler": 23,
-      "klassenlehrkraft": "l-voi",
+      "klassenlehrkraft": "l-poh",
       "heimatraum": "r-601",
       "stundentafel": [
         {
@@ -2813,7 +2766,7 @@
       "name": "6b",
       "stufe": 6,
       "schueler": 27,
-      "klassenlehrkraft": "l-poh",
+      "klassenlehrkraft": "l-alb",
       "heimatraum": "r-602",
       "stundentafel": [
         {
@@ -2878,7 +2831,7 @@
       "name": "6c",
       "stufe": 6,
       "schueler": 26,
-      "klassenlehrkraft": "l-uhl",
+      "klassenlehrkraft": "l-bue",
       "heimatraum": "r-603",
       "stundentafel": [
         {
@@ -2943,7 +2896,7 @@
       "name": "6d",
       "stufe": 6,
       "schueler": 24,
-      "klassenlehrkraft": "l-alb",
+      "klassenlehrkraft": "l-abe",
       "heimatraum": "r-604",
       "stundentafel": [
         {
@@ -3008,7 +2961,7 @@
       "name": "6e",
       "stufe": 6,
       "schueler": 28,
-      "klassenlehrkraft": "l-eng",
+      "klassenlehrkraft": "l-sei",
       "heimatraum": "r-605",
       "stundentafel": [
         {
@@ -3073,7 +3026,7 @@
       "name": "7a",
       "stufe": 7,
       "schueler": 24,
-      "klassenlehrkraft": "l-chr",
+      "klassenlehrkraft": "l-lin",
       "heimatraum": "r-701",
       "stundentafel": [
         {
@@ -3143,7 +3096,7 @@
       "name": "7b",
       "stufe": 7,
       "schueler": 27,
-      "klassenlehrkraft": "l-qua",
+      "klassenlehrkraft": "l-nol",
       "heimatraum": "r-702",
       "stundentafel": [
         {
@@ -3213,7 +3166,7 @@
       "name": "7c",
       "stufe": 7,
       "schueler": 26,
-      "klassenlehrkraft": "l-hah",
+      "klassenlehrkraft": "l-dor",
       "heimatraum": "r-703",
       "stundentafel": [
         {
@@ -3283,7 +3236,7 @@
       "name": "7d",
       "stufe": 7,
       "schueler": 23,
-      "klassenlehrkraft": "l-abe",
+      "klassenlehrkraft": "l-now",
       "heimatraum": "r-704",
       "stundentafel": [
         {
@@ -3353,7 +3306,7 @@
       "name": "7e",
       "stufe": 7,
       "schueler": 20,
-      "klassenlehrkraft": "l-arn",
+      "klassenlehrkraft": "l-bau",
       "heimatraum": "r-705",
       "stundentafel": [
         {
@@ -3423,7 +3376,7 @@
       "name": "8a",
       "stufe": 8,
       "schueler": 24,
-      "klassenlehrkraft": "l-kra",
+      "klassenlehrkraft": "l-eng",
       "heimatraum": "r-801",
       "stundentafel": [
         {
@@ -3498,7 +3451,7 @@
       "name": "8b",
       "stufe": 8,
       "schueler": 20,
-      "klassenlehrkraft": "l-osw",
+      "klassenlehrkraft": "l-zie",
       "heimatraum": "r-802",
       "stundentafel": [
         {
@@ -3573,7 +3526,7 @@
       "name": "8c",
       "stufe": 8,
       "schueler": 23,
-      "klassenlehrkraft": "l-imh",
+      "klassenlehrkraft": "l-ker",
       "heimatraum": "r-803",
       "stundentafel": [
         {
@@ -3648,7 +3601,7 @@
       "name": "8d",
       "stufe": 8,
       "schueler": 24,
-      "klassenlehrkraft": "l-web",
+      "klassenlehrkraft": "l-die",
       "heimatraum": "r-804",
       "stundentafel": [
         {
@@ -3723,7 +3676,7 @@
       "name": "8e",
       "stufe": 8,
       "schueler": 25,
-      "klassenlehrkraft": "l-sau",
+      "klassenlehrkraft": "l-jah",
       "heimatraum": "r-805",
       "stundentafel": [
         {
@@ -3798,7 +3751,7 @@
       "name": "9a",
       "stufe": 9,
       "schueler": 25,
-      "klassenlehrkraft": "l-wen",
+      "klassenlehrkraft": "l-ott",
       "heimatraum": "r-901",
       "stundentafel": [
         {
@@ -3873,7 +3826,7 @@
       "name": "9b",
       "stufe": 9,
       "schueler": 28,
-      "klassenlehrkraft": "l-sei",
+      "klassenlehrkraft": "l-arn",
       "heimatraum": "r-902",
       "stundentafel": [
         {
@@ -3948,7 +3901,7 @@
       "name": "9c",
       "stufe": 9,
       "schueler": 28,
-      "klassenlehrkraft": "l-lor",
+      "klassenlehrkraft": "l-hei",
       "heimatraum": "r-903",
       "stundentafel": [
         {
@@ -4023,7 +3976,7 @@
       "name": "9d",
       "stufe": 9,
       "schueler": 21,
-      "klassenlehrkraft": "l-dor",
+      "klassenlehrkraft": "l-wen",
       "heimatraum": "r-904",
       "stundentafel": [
         {
@@ -4098,7 +4051,7 @@
       "name": "9e",
       "stufe": 9,
       "schueler": 24,
-      "klassenlehrkraft": "l-zel",
+      "klassenlehrkraft": "l-moh",
       "heimatraum": "r-905",
       "stundentafel": [
         {
@@ -4173,7 +4126,7 @@
       "name": "10a",
       "stufe": 10,
       "schueler": 26,
-      "klassenlehrkraft": "l-now",
+      "klassenlehrkraft": "l-thi",
       "heimatraum": "r-1001",
       "stundentafel": [
         {
@@ -4248,7 +4201,7 @@
       "name": "10b",
       "stufe": 10,
       "schueler": 20,
-      "klassenlehrkraft": "l-rot",
+      "klassenlehrkraft": "l-lor",
       "heimatraum": "r-1002",
       "stundentafel": [
         {
@@ -4323,7 +4276,7 @@
       "name": "10c",
       "stufe": 10,
       "schueler": 28,
-      "klassenlehrkraft": "l-ker",
+      "klassenlehrkraft": "l-voi",
       "heimatraum": "r-1003",
       "stundentafel": [
         {
@@ -4398,7 +4351,7 @@
       "name": "10d",
       "stufe": 10,
       "schueler": 24,
-      "klassenlehrkraft": "l-cra",
+      "klassenlehrkraft": "l-zel",
       "heimatraum": "r-1004",
       "stundentafel": [
         {
@@ -4473,7 +4426,7 @@
       "name": "10e",
       "stufe": 10,
       "schueler": 22,
-      "klassenlehrkraft": "l-vol",
+      "klassenlehrkraft": "l-sau",
       "heimatraum": "r-1005",
       "stundentafel": [
         {
@@ -4546,2193 +4499,2223 @@
   ],
   "zuordnungen": [
     {
-      "klasse": "k-10a",
-      "fach": "f-ch",
-      "lehrkraft": "l-poh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10a",
-      "fach": "f-ge",
-      "lehrkraft": "l-now",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10a",
-      "fach": "f-if",
-      "lehrkraft": "l-zel",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10b",
-      "fach": "f-ch",
-      "lehrkraft": "l-jah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10b",
-      "fach": "f-ge",
-      "lehrkraft": "l-jah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10b",
-      "fach": "f-if",
-      "lehrkraft": "l-rot",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10c",
-      "fach": "f-ch",
-      "lehrkraft": "l-ker",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10c",
-      "fach": "f-ge",
-      "lehrkraft": "l-con",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10c",
-      "fach": "f-if",
-      "lehrkraft": "l-cra",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10d",
-      "fach": "f-ch",
-      "lehrkraft": "l-abe",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10d",
-      "fach": "f-ge",
-      "lehrkraft": "l-cra",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10d",
-      "fach": "f-if",
-      "lehrkraft": "l-cra",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10e",
-      "fach": "f-ch",
-      "lehrkraft": "l-wen",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10e",
-      "fach": "f-ge",
-      "lehrkraft": "l-eng",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10e",
-      "fach": "f-if",
-      "lehrkraft": "l-bue",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6a",
-      "fach": "f-ge",
-      "lehrkraft": "l-lor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6b",
-      "fach": "f-ge",
-      "lehrkraft": "l-con",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6c",
-      "fach": "f-ge",
-      "lehrkraft": "l-eng",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6d",
-      "fach": "f-ge",
-      "lehrkraft": "l-lor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6e",
-      "fach": "f-ge",
-      "lehrkraft": "l-eng",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7a",
-      "fach": "f-ch",
-      "lehrkraft": "l-poh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7a",
-      "fach": "f-ge",
-      "lehrkraft": "l-now",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7b",
-      "fach": "f-ch",
-      "lehrkraft": "l-abe",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7b",
-      "fach": "f-ge",
-      "lehrkraft": "l-con",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7c",
-      "fach": "f-ch",
-      "lehrkraft": "l-wen",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7c",
-      "fach": "f-ge",
-      "lehrkraft": "l-jah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7d",
-      "fach": "f-ch",
-      "lehrkraft": "l-abe",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7d",
-      "fach": "f-ge",
-      "lehrkraft": "l-lor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7e",
-      "fach": "f-ch",
-      "lehrkraft": "l-ker",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7e",
-      "fach": "f-ge",
-      "lehrkraft": "l-now",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8a",
-      "fach": "f-ch",
-      "lehrkraft": "l-bue",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8a",
-      "fach": "f-ge",
-      "lehrkraft": "l-con",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8b",
-      "fach": "f-ch",
-      "lehrkraft": "l-poh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8b",
-      "fach": "f-ge",
-      "lehrkraft": "l-eng",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8c",
-      "fach": "f-ch",
-      "lehrkraft": "l-tew",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8c",
-      "fach": "f-ge",
-      "lehrkraft": "l-jah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8d",
-      "fach": "f-ch",
-      "lehrkraft": "l-wen",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8d",
-      "fach": "f-ge",
-      "lehrkraft": "l-lor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8e",
-      "fach": "f-ch",
-      "lehrkraft": "l-ker",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8e",
-      "fach": "f-ge",
-      "lehrkraft": "l-now",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9a",
-      "fach": "f-ch",
-      "lehrkraft": "l-wen",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9a",
-      "fach": "f-ge",
-      "lehrkraft": "l-cra",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9a",
-      "fach": "f-if",
-      "lehrkraft": "l-cra",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9b",
-      "fach": "f-ch",
-      "lehrkraft": "l-bue",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9b",
-      "fach": "f-ge",
-      "lehrkraft": "l-con",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9b",
-      "fach": "f-if",
-      "lehrkraft": "l-bue",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9c",
-      "fach": "f-ch",
-      "lehrkraft": "l-poh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9c",
-      "fach": "f-ge",
-      "lehrkraft": "l-lor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9c",
-      "fach": "f-if",
-      "lehrkraft": "l-zel",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9d",
-      "fach": "f-ch",
-      "lehrkraft": "l-abe",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9d",
-      "fach": "f-ge",
-      "lehrkraft": "l-eng",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9d",
-      "fach": "f-if",
-      "lehrkraft": "l-rot",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9e",
-      "fach": "f-ch",
-      "lehrkraft": "l-tew",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9e",
-      "fach": "f-ge",
-      "lehrkraft": "l-jah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9e",
-      "fach": "f-if",
-      "lehrkraft": "l-zel",
-      "rolle": "haupt"
-    },
-    {
       "klasse": "k-5a",
-      "fach": "f-ge",
-      "lehrkraft": "l-now",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5a",
-      "fach": "f-if",
-      "lehrkraft": "l-rot",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5b",
-      "fach": "f-ge",
-      "lehrkraft": "l-con",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5b",
-      "fach": "f-if",
-      "lehrkraft": "l-rot",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5c",
-      "fach": "f-ge",
-      "lehrkraft": "l-now",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5c",
-      "fach": "f-if",
-      "lehrkraft": "l-zel",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5d",
-      "fach": "f-ge",
-      "lehrkraft": "l-jah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5d",
-      "fach": "f-if",
-      "lehrkraft": "l-rot",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5e",
-      "fach": "f-ge",
-      "lehrkraft": "l-eng",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5e",
-      "fach": "f-if",
-      "lehrkraft": "l-zel",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6a",
-      "fach": "f-if",
-      "lehrkraft": "l-rot",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6b",
-      "fach": "f-if",
-      "lehrkraft": "l-zel",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6c",
-      "fach": "f-if",
-      "lehrkraft": "l-rot",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6d",
-      "fach": "f-if",
-      "lehrkraft": "l-bue",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6e",
-      "fach": "f-if",
-      "lehrkraft": "l-zel",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8a",
-      "fach": "f-if",
-      "lehrkraft": "l-bue",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8b",
-      "fach": "f-if",
-      "lehrkraft": "l-rot",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8c",
-      "fach": "f-if",
-      "lehrkraft": "l-zel",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8d",
-      "fach": "f-if",
-      "lehrkraft": "l-ulr",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8e",
-      "fach": "f-if",
-      "lehrkraft": "l-bau",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10a",
-      "fach": "f-ku",
-      "lehrkraft": "l-alb",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10b",
-      "fach": "f-ku",
-      "lehrkraft": "l-rot",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10c",
-      "fach": "f-ku",
-      "lehrkraft": "l-ker",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10d",
-      "fach": "f-ku",
-      "lehrkraft": "l-dor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10e",
-      "fach": "f-ku",
-      "lehrkraft": "l-vol",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5a",
-      "fach": "f-mu",
-      "lehrkraft": "l-qua",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5a",
-      "fach": "f-ku",
-      "lehrkraft": "l-rot",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5b",
-      "fach": "f-mu",
-      "lehrkraft": "l-sau",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5b",
-      "fach": "f-ku",
-      "lehrkraft": "l-rot",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5c",
-      "fach": "f-mu",
-      "lehrkraft": "l-moh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5c",
-      "fach": "f-ku",
-      "lehrkraft": "l-gae",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5d",
-      "fach": "f-mu",
-      "lehrkraft": "l-alb",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5d",
-      "fach": "f-ku",
-      "lehrkraft": "l-alb",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5e",
-      "fach": "f-mu",
-      "lehrkraft": "l-qua",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5e",
-      "fach": "f-ku",
-      "lehrkraft": "l-dor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6a",
-      "fach": "f-mu",
-      "lehrkraft": "l-sau",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6a",
-      "fach": "f-ku",
-      "lehrkraft": "l-rot",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6b",
-      "fach": "f-mu",
-      "lehrkraft": "l-moh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6b",
-      "fach": "f-ku",
-      "lehrkraft": "l-vol",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6c",
-      "fach": "f-mu",
-      "lehrkraft": "l-qua",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6c",
-      "fach": "f-ku",
-      "lehrkraft": "l-rot",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6d",
-      "fach": "f-mu",
-      "lehrkraft": "l-alb",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6d",
-      "fach": "f-ku",
-      "lehrkraft": "l-alb",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6e",
-      "fach": "f-mu",
-      "lehrkraft": "l-pie",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6e",
-      "fach": "f-ku",
-      "lehrkraft": "l-pie",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7a",
-      "fach": "f-ku",
-      "lehrkraft": "l-gae",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7b",
-      "fach": "f-ku",
-      "lehrkraft": "l-thi",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7c",
-      "fach": "f-ku",
-      "lehrkraft": "l-dor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7d",
-      "fach": "f-ku",
-      "lehrkraft": "l-vol",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7e",
-      "fach": "f-ku",
-      "lehrkraft": "l-ker",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8a",
-      "fach": "f-mu",
-      "lehrkraft": "l-sau",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8b",
-      "fach": "f-mu",
-      "lehrkraft": "l-moh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8c",
-      "fach": "f-mu",
-      "lehrkraft": "l-qua",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8d",
-      "fach": "f-mu",
-      "lehrkraft": "l-ulr",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8e",
-      "fach": "f-mu",
-      "lehrkraft": "l-sau",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9a",
-      "fach": "f-ku",
-      "lehrkraft": "l-gae",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9b",
-      "fach": "f-ku",
-      "lehrkraft": "l-thi",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9c",
-      "fach": "f-ku",
-      "lehrkraft": "l-dor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9d",
-      "fach": "f-ku",
-      "lehrkraft": "l-dor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9e",
-      "fach": "f-ku",
-      "lehrkraft": "l-vol",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10a",
-      "fach": "f-mu",
-      "lehrkraft": "l-alb",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10b",
-      "fach": "f-mu",
-      "lehrkraft": "l-moh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10c",
-      "fach": "f-mu",
-      "lehrkraft": "l-qua",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10d",
-      "fach": "f-mu",
-      "lehrkraft": "l-moh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10e",
-      "fach": "f-mu",
-      "lehrkraft": "l-pie",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7a",
-      "fach": "f-mu",
-      "lehrkraft": "l-sau",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7b",
-      "fach": "f-mu",
-      "lehrkraft": "l-qua",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7c",
-      "fach": "f-mu",
-      "lehrkraft": "l-moh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7d",
-      "fach": "f-mu",
-      "lehrkraft": "l-pie",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7e",
-      "fach": "f-mu",
-      "lehrkraft": "l-sau",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8a",
-      "fach": "f-ku",
-      "lehrkraft": "l-gae",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8b",
-      "fach": "f-ku",
-      "lehrkraft": "l-rot",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8c",
-      "fach": "f-ku",
-      "lehrkraft": "l-gae",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8d",
-      "fach": "f-ku",
-      "lehrkraft": "l-thi",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8e",
-      "fach": "f-ku",
-      "lehrkraft": "l-ker",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9a",
-      "fach": "f-mu",
-      "lehrkraft": "l-qua",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9b",
-      "fach": "f-mu",
-      "lehrkraft": "l-moh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9c",
-      "fach": "f-mu",
-      "lehrkraft": "l-pie",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9d",
-      "fach": "f-mu",
-      "lehrkraft": "l-nol",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9e",
-      "fach": "f-mu",
-      "lehrkraft": "l-sau",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10a",
-      "fach": "f-ph",
-      "lehrkraft": "l-fre",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10a",
-      "fach": "f-re",
-      "lehrkraft": "l-now",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10b",
-      "fach": "f-ph",
-      "lehrkraft": "l-fre",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10b",
-      "fach": "f-re",
-      "lehrkraft": "l-fre",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10c",
-      "fach": "f-ph",
-      "lehrkraft": "l-ste",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10c",
-      "fach": "f-re",
-      "lehrkraft": "l-uhl",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10d",
-      "fach": "f-ph",
-      "lehrkraft": "l-dor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10d",
-      "fach": "f-re",
-      "lehrkraft": "l-chr",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10e",
-      "fach": "f-ph",
-      "lehrkraft": "l-eng",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10e",
-      "fach": "f-re",
-      "lehrkraft": "l-sei",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5a",
-      "fach": "f-re",
-      "lehrkraft": "l-now",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5b",
-      "fach": "f-re",
-      "lehrkraft": "l-die",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5c",
-      "fach": "f-re",
-      "lehrkraft": "l-fre",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5d",
-      "fach": "f-re",
-      "lehrkraft": "l-uhl",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5e",
-      "fach": "f-re",
-      "lehrkraft": "l-chr",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6a",
-      "fach": "f-re",
-      "lehrkraft": "l-sei",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6b",
-      "fach": "f-re",
-      "lehrkraft": "l-die",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6c",
-      "fach": "f-re",
-      "lehrkraft": "l-uhl",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6d",
-      "fach": "f-re",
-      "lehrkraft": "l-chr",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6e",
-      "fach": "f-re",
-      "lehrkraft": "l-bus",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7a",
-      "fach": "f-ph",
-      "lehrkraft": "l-zah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7a",
-      "fach": "f-re",
-      "lehrkraft": "l-chr",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7b",
-      "fach": "f-ph",
-      "lehrkraft": "l-ste",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7b",
-      "fach": "f-re",
-      "lehrkraft": "l-sei",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7c",
-      "fach": "f-ph",
-      "lehrkraft": "l-dor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7c",
-      "fach": "f-re",
-      "lehrkraft": "l-lin",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7d",
-      "fach": "f-ph",
-      "lehrkraft": "l-zah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7d",
-      "fach": "f-re",
-      "lehrkraft": "l-die",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7e",
-      "fach": "f-ph",
-      "lehrkraft": "l-fre",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7e",
-      "fach": "f-re",
-      "lehrkraft": "l-fre",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8a",
-      "fach": "f-ph",
-      "lehrkraft": "l-tew",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8a",
-      "fach": "f-re",
-      "lehrkraft": "l-uhl",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8b",
-      "fach": "f-ph",
-      "lehrkraft": "l-eng",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8b",
-      "fach": "f-re",
-      "lehrkraft": "l-bus",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8c",
-      "fach": "f-ph",
-      "lehrkraft": "l-tew",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8c",
-      "fach": "f-re",
-      "lehrkraft": "l-sei",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8d",
-      "fach": "f-ph",
-      "lehrkraft": "l-ste",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8d",
-      "fach": "f-re",
-      "lehrkraft": "l-lin",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8e",
-      "fach": "f-ph",
-      "lehrkraft": "l-zah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8e",
-      "fach": "f-re",
-      "lehrkraft": "l-bau",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9a",
-      "fach": "f-ph",
-      "lehrkraft": "l-klu",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9a",
-      "fach": "f-re",
-      "lehrkraft": "l-die",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9b",
-      "fach": "f-ph",
-      "lehrkraft": "l-ste",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9b",
-      "fach": "f-re",
-      "lehrkraft": "l-sei",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9c",
-      "fach": "f-ph",
-      "lehrkraft": "l-dor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9c",
-      "fach": "f-re",
-      "lehrkraft": "l-uhl",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9d",
-      "fach": "f-ph",
-      "lehrkraft": "l-dor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9d",
-      "fach": "f-re",
-      "lehrkraft": "l-chr",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9e",
-      "fach": "f-ph",
-      "lehrkraft": "l-tew",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9e",
-      "fach": "f-re",
-      "lehrkraft": "l-bus",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5a",
-      "fach": "f-sp",
-      "lehrkraft": "l-voi",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5b",
-      "fach": "f-sp",
-      "lehrkraft": "l-sau",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5c",
-      "fach": "f-sp",
-      "lehrkraft": "l-ort",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5d",
-      "fach": "f-sp",
-      "lehrkraft": "l-uhl",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5e",
-      "fach": "f-sp",
-      "lehrkraft": "l-ort",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6a",
-      "fach": "f-sp",
-      "lehrkraft": "l-voi",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6b",
-      "fach": "f-sp",
-      "lehrkraft": "l-vol",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6c",
-      "fach": "f-sp",
-      "lehrkraft": "l-uhl",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6d",
-      "fach": "f-sp",
-      "lehrkraft": "l-chr",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6e",
-      "fach": "f-sp",
-      "lehrkraft": "l-web",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7a",
-      "fach": "f-sp",
-      "lehrkraft": "l-chr",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7b",
-      "fach": "f-sp",
-      "lehrkraft": "l-sei",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7c",
-      "fach": "f-sp",
-      "lehrkraft": "l-web",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7d",
-      "fach": "f-sp",
-      "lehrkraft": "l-vol",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7e",
-      "fach": "f-sp",
-      "lehrkraft": "l-sau",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8a",
-      "fach": "f-sp",
-      "lehrkraft": "l-uhl",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8b",
-      "fach": "f-sp",
-      "lehrkraft": "l-isk",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8c",
-      "fach": "f-sp",
-      "lehrkraft": "l-sei",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8d",
-      "fach": "f-sp",
-      "lehrkraft": "l-web",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8e",
-      "fach": "f-sp",
-      "lehrkraft": "l-sau",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10a",
-      "fach": "f-sp",
-      "lehrkraft": "l-voi",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10b",
-      "fach": "f-sp",
-      "lehrkraft": "l-ort",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10c",
-      "fach": "f-sp",
-      "lehrkraft": "l-uhl",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10d",
-      "fach": "f-sp",
-      "lehrkraft": "l-chr",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10e",
-      "fach": "f-sp",
-      "lehrkraft": "l-vol",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9a",
-      "fach": "f-sp",
-      "lehrkraft": "l-isk",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9b",
-      "fach": "f-sp",
-      "lehrkraft": "l-sei",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9c",
-      "fach": "f-sp",
-      "lehrkraft": "l-uhl",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9d",
-      "fach": "f-sp",
-      "lehrkraft": "l-chr",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9e",
-      "fach": "f-sp",
-      "lehrkraft": "l-vol",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10a",
-      "fach": "f-bi",
-      "lehrkraft": "l-hah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10b",
-      "fach": "f-bi",
-      "lehrkraft": "l-hah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10c",
-      "fach": "f-bi",
-      "lehrkraft": "l-hah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10d",
-      "fach": "f-bi",
-      "lehrkraft": "l-chr",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10e",
-      "fach": "f-bi",
-      "lehrkraft": "l-hah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5a",
-      "fach": "f-bi",
-      "lehrkraft": "l-hah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5a",
-      "fach": "f-ek",
-      "lehrkraft": "l-hah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5b",
-      "fach": "f-bi",
-      "lehrkraft": "l-die",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5b",
-      "fach": "f-ek",
-      "lehrkraft": "l-abe",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5c",
-      "fach": "f-bi",
-      "lehrkraft": "l-lin",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5c",
-      "fach": "f-ek",
-      "lehrkraft": "l-gae",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5d",
-      "fach": "f-bi",
-      "lehrkraft": "l-bus",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5d",
-      "fach": "f-ek",
-      "lehrkraft": "l-abe",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5e",
-      "fach": "f-bi",
-      "lehrkraft": "l-bra",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5e",
-      "fach": "f-ek",
-      "lehrkraft": "l-zel",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6a",
-      "fach": "f-bi",
-      "lehrkraft": "l-lin",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6b",
-      "fach": "f-bi",
-      "lehrkraft": "l-die",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6c",
-      "fach": "f-bi",
-      "lehrkraft": "l-gra",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6d",
-      "fach": "f-bi",
+      "fach": "f-sw",
       "lehrkraft": "l-zie",
       "rolle": "haupt"
     },
     {
-      "klasse": "k-6e",
-      "fach": "f-bi",
-      "lehrkraft": "l-bus",
+      "klasse": "k-5b",
+      "fach": "f-sw",
+      "lehrkraft": "l-ker",
       "rolle": "haupt"
     },
     {
-      "klasse": "k-7a",
-      "fach": "f-bi",
-      "lehrkraft": "l-reh",
+      "klasse": "k-5c",
+      "fach": "f-sw",
+      "lehrkraft": "l-jah",
       "rolle": "haupt"
     },
     {
-      "klasse": "k-7a",
-      "fach": "f-ek",
-      "lehrkraft": "l-gae",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7b",
-      "fach": "f-bi",
-      "lehrkraft": "l-ott",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7b",
-      "fach": "f-ek",
+      "klasse": "k-5d",
+      "fach": "f-sw",
       "lehrkraft": "l-abe",
       "rolle": "haupt"
     },
     {
-      "klasse": "k-7c",
-      "fach": "f-bi",
-      "lehrkraft": "l-hah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7c",
-      "fach": "f-ek",
-      "lehrkraft": "l-hah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7d",
-      "fach": "f-bi",
-      "lehrkraft": "l-die",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7d",
-      "fach": "f-ek",
-      "lehrkraft": "l-abe",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7e",
-      "fach": "f-bi",
-      "lehrkraft": "l-bra",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7e",
-      "fach": "f-ek",
-      "lehrkraft": "l-now",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8a",
-      "fach": "f-bi",
-      "lehrkraft": "l-lin",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8a",
-      "fach": "f-ek",
-      "lehrkraft": "l-bue",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8b",
-      "fach": "f-bi",
-      "lehrkraft": "l-bus",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8b",
-      "fach": "f-ek",
-      "lehrkraft": "l-lor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8c",
-      "fach": "f-bi",
-      "lehrkraft": "l-gra",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8c",
-      "fach": "f-ek",
-      "lehrkraft": "l-gae",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8d",
-      "fach": "f-bi",
-      "lehrkraft": "l-lin",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8d",
-      "fach": "f-ek",
-      "lehrkraft": "l-lor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8e",
-      "fach": "f-bi",
-      "lehrkraft": "l-bau",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8e",
-      "fach": "f-ek",
-      "lehrkraft": "l-now",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9a",
-      "fach": "f-bi",
-      "lehrkraft": "l-klu",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9a",
-      "fach": "f-ek",
-      "lehrkraft": "l-gae",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9b",
-      "fach": "f-bi",
+      "klasse": "k-5e",
+      "fach": "f-sw",
       "lehrkraft": "l-zie",
       "rolle": "haupt"
     },
     {
-      "klasse": "k-9b",
-      "fach": "f-ek",
-      "lehrkraft": "l-ste",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9c",
-      "fach": "f-bi",
-      "lehrkraft": "l-reh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9c",
-      "fach": "f-ek",
-      "lehrkraft": "l-lor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9d",
-      "fach": "f-bi",
-      "lehrkraft": "l-ott",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9d",
-      "fach": "f-ek",
-      "lehrkraft": "l-nol",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9e",
-      "fach": "f-bi",
-      "lehrkraft": "l-bus",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9e",
-      "fach": "f-ek",
-      "lehrkraft": "l-zel",
-      "rolle": "haupt"
-    },
-    {
       "klasse": "k-10a",
-      "fach": "f-ek",
+      "fach": "f-if",
       "lehrkraft": "l-now",
       "rolle": "haupt"
     },
     {
       "klasse": "k-10b",
-      "fach": "f-ek",
-      "lehrkraft": "l-hah",
+      "fach": "f-if",
+      "lehrkraft": "l-eng",
       "rolle": "haupt"
     },
     {
       "klasse": "k-10c",
-      "fach": "f-ek",
-      "lehrkraft": "l-ste",
+      "fach": "f-if",
+      "lehrkraft": "l-chr",
       "rolle": "haupt"
     },
     {
       "klasse": "k-10d",
-      "fach": "f-ek",
-      "lehrkraft": "l-abe",
+      "fach": "f-if",
+      "lehrkraft": "l-moh",
       "rolle": "haupt"
     },
     {
       "klasse": "k-10e",
-      "fach": "f-ek",
-      "lehrkraft": "l-bue",
+      "fach": "f-if",
+      "lehrkraft": "l-now",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9a",
+      "fach": "f-if",
+      "lehrkraft": "l-eng",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9b",
+      "fach": "f-if",
+      "lehrkraft": "l-ker",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9c",
+      "fach": "f-if",
+      "lehrkraft": "l-chr",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9d",
+      "fach": "f-if",
+      "lehrkraft": "l-moh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9e",
+      "fach": "f-if",
+      "lehrkraft": "l-moh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5a",
+      "fach": "f-if",
+      "lehrkraft": "l-now",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5b",
+      "fach": "f-if",
+      "lehrkraft": "l-ker",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5c",
+      "fach": "f-if",
+      "lehrkraft": "l-eng",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5d",
+      "fach": "f-if",
+      "lehrkraft": "l-gra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5e",
+      "fach": "f-if",
+      "lehrkraft": "l-now",
       "rolle": "haupt"
     },
     {
       "klasse": "k-6a",
-      "fach": "f-ek",
-      "lehrkraft": "l-lor",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6b",
-      "fach": "f-ek",
-      "lehrkraft": "l-zel",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6c",
-      "fach": "f-ek",
+      "fach": "f-if",
       "lehrkraft": "l-raa",
       "rolle": "haupt"
     },
     {
+      "klasse": "k-6b",
+      "fach": "f-if",
+      "lehrkraft": "l-eng",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6c",
+      "fach": "f-if",
+      "lehrkraft": "l-chr",
+      "rolle": "haupt"
+    },
+    {
       "klasse": "k-6d",
-      "fach": "f-ek",
-      "lehrkraft": "l-bue",
+      "fach": "f-if",
+      "lehrkraft": "l-ker",
       "rolle": "haupt"
     },
     {
       "klasse": "k-6e",
+      "fach": "f-if",
+      "lehrkraft": "l-gra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8a",
+      "fach": "f-if",
+      "lehrkraft": "l-eng",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8b",
+      "fach": "f-if",
+      "lehrkraft": "l-now",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8c",
+      "fach": "f-if",
+      "lehrkraft": "l-ker",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8d",
+      "fach": "f-if",
+      "lehrkraft": "l-raa",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8e",
+      "fach": "f-if",
+      "lehrkraft": "l-chr",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10a",
+      "fach": "f-ph",
+      "lehrkraft": "l-nol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10a",
+      "fach": "f-ku",
+      "lehrkraft": "l-bau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10b",
+      "fach": "f-ph",
+      "lehrkraft": "l-die",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10b",
+      "fach": "f-ku",
+      "lehrkraft": "l-bue",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10c",
+      "fach": "f-ph",
+      "lehrkraft": "l-sau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10c",
+      "fach": "f-ku",
+      "lehrkraft": "l-zel",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10d",
+      "fach": "f-ph",
+      "lehrkraft": "l-ste",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10d",
+      "fach": "f-ku",
+      "lehrkraft": "l-zel",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10e",
+      "fach": "f-ph",
+      "lehrkraft": "l-sau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10e",
+      "fach": "f-ku",
+      "lehrkraft": "l-rot",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5a",
+      "fach": "f-ku",
+      "lehrkraft": "l-zah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5b",
+      "fach": "f-ku",
+      "lehrkraft": "l-bau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5c",
+      "fach": "f-ku",
+      "lehrkraft": "l-bue",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5d",
+      "fach": "f-ku",
+      "lehrkraft": "l-rot",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5e",
+      "fach": "f-ku",
+      "lehrkraft": "l-zah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6a",
+      "fach": "f-ku",
+      "lehrkraft": "l-bau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6b",
+      "fach": "f-ku",
+      "lehrkraft": "l-bue",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6c",
+      "fach": "f-ku",
+      "lehrkraft": "l-bue",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6d",
+      "fach": "f-ku",
+      "lehrkraft": "l-con",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6e",
+      "fach": "f-ku",
+      "lehrkraft": "l-pie",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7a",
+      "fach": "f-ph",
+      "lehrkraft": "l-qua",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7a",
+      "fach": "f-ku",
+      "lehrkraft": "l-zel",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7b",
+      "fach": "f-ph",
+      "lehrkraft": "l-nol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7b",
+      "fach": "f-ku",
+      "lehrkraft": "l-rot",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7c",
+      "fach": "f-ph",
+      "lehrkraft": "l-die",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7c",
+      "fach": "f-ku",
+      "lehrkraft": "l-zah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7d",
+      "fach": "f-ph",
+      "lehrkraft": "l-ste",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7d",
+      "fach": "f-ku",
+      "lehrkraft": "l-cra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7e",
+      "fach": "f-ph",
+      "lehrkraft": "l-qua",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7e",
+      "fach": "f-ku",
+      "lehrkraft": "l-bau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8a",
+      "fach": "f-ph",
+      "lehrkraft": "l-nol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8b",
+      "fach": "f-ph",
+      "lehrkraft": "l-die",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8c",
+      "fach": "f-ph",
+      "lehrkraft": "l-sau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8d",
+      "fach": "f-ph",
+      "lehrkraft": "l-die",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8e",
+      "fach": "f-ph",
+      "lehrkraft": "l-ste",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9a",
+      "fach": "f-ph",
+      "lehrkraft": "l-qua",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9a",
+      "fach": "f-ku",
+      "lehrkraft": "l-con",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9b",
+      "fach": "f-ph",
+      "lehrkraft": "l-nol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9b",
+      "fach": "f-ku",
+      "lehrkraft": "l-pie",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9c",
+      "fach": "f-ph",
+      "lehrkraft": "l-gra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9c",
+      "fach": "f-ku",
+      "lehrkraft": "l-zel",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9d",
+      "fach": "f-ph",
+      "lehrkraft": "l-sau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9d",
+      "fach": "f-ku",
+      "lehrkraft": "l-rot",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9e",
+      "fach": "f-ph",
+      "lehrkraft": "l-ste",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9e",
+      "fach": "f-ku",
+      "lehrkraft": "l-zah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8a",
+      "fach": "f-ku",
+      "lehrkraft": "l-cra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8b",
+      "fach": "f-ku",
+      "lehrkraft": "l-bau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8c",
+      "fach": "f-ku",
+      "lehrkraft": "l-cra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8d",
+      "fach": "f-ku",
+      "lehrkraft": "l-bue",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8e",
+      "fach": "f-ku",
+      "lehrkraft": "l-con",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5a",
+      "fach": "f-mu",
+      "lehrkraft": "l-lin",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5b",
+      "fach": "f-mu",
+      "lehrkraft": "l-voi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5c",
+      "fach": "f-mu",
+      "lehrkraft": "l-tew",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5d",
+      "fach": "f-mu",
+      "lehrkraft": "l-vol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5e",
+      "fach": "f-mu",
+      "lehrkraft": "l-ort",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6a",
+      "fach": "f-mu",
+      "lehrkraft": "l-lin",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6b",
+      "fach": "f-mu",
+      "lehrkraft": "l-voi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6c",
+      "fach": "f-mu",
+      "lehrkraft": "l-chr",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6d",
+      "fach": "f-mu",
+      "lehrkraft": "l-tew",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6e",
+      "fach": "f-mu",
+      "lehrkraft": "l-vol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8a",
+      "fach": "f-mu",
+      "lehrkraft": "l-ort",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8b",
+      "fach": "f-mu",
+      "lehrkraft": "l-lin",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8c",
+      "fach": "f-mu",
+      "lehrkraft": "l-sau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8d",
+      "fach": "f-mu",
+      "lehrkraft": "l-voi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8e",
+      "fach": "f-mu",
+      "lehrkraft": "l-chr",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10a",
+      "fach": "f-mu",
+      "lehrkraft": "l-tew",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10b",
+      "fach": "f-mu",
+      "lehrkraft": "l-vol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10c",
+      "fach": "f-mu",
+      "lehrkraft": "l-voi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10d",
+      "fach": "f-mu",
+      "lehrkraft": "l-ort",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10e",
+      "fach": "f-mu",
+      "lehrkraft": "l-sau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7a",
+      "fach": "f-mu",
+      "lehrkraft": "l-lin",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7b",
+      "fach": "f-mu",
+      "lehrkraft": "l-tew",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7c",
+      "fach": "f-mu",
+      "lehrkraft": "l-vol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7d",
+      "fach": "f-mu",
+      "lehrkraft": "l-ort",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7e",
+      "fach": "f-mu",
+      "lehrkraft": "l-lin",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9a",
+      "fach": "f-mu",
+      "lehrkraft": "l-tew",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9b",
+      "fach": "f-mu",
+      "lehrkraft": "l-vol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9c",
+      "fach": "f-mu",
+      "lehrkraft": "l-chr",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9d",
+      "fach": "f-mu",
+      "lehrkraft": "l-sau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9e",
+      "fach": "f-mu",
+      "lehrkraft": "l-ort",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10a",
+      "fach": "f-bi",
+      "lehrkraft": "l-nol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10a",
+      "fach": "f-ch",
+      "lehrkraft": "l-tew",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10a",
+      "fach": "f-re",
+      "lehrkraft": "l-sei",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10b",
+      "fach": "f-bi",
+      "lehrkraft": "l-lor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10b",
+      "fach": "f-ch",
+      "lehrkraft": "l-bue",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10b",
+      "fach": "f-re",
+      "lehrkraft": "l-eng",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10c",
+      "fach": "f-bi",
+      "lehrkraft": "l-ott",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10c",
+      "fach": "f-ch",
+      "lehrkraft": "l-uhl",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10c",
+      "fach": "f-re",
+      "lehrkraft": "l-chr",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10d",
+      "fach": "f-bi",
+      "lehrkraft": "l-yil",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10d",
+      "fach": "f-ch",
+      "lehrkraft": "l-moh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10d",
+      "fach": "f-re",
+      "lehrkraft": "l-poh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10e",
+      "fach": "f-bi",
+      "lehrkraft": "l-sei",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10e",
+      "fach": "f-ch",
+      "lehrkraft": "l-rot",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10e",
+      "fach": "f-re",
+      "lehrkraft": "l-sau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5a",
+      "fach": "f-bi",
+      "lehrkraft": "l-ott",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5a",
+      "fach": "f-ek",
+      "lehrkraft": "l-zie",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5a",
+      "fach": "f-re",
+      "lehrkraft": "l-wen",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5b",
+      "fach": "f-bi",
+      "lehrkraft": "l-lor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5b",
+      "fach": "f-ek",
+      "lehrkraft": "l-lor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5b",
+      "fach": "f-re",
+      "lehrkraft": "l-poh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5c",
+      "fach": "f-bi",
+      "lehrkraft": "l-eng",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5c",
+      "fach": "f-ek",
+      "lehrkraft": "l-alb",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5c",
+      "fach": "f-re",
+      "lehrkraft": "l-eng",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5d",
+      "fach": "f-bi",
+      "lehrkraft": "l-yil",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5d",
+      "fach": "f-ek",
+      "lehrkraft": "l-yil",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5d",
+      "fach": "f-re",
+      "lehrkraft": "l-wen",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5e",
+      "fach": "f-bi",
+      "lehrkraft": "l-sei",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5e",
+      "fach": "f-ek",
+      "lehrkraft": "l-zie",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5e",
+      "fach": "f-re",
+      "lehrkraft": "l-sei",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6a",
+      "fach": "f-bi",
+      "lehrkraft": "l-ott",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6a",
+      "fach": "f-re",
+      "lehrkraft": "l-poh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6b",
+      "fach": "f-bi",
+      "lehrkraft": "l-eng",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6b",
+      "fach": "f-re",
+      "lehrkraft": "l-eng",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6c",
+      "fach": "f-bi",
+      "lehrkraft": "l-ott",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6c",
+      "fach": "f-re",
+      "lehrkraft": "l-chr",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6d",
+      "fach": "f-bi",
+      "lehrkraft": "l-con",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6d",
+      "fach": "f-re",
+      "lehrkraft": "l-wen",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6e",
+      "fach": "f-bi",
+      "lehrkraft": "l-sei",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6e",
+      "fach": "f-re",
+      "lehrkraft": "l-sei",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7a",
+      "fach": "f-bi",
+      "lehrkraft": "l-lor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7a",
+      "fach": "f-ch",
+      "lehrkraft": "l-qua",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7a",
+      "fach": "f-ek",
+      "lehrkraft": "l-lor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7a",
+      "fach": "f-re",
+      "lehrkraft": "l-reh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7b",
+      "fach": "f-bi",
+      "lehrkraft": "l-nol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7b",
+      "fach": "f-ch",
+      "lehrkraft": "l-nol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7b",
+      "fach": "f-ek",
+      "lehrkraft": "l-alb",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7b",
+      "fach": "f-re",
+      "lehrkraft": "l-gae",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7c",
+      "fach": "f-bi",
+      "lehrkraft": "l-uhl",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7c",
+      "fach": "f-ch",
+      "lehrkraft": "l-uhl",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7c",
+      "fach": "f-ek",
+      "lehrkraft": "l-die",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7c",
+      "fach": "f-re",
+      "lehrkraft": "l-poh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7d",
+      "fach": "f-bi",
+      "lehrkraft": "l-cra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7d",
+      "fach": "f-ch",
+      "lehrkraft": "l-raa",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7d",
+      "fach": "f-ek",
+      "lehrkraft": "l-alb",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7d",
+      "fach": "f-re",
+      "lehrkraft": "l-wen",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7e",
+      "fach": "f-bi",
+      "lehrkraft": "l-yil",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7e",
+      "fach": "f-ch",
+      "lehrkraft": "l-qua",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7e",
+      "fach": "f-ek",
+      "lehrkraft": "l-yil",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7e",
+      "fach": "f-re",
+      "lehrkraft": "l-reh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8a",
+      "fach": "f-bi",
+      "lehrkraft": "l-eng",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8a",
+      "fach": "f-ch",
+      "lehrkraft": "l-nol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8a",
+      "fach": "f-ek",
+      "lehrkraft": "l-klu",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8a",
+      "fach": "f-re",
+      "lehrkraft": "l-eng",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8b",
+      "fach": "f-bi",
+      "lehrkraft": "l-ott",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8b",
+      "fach": "f-ch",
+      "lehrkraft": "l-gae",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8b",
+      "fach": "f-ek",
+      "lehrkraft": "l-zie",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8b",
+      "fach": "f-re",
+      "lehrkraft": "l-gae",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8c",
+      "fach": "f-bi",
+      "lehrkraft": "l-cra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8c",
+      "fach": "f-ch",
+      "lehrkraft": "l-gra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8c",
+      "fach": "f-ek",
+      "lehrkraft": "l-hah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8c",
+      "fach": "f-re",
+      "lehrkraft": "l-sau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8d",
+      "fach": "f-bi",
+      "lehrkraft": "l-ott",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8d",
+      "fach": "f-ch",
+      "lehrkraft": "l-raa",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8d",
+      "fach": "f-ek",
+      "lehrkraft": "l-die",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8d",
+      "fach": "f-re",
+      "lehrkraft": "l-poh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8e",
+      "fach": "f-bi",
+      "lehrkraft": "l-con",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8e",
+      "fach": "f-ch",
+      "lehrkraft": "l-moh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8e",
+      "fach": "f-ek",
+      "lehrkraft": "l-alb",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8e",
+      "fach": "f-re",
+      "lehrkraft": "l-chr",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9a",
+      "fach": "f-bi",
+      "lehrkraft": "l-ott",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9a",
+      "fach": "f-ch",
+      "lehrkraft": "l-tew",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9a",
+      "fach": "f-ek",
+      "lehrkraft": "l-ott",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9a",
+      "fach": "f-re",
+      "lehrkraft": "l-eng",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9b",
+      "fach": "f-bi",
+      "lehrkraft": "l-nol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9b",
+      "fach": "f-ch",
+      "lehrkraft": "l-nol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9b",
+      "fach": "f-ek",
+      "lehrkraft": "l-klu",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9b",
+      "fach": "f-re",
+      "lehrkraft": "l-pie",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9c",
+      "fach": "f-bi",
+      "lehrkraft": "l-bus",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9c",
+      "fach": "f-ch",
+      "lehrkraft": "l-gra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9c",
       "fach": "f-ek",
       "lehrkraft": "l-zel",
       "rolle": "haupt"
     },
     {
+      "klasse": "k-9c",
+      "fach": "f-re",
+      "lehrkraft": "l-bus",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9d",
+      "fach": "f-bi",
+      "lehrkraft": "l-lor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9d",
+      "fach": "f-ch",
+      "lehrkraft": "l-rot",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9d",
+      "fach": "f-ek",
+      "lehrkraft": "l-lor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9d",
+      "fach": "f-re",
+      "lehrkraft": "l-wen",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9e",
+      "fach": "f-bi",
+      "lehrkraft": "l-uhl",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9e",
+      "fach": "f-ch",
+      "lehrkraft": "l-moh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9e",
+      "fach": "f-ek",
+      "lehrkraft": "l-hah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9e",
+      "fach": "f-re",
+      "lehrkraft": "l-reh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10a",
+      "fach": "f-ek",
+      "lehrkraft": "l-alb",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10b",
+      "fach": "f-ek",
+      "lehrkraft": "l-lor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10c",
+      "fach": "f-ek",
+      "lehrkraft": "l-zel",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10d",
+      "fach": "f-ek",
+      "lehrkraft": "l-zel",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10e",
+      "fach": "f-ek",
+      "lehrkraft": "l-klu",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6a",
+      "fach": "f-ek",
+      "lehrkraft": "l-poh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6b",
+      "fach": "f-ek",
+      "lehrkraft": "l-alb",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6c",
+      "fach": "f-ek",
+      "lehrkraft": "l-ott",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6d",
+      "fach": "f-ek",
+      "lehrkraft": "l-hah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6e",
+      "fach": "f-ek",
+      "lehrkraft": "l-klu",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10a",
+      "fach": "f-ge",
+      "lehrkraft": "l-thi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10b",
+      "fach": "f-ge",
+      "lehrkraft": "l-jah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10c",
+      "fach": "f-ge",
+      "lehrkraft": "l-voi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10d",
+      "fach": "f-ge",
+      "lehrkraft": "l-zel",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10e",
+      "fach": "f-ge",
+      "lehrkraft": "l-klu",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6a",
+      "fach": "f-ge",
+      "lehrkraft": "l-raa",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6b",
+      "fach": "f-ge",
+      "lehrkraft": "l-voi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6c",
+      "fach": "f-ge",
+      "lehrkraft": "l-thi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6d",
+      "fach": "f-ge",
+      "lehrkraft": "l-jah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6e",
+      "fach": "f-ge",
+      "lehrkraft": "l-sei",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7a",
+      "fach": "f-ge",
+      "lehrkraft": "l-zel",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7b",
+      "fach": "f-ge",
+      "lehrkraft": "l-thi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7c",
+      "fach": "f-ge",
+      "lehrkraft": "l-zah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7d",
+      "fach": "f-ge",
+      "lehrkraft": "l-raa",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7e",
+      "fach": "f-ge",
+      "lehrkraft": "l-teu",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8a",
+      "fach": "f-ge",
+      "lehrkraft": "l-klu",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8b",
+      "fach": "f-ge",
+      "lehrkraft": "l-jah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8c",
+      "fach": "f-ge",
+      "lehrkraft": "l-thi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8d",
+      "fach": "f-ge",
+      "lehrkraft": "l-voi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8e",
+      "fach": "f-ge",
+      "lehrkraft": "l-jah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9a",
+      "fach": "f-ge",
+      "lehrkraft": "l-teu",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9b",
+      "fach": "f-ge",
+      "lehrkraft": "l-klu",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9c",
+      "fach": "f-ge",
+      "lehrkraft": "l-zel",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9d",
+      "fach": "f-ge",
+      "lehrkraft": "l-thi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9e",
+      "fach": "f-ge",
+      "lehrkraft": "l-zah",
+      "rolle": "haupt"
+    },
+    {
       "klasse": "k-5a",
-      "fach": "f-en",
-      "lehrkraft": "l-mer",
+      "fach": "f-ge",
+      "lehrkraft": "l-zah",
       "rolle": "haupt"
     },
     {
       "klasse": "k-5b",
-      "fach": "f-en",
-      "lehrkraft": "l-die",
+      "fach": "f-ge",
+      "lehrkraft": "l-voi",
       "rolle": "haupt"
     },
     {
       "klasse": "k-5c",
-      "fach": "f-en",
-      "lehrkraft": "l-gae",
+      "fach": "f-ge",
+      "lehrkraft": "l-jah",
       "rolle": "haupt"
     },
     {
       "klasse": "k-5d",
-      "fach": "f-en",
+      "fach": "f-ge",
+      "lehrkraft": "l-teu",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5e",
+      "fach": "f-ge",
+      "lehrkraft": "l-sei",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5a",
+      "fach": "f-sp",
+      "lehrkraft": "l-lin",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5b",
+      "fach": "f-sp",
+      "lehrkraft": "l-voi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5c",
+      "fach": "f-sp",
+      "lehrkraft": "l-alb",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5d",
+      "fach": "f-sp",
+      "lehrkraft": "l-mar",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5e",
+      "fach": "f-sp",
+      "lehrkraft": "l-jae",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6a",
+      "fach": "f-sp",
+      "lehrkraft": "l-lin",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6b",
+      "fach": "f-sp",
+      "lehrkraft": "l-alb",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6c",
+      "fach": "f-sp",
+      "lehrkraft": "l-mar",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6d",
+      "fach": "f-sp",
+      "lehrkraft": "l-jah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6e",
+      "fach": "f-sp",
+      "lehrkraft": "l-vol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7a",
+      "fach": "f-sp",
+      "lehrkraft": "l-lin",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7b",
+      "fach": "f-sp",
+      "lehrkraft": "l-alb",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7c",
+      "fach": "f-sp",
+      "lehrkraft": "l-vol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7d",
+      "fach": "f-sp",
+      "lehrkraft": "l-ort",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7e",
+      "fach": "f-sp",
+      "lehrkraft": "l-lin",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8a",
+      "fach": "f-sp",
+      "lehrkraft": "l-ort",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8b",
+      "fach": "f-sp",
+      "lehrkraft": "l-zie",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8c",
+      "fach": "f-sp",
+      "lehrkraft": "l-jae",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8d",
+      "fach": "f-sp",
+      "lehrkraft": "l-voi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8e",
+      "fach": "f-sp",
+      "lehrkraft": "l-jah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10a",
+      "fach": "f-sp",
+      "lehrkraft": "l-alb",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10b",
+      "fach": "f-sp",
+      "lehrkraft": "l-vol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10c",
+      "fach": "f-sp",
+      "lehrkraft": "l-voi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10d",
+      "fach": "f-sp",
+      "lehrkraft": "l-ste",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10e",
+      "fach": "f-sp",
+      "lehrkraft": "l-klu",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9a",
+      "fach": "f-sp",
+      "lehrkraft": "l-pet",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9b",
+      "fach": "f-sp",
+      "lehrkraft": "l-vol",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9c",
+      "fach": "f-sp",
+      "lehrkraft": "l-mar",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9d",
+      "fach": "f-sp",
+      "lehrkraft": "l-jae",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9e",
+      "fach": "f-sp",
+      "lehrkraft": "l-ste",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10a",
+      "fach": "f-ma",
+      "lehrkraft": "l-thi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10b",
+      "fach": "f-ma",
+      "lehrkraft": "l-kra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10c",
+      "fach": "f-ma",
+      "lehrkraft": "l-web",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10d",
+      "fach": "f-ma",
+      "lehrkraft": "l-dor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10e",
+      "fach": "f-ma",
+      "lehrkraft": "l-now",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5a",
+      "fach": "f-ma",
+      "lehrkraft": "l-kra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5b",
+      "fach": "f-ma",
+      "lehrkraft": "l-bau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5c",
+      "fach": "f-ma",
+      "lehrkraft": "l-web",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5d",
+      "fach": "f-ma",
       "lehrkraft": "l-abe",
       "rolle": "haupt"
     },
     {
       "klasse": "k-5e",
+      "fach": "f-ma",
+      "lehrkraft": "l-now",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6a",
+      "fach": "f-ma",
+      "lehrkraft": "l-bau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6b",
+      "fach": "f-ma",
+      "lehrkraft": "l-arn",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6c",
+      "fach": "f-ma",
+      "lehrkraft": "l-thi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6d",
+      "fach": "f-ma",
+      "lehrkraft": "l-abe",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6e",
+      "fach": "f-ma",
+      "lehrkraft": "l-hei",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7a",
+      "fach": "f-ma",
+      "lehrkraft": "l-dor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7b",
+      "fach": "f-ma",
+      "lehrkraft": "l-thi",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7c",
+      "fach": "f-ma",
+      "lehrkraft": "l-dor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7d",
+      "fach": "f-ma",
+      "lehrkraft": "l-now",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7e",
+      "fach": "f-ma",
+      "lehrkraft": "l-bau",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8a",
+      "fach": "f-ma",
+      "lehrkraft": "l-arn",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8b",
+      "fach": "f-ma",
+      "lehrkraft": "l-now",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8c",
+      "fach": "f-ma",
+      "lehrkraft": "l-osw",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8d",
+      "fach": "f-ma",
+      "lehrkraft": "l-hei",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8e",
+      "fach": "f-ma",
+      "lehrkraft": "l-con",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9a",
+      "fach": "f-ma",
+      "lehrkraft": "l-teu",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9b",
+      "fach": "f-ma",
+      "lehrkraft": "l-arn",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9c",
+      "fach": "f-ma",
+      "lehrkraft": "l-hei",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9d",
+      "fach": "f-ma",
+      "lehrkraft": "l-bra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9e",
+      "fach": "f-ma",
+      "lehrkraft": "l-zah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5a",
+      "fach": "f-de",
+      "lehrkraft": "l-kra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5a",
       "fach": "f-en",
+      "lehrkraft": "l-kra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5b",
+      "fach": "f-de",
+      "lehrkraft": "l-imh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5b",
+      "fach": "f-en",
+      "lehrkraft": "l-imh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5c",
+      "fach": "f-de",
+      "lehrkraft": "l-web",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5c",
+      "fach": "f-en",
+      "lehrkraft": "l-tew",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5d",
+      "fach": "f-de",
+      "lehrkraft": "l-mar",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5d",
+      "fach": "f-en",
+      "lehrkraft": "l-mar",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5e",
+      "fach": "f-de",
+      "lehrkraft": "l-jae",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-5e",
+      "fach": "f-en",
+      "lehrkraft": "l-ort",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6a",
+      "fach": "f-de",
+      "lehrkraft": "l-poh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6b",
+      "fach": "f-de",
+      "lehrkraft": "l-bue",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6c",
+      "fach": "f-de",
+      "lehrkraft": "l-bue",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6d",
+      "fach": "f-de",
+      "lehrkraft": "l-abe",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-6e",
+      "fach": "f-de",
+      "lehrkraft": "l-hei",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10a",
+      "fach": "f-de",
+      "lehrkraft": "l-pet",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10b",
+      "fach": "f-de",
+      "lehrkraft": "l-kra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10c",
+      "fach": "f-de",
+      "lehrkraft": "l-web",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10d",
+      "fach": "f-de",
+      "lehrkraft": "l-moh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-10e",
+      "fach": "f-de",
       "lehrkraft": "l-bra",
       "rolle": "haupt"
     },
     {
       "klasse": "k-6a",
       "fach": "f-en",
-      "lehrkraft": "l-voi",
+      "lehrkraft": "l-osw",
       "rolle": "haupt"
     },
     {
       "klasse": "k-6b",
       "fach": "f-en",
-      "lehrkraft": "l-zel",
+      "lehrkraft": "l-imh",
       "rolle": "haupt"
     },
     {
       "klasse": "k-6c",
       "fach": "f-en",
-      "lehrkraft": "l-osw",
+      "lehrkraft": "l-mar",
       "rolle": "haupt"
     },
     {
       "klasse": "k-6d",
       "fach": "f-en",
-      "lehrkraft": "l-imh",
+      "lehrkraft": "l-wen",
       "rolle": "haupt"
     },
     {
       "klasse": "k-6e",
       "fach": "f-en",
-      "lehrkraft": "l-osw",
+      "lehrkraft": "l-hei",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7a",
+      "fach": "f-de",
+      "lehrkraft": "l-hah",
       "rolle": "haupt"
     },
     {
       "klasse": "k-7a",
       "fach": "f-en",
-      "lehrkraft": "l-zah",
+      "lehrkraft": "l-reh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7b",
+      "fach": "f-de",
+      "lehrkraft": "l-gae",
       "rolle": "haupt"
     },
     {
       "klasse": "k-7b",
       "fach": "f-en",
-      "lehrkraft": "l-thi",
+      "lehrkraft": "l-rot",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7c",
+      "fach": "f-de",
+      "lehrkraft": "l-poh",
       "rolle": "haupt"
     },
     {
       "klasse": "k-7c",
       "fach": "f-en",
-      "lehrkraft": "l-imh",
+      "lehrkraft": "l-dor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7d",
+      "fach": "f-de",
+      "lehrkraft": "l-wen",
       "rolle": "haupt"
     },
     {
       "klasse": "k-7d",
       "fach": "f-en",
-      "lehrkraft": "l-zah",
+      "lehrkraft": "l-cra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-7e",
+      "fach": "f-de",
+      "lehrkraft": "l-fin",
       "rolle": "haupt"
     },
     {
       "klasse": "k-7e",
       "fach": "f-en",
-      "lehrkraft": "l-hei",
+      "lehrkraft": "l-fin",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8a",
+      "fach": "f-de",
+      "lehrkraft": "l-arn",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8b",
+      "fach": "f-de",
+      "lehrkraft": "l-gae",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8c",
+      "fach": "f-de",
+      "lehrkraft": "l-jae",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8d",
+      "fach": "f-de",
+      "lehrkraft": "l-pet",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-8e",
+      "fach": "f-de",
+      "lehrkraft": "l-moh",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9a",
+      "fach": "f-de",
+      "lehrkraft": "l-pet",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9b",
+      "fach": "f-de",
+      "lehrkraft": "l-arn",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9c",
+      "fach": "f-de",
+      "lehrkraft": "l-mer",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9d",
+      "fach": "f-de",
+      "lehrkraft": "l-wen",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-9e",
+      "fach": "f-de",
+      "lehrkraft": "l-hah",
       "rolle": "haupt"
     },
     {
       "klasse": "k-10a",
       "fach": "f-en",
-      "lehrkraft": "l-voi",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10b",
-      "fach": "f-en",
-      "lehrkraft": "l-mer",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10c",
-      "fach": "f-en",
-      "lehrkraft": "l-ste",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10d",
-      "fach": "f-en",
-      "lehrkraft": "l-mer",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10e",
-      "fach": "f-en",
-      "lehrkraft": "l-osw",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8a",
-      "fach": "f-en",
-      "lehrkraft": "l-imh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8b",
-      "fach": "f-en",
-      "lehrkraft": "l-osw",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8c",
-      "fach": "f-en",
-      "lehrkraft": "l-imh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8d",
-      "fach": "f-en",
-      "lehrkraft": "l-thi",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8e",
-      "fach": "f-en",
-      "lehrkraft": "l-zah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9a",
-      "fach": "f-en",
-      "lehrkraft": "l-isk",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9b",
-      "fach": "f-en",
-      "lehrkraft": "l-thi",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9c",
-      "fach": "f-en",
-      "lehrkraft": "l-hei",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9d",
-      "fach": "f-en",
-      "lehrkraft": "l-fin",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9e",
-      "fach": "f-en",
-      "lehrkraft": "l-mer",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10a",
-      "fach": "f-ma",
-      "lehrkraft": "l-poh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10b",
-      "fach": "f-ma",
-      "lehrkraft": "l-ort",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10c",
-      "fach": "f-ma",
-      "lehrkraft": "l-con",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10d",
-      "fach": "f-ma",
-      "lehrkraft": "l-moh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10e",
-      "fach": "f-ma",
-      "lehrkraft": "l-osw",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5a",
-      "fach": "f-ma",
-      "lehrkraft": "l-mer",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5b",
-      "fach": "f-ma",
-      "lehrkraft": "l-con",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5c",
-      "fach": "f-ma",
-      "lehrkraft": "l-ort",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5d",
-      "fach": "f-ma",
-      "lehrkraft": "l-arn",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5e",
-      "fach": "f-ma",
-      "lehrkraft": "l-ort",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6a",
-      "fach": "f-ma",
-      "lehrkraft": "l-lin",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6b",
-      "fach": "f-ma",
-      "lehrkraft": "l-poh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6c",
-      "fach": "f-ma",
-      "lehrkraft": "l-qua",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6d",
-      "fach": "f-ma",
-      "lehrkraft": "l-imh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6e",
-      "fach": "f-ma",
-      "lehrkraft": "l-osw",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7a",
-      "fach": "f-ma",
-      "lehrkraft": "l-poh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7b",
-      "fach": "f-ma",
-      "lehrkraft": "l-qua",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7c",
-      "fach": "f-ma",
-      "lehrkraft": "l-moh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7d",
-      "fach": "f-ma",
-      "lehrkraft": "l-kra",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7e",
-      "fach": "f-ma",
-      "lehrkraft": "l-arn",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8a",
-      "fach": "f-ma",
-      "lehrkraft": "l-kra",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8b",
-      "fach": "f-ma",
-      "lehrkraft": "l-isk",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8c",
-      "fach": "f-ma",
-      "lehrkraft": "l-imh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8d",
-      "fach": "f-ma",
-      "lehrkraft": "l-ulr",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-8e",
-      "fach": "f-ma",
-      "lehrkraft": "l-arn",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9a",
-      "fach": "f-ma",
-      "lehrkraft": "l-isk",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9b",
-      "fach": "f-ma",
-      "lehrkraft": "l-zie",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9c",
-      "fach": "f-ma",
-      "lehrkraft": "l-hei",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9d",
-      "fach": "f-ma",
-      "lehrkraft": "l-fin",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-9e",
-      "fach": "f-ma",
       "lehrkraft": "l-tew",
       "rolle": "haupt"
     },
     {
-      "klasse": "k-5a",
-      "fach": "f-de",
-      "lehrkraft": "l-mer",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5b",
-      "fach": "f-de",
-      "lehrkraft": "l-kra",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5c",
-      "fach": "f-de",
-      "lehrkraft": "l-fre",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5d",
-      "fach": "f-de",
-      "lehrkraft": "l-jah",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-5e",
-      "fach": "f-de",
-      "lehrkraft": "l-wen",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6a",
-      "fach": "f-de",
-      "lehrkraft": "l-web",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6b",
-      "fach": "f-de",
-      "lehrkraft": "l-pet",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6c",
-      "fach": "f-de",
-      "lehrkraft": "l-yil",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6d",
-      "fach": "f-de",
-      "lehrkraft": "l-teu",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-6e",
-      "fach": "f-de",
-      "lehrkraft": "l-pie",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-10a",
-      "fach": "f-de",
-      "lehrkraft": "l-fre",
-      "rolle": "haupt"
-    },
-    {
       "klasse": "k-10b",
-      "fach": "f-de",
-      "lehrkraft": "l-jah",
+      "fach": "f-en",
+      "lehrkraft": "l-die",
       "rolle": "haupt"
     },
     {
       "klasse": "k-10c",
-      "fach": "f-de",
-      "lehrkraft": "l-con",
+      "fach": "f-en",
+      "lehrkraft": "l-uhl",
       "rolle": "haupt"
     },
     {
       "klasse": "k-10d",
-      "fach": "f-de",
-      "lehrkraft": "l-arn",
+      "fach": "f-en",
+      "lehrkraft": "l-dor",
       "rolle": "haupt"
     },
     {
       "klasse": "k-10e",
-      "fach": "f-de",
-      "lehrkraft": "l-wen",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7a",
-      "fach": "f-de",
-      "lehrkraft": "l-reh",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7b",
-      "fach": "f-de",
-      "lehrkraft": "l-kra",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7c",
-      "fach": "f-de",
-      "lehrkraft": "l-web",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7d",
-      "fach": "f-de",
-      "lehrkraft": "l-pie",
-      "rolle": "haupt"
-    },
-    {
-      "klasse": "k-7e",
-      "fach": "f-de",
-      "lehrkraft": "l-arn",
+      "fach": "f-en",
+      "lehrkraft": "l-rot",
       "rolle": "haupt"
     },
     {
       "klasse": "k-8a",
-      "fach": "f-de",
-      "lehrkraft": "l-kra",
+      "fach": "f-en",
+      "lehrkraft": "l-cra",
       "rolle": "haupt"
     },
     {
       "klasse": "k-8b",
-      "fach": "f-de",
-      "lehrkraft": "l-bus",
+      "fach": "f-en",
+      "lehrkraft": "l-die",
       "rolle": "haupt"
     },
     {
       "klasse": "k-8c",
-      "fach": "f-de",
-      "lehrkraft": "l-hei",
+      "fach": "f-en",
+      "lehrkraft": "l-osw",
       "rolle": "haupt"
     },
     {
       "klasse": "k-8d",
-      "fach": "f-de",
-      "lehrkraft": "l-web",
+      "fach": "f-en",
+      "lehrkraft": "l-die",
       "rolle": "haupt"
     },
     {
       "klasse": "k-8e",
-      "fach": "f-de",
-      "lehrkraft": "l-pet",
+      "fach": "f-en",
+      "lehrkraft": "l-isk",
       "rolle": "haupt"
     },
     {
       "klasse": "k-9a",
-      "fach": "f-de",
-      "lehrkraft": "l-wen",
+      "fach": "f-en",
+      "lehrkraft": "l-pet",
       "rolle": "haupt"
     },
     {
       "klasse": "k-9b",
-      "fach": "f-de",
-      "lehrkraft": "l-yil",
+      "fach": "f-en",
+      "lehrkraft": "l-imh",
       "rolle": "haupt"
     },
     {
       "klasse": "k-9c",
-      "fach": "f-de",
-      "lehrkraft": "l-reh",
+      "fach": "f-en",
+      "lehrkraft": "l-mer",
       "rolle": "haupt"
     },
     {
       "klasse": "k-9d",
-      "fach": "f-de",
-      "lehrkraft": "l-fin",
+      "fach": "f-en",
+      "lehrkraft": "l-rot",
       "rolle": "haupt"
     },
     {
       "klasse": "k-9e",
-      "fach": "f-de",
-      "lehrkraft": "l-teu",
+      "fach": "f-en",
+      "lehrkraft": "l-reh",
       "rolle": "haupt"
     }
   ],

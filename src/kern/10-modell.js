@@ -19,8 +19,14 @@ const Modell = (() => {
     AUFSICHT: 'aufsicht',
   });
 
-  /** Raumtypen (§2). */
-  const RAUMTYPEN = Object.freeze(['klassenraum', 'fachraum', 'turnhalle']);
+  /** Raumtypen (§2). Fachräume tragen zusätzlich einen `fachraumtyp`. */
+  const RAUMTYPEN = Object.freeze(['klassenraum', 'fachraum', 'turnhalle', 'schwimmhalle']);
+
+  /** Raumtypen, die ein Fach direkt (ohne Fachraumtyp) verlangen kann. */
+  const SONDERRAUMTYPEN = Object.freeze(['turnhalle', 'schwimmhalle']);
+
+  /** Wochentage, die das Zeitraster enthalten darf (§2: Mo–Fr). */
+  const TAGE = Object.freeze(['Mo', 'Di', 'Mi', 'Do', 'Fr']);
 
   /** Rollen einer Zuordnung (§2). */
   const ROLLEN = Object.freeze(['haupt', 'zweit']);
@@ -105,6 +111,13 @@ const Modell = (() => {
     };
   }
 
+  /** true, wenn keine Stammdaten und kein Plan vorhanden sind (dann ist Überschreiben unkritisch). */
+  function istLeer(zustand) {
+    const p = zustand.plan || {};
+    return ['faecher', 'lehrkraefte', 'raeume', 'klassen', 'zuordnungen'].every((k) => !(zustand[k] || []).length)
+      && ['regelplan', 'aufsichten', 'vertretungen', 'aufsichtsVertretungen'].every((k) => !(p[k] || []).length);
+  }
+
   /** Vertretungsreserve einer Lehrkraft in Stunden (aufgerundet, Annahme 11). */
   function vertretungsreserve(sollStunden, prozent) {
     const stunden = Math.ceil((sollStunden * prozent) / 100 - 1e-9);
@@ -112,7 +125,7 @@ const Modell = (() => {
   }
 
   return {
-    SCHEMA_VERSION, STATUS, RAUMTYPEN, ROLLEN, STANDARD_GEWICHTE,
-    standardEinstellungen, standardPausen, standardZeitraster, leererZustand, vertretungsreserve,
+    SCHEMA_VERSION, STATUS, RAUMTYPEN, SONDERRAUMTYPEN, TAGE, ROLLEN, STANDARD_GEWICHTE,
+    standardEinstellungen, standardPausen, standardZeitraster, leererZustand, istLeer, vertretungsreserve,
   };
 })();

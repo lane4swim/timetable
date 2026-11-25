@@ -138,13 +138,15 @@ test('ueberhang: mehr Lehrkräfte als Klassen, deutliche Überkapazität, feste 
   }
 });
 
-test('gross: 30 Klassen, 60 Lehrkräfte, Fachräume und Turnhallen vorhanden, alles zugeordnet', () => {
+test('gross: 30 Klassen, 60 Lehrkräfte, Fachräume, Turn- und Schwimmhalle vorhanden, alles zugeordnet', () => {
   const d = lade('gross');
   assert.equal(d.klassen.length, 30);
   assert.equal(d.lehrkraefte.length, 60);
   assert.equal(d.zeitraster.stunden.length, 8);
   assert.ok(d.raeume.filter((r) => r.typ === 'turnhalle').length >= 2);
   assert.ok(d.raeume.some((r) => r.fachraumtyp === 'nawi'));
+  assert.ok(d.raeume.some((r) => r.typ === 'schwimmhalle'));
+  assert.ok(d.faecher.some((f) => f.raumtyp === 'schwimmhalle'));
   const haupt = d.zuordnungen.filter((z) => z.rolle === 'haupt').length;
   assert.equal(haupt, d.klassen.reduce((s, x) => s + x.stundentafel.length, 0));
 });

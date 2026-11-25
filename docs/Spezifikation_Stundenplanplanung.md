@@ -27,9 +27,9 @@ Alle Entitäten haben eine stabile `id` (String, vom Programm vergeben) und werd
 | --- | --- | --- |
 | Zeitraster | Tage (Mo–Fr), Stunden pro Tag (1–10), Pausen mit Aufsichtsbedarf, Doppelstundenpaare | Rahmen aller Planungen |
 | Pause | Lage (vor Stunde n), Name, Anzahl erforderlicher Aufsichten (0 = keine Aufsicht) | Aufsichtsbedarf je Tag |
-| Fach | Name, Kürzel, Fachraumtyp (optional), Blockung erlaubt (ja/nein) | Unterrichtsinhalt |
+| Fach | Name, Kürzel, benötigter Raumtyp (optional: Turnhalle, Schwimmhalle oder ein Fachraumtyp), Blockung erlaubt (ja/nein), Hauptfach (ja/nein) | Unterrichtsinhalt |
 | Lehrkraft | Name, Kürzel, Qualifikationen (Fächer + Stufenbereich), Soll-Stunden pro Woche, Mindest-/Höchstgrenze, Teilzeitfaktor, Aufsichten pro Woche (individuell), Abwesenheiten, nicht verfügbare Zeitfenster | Personalressource |
-| Raum | Name, Raumtyp (Klassenraum, Fachraum, Turnhalle), Kapazität, Sperrzeiten | Raumressource |
+| Raum | Name, Raumtyp (Klassenraum, Fachraum, Turnhalle, Schwimmhalle), Fachraumtyp (bei Fachräumen, z. B. NaWi, Musik), Kapazität, Sperrzeiten, Abwesenheiten (datumsgenau) | Raumressource |
 | Klasse | Name, Stufe, Schülerzahl, Klassenlehrkraft, Heimatraum, Stundentafel | Planungsobjekt |
 | Stundentafel | je Fach: Wochenstunden, Doppelstunde gewünscht (ja/nein) | Bedarf der Klasse |
 | Zuordnung (Fest) | Klasse, Fach, Lehrkraft, Rolle (Haupt oder Zweit) | Vorgabe: Wer unterrichtet was dauerhaft; je Klasse und Fach 1–2 Lehrkräfte |
@@ -73,7 +73,7 @@ Harte Regeln dürfen in keinem erzeugten Plan verletzt sein. Bei manueller Bearb
 | H2 | Eine Klasse hat pro Zeitslot höchstens eine Veranstaltung. Sie darf von bis zu zwei Lehrkräften gleichzeitig betreut werden (H10). |
 | H3 | Ein Raum ist pro Zeitslot höchstens einmal belegt. Ausnahme: Doppelbetreuung in einem Raum, wenn Kapazität reicht. |
 | H4 | Lehrkräfte werden nicht in gesperrten Zeitfenstern oder bei Abwesenheit eingesetzt. |
-| H5 | Räume werden nicht in Sperrzeiten genutzt; Fachräume nur für Fächer mit passendem Raumtyp. |
+| H5 | Räume werden nicht in Sperrzeiten genutzt; Fachräume, Turn- und Schwimmhallen nur für Fächer mit passendem Raumtyp, und Fächer mit Raumtyp nur in einem solchen Raum. |
 | H6 | Raumkapazität ≥ Schülerzahl (bei Aufteilung: Summe der anwesenden Schüler:innen). |
 | H7 | Wochenstunden einer Lehrkraft ≤ individuelle Höchstgrenze. Vertretungs- und Zweitbesetzungsstunden zählen mit. |
 | H8 | Reguläre Fachstunden nur durch qualifizierte Hauptlehrkräfte. Die Zweitbesetzung braucht keine Fachqualifikation. |
@@ -231,7 +231,9 @@ Das Programm speichert nichts selbst. Der gesamte Zustand liegt in einer JSON-Da
     }
   ],
   "raeume": [
-    { "id": "r-101", "name": "101", "typ": "klassenraum", "kapazitaet": 28, "nahe": ["r-102"], "gesperrt": [] }
+    { "id": "r-101", "name": "101", "typ": "klassenraum", "kapazitaet": 28, "nahe": ["r-102"], "gesperrt": [] },
+    { "id": "r-nawi1", "name": "NaWi 1", "typ": "fachraum", "fachraumtyp": "nawi", "kapazitaet": 32, "nahe": [], "gesperrt": [] },
+    { "id": "r-bad", "name": "Hallenbad", "typ": "schwimmhalle", "kapazitaet": 35, "nahe": [], "gesperrt": [ { "tag": "Mi", "stunden": [1, 2] } ] }
   ],
   "klassen": [
     {

@@ -11,7 +11,8 @@
  *   klein        4 Klassen (Grundschule, Stufe 1–2), knapp ausreichendes Personal
  *   unterdeckung 4 Klassen (Stufe 3–4), zu wenige Mathe-Lehrkräfte, knappes Aufsichtssoll
  *   ueberhang    4 Klassen, deutlich mehr Lehrkräfte als nötig, feste Zweitbesetzungen
- *   gross        30 Klassen (Sek I, Stufe 5–10, fünfzügig), 60 Lehrkräfte – Leistungstest
+ *   gross        30 Klassen (Sek I, Stufe 5–10, fünfzügig), 60 Lehrkräfte, Fachräume,
+ *                Turnhallen und Schwimmhalle – Leistungstest
  * ========================================================================== */
 import { writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
@@ -39,6 +40,7 @@ const FAECHER = {
   KU: { name: 'Kunst', raumtyp: 'kunst', blockbar: true },
   RE: { name: 'Religion/Ethik', raumtyp: null, blockbar: false },
   IF: { name: 'Informatik', raumtyp: 'informatik', blockbar: true },
+  SW: { name: 'Schwimmen', raumtyp: 'schwimmhalle', blockbar: true },
 };
 
 /** Stundentafeln je Stufe: [Kürzel, Wochenstunden, Doppelstunde gewünscht]. */
@@ -47,7 +49,7 @@ const STUNDENTAFELN = {
   2: [['DE', 6, false], ['MA', 5, false], ['SU', 3, false], ['SP', 3, false], ['MU', 2, false], ['KU', 2, true], ['RE', 2, false]],
   3: [['DE', 6, false], ['MA', 5, false], ['SU', 4, false], ['EN', 2, false], ['SP', 3, false], ['MU', 2, false], ['KU', 2, true], ['RE', 2, false]],
   4: [['DE', 6, false], ['MA', 5, false], ['SU', 4, false], ['EN', 2, false], ['SP', 3, false], ['MU', 2, false], ['KU', 2, true], ['RE', 2, false]],
-  5: [['DE', 5, false], ['MA', 4, false], ['EN', 5, false], ['BI', 2, false], ['GE', 1, false], ['EK', 2, false], ['SP', 3, true], ['MU', 2, false], ['KU', 2, true], ['RE', 2, false], ['IF', 1, false]],
+  5: [['DE', 5, false], ['MA', 4, false], ['EN', 5, false], ['BI', 2, false], ['GE', 1, false], ['EK', 2, false], ['SP', 3, true], ['MU', 2, false], ['KU', 2, true], ['RE', 2, false], ['IF', 1, false], ['SW', 2, true]],
   6: [['DE', 5, false], ['MA', 4, false], ['EN', 4, false], ['BI', 2, false], ['GE', 2, false], ['EK', 1, false], ['SP', 3, true], ['MU', 2, false], ['KU', 2, true], ['RE', 2, false], ['IF', 1, false]],
   7: [['DE', 4, false], ['MA', 4, false], ['EN', 4, false], ['BI', 2, false], ['PH', 2, true], ['CH', 2, true], ['GE', 2, false], ['EK', 2, false], ['SP', 3, true], ['MU', 1, false], ['KU', 2, true], ['RE', 2, false]],
   8: [['DE', 4, false], ['MA', 4, false], ['EN', 3, false], ['BI', 2, false], ['PH', 2, true], ['CH', 2, true], ['GE', 2, false], ['EK', 2, false], ['SP', 3, true], ['MU', 2, false], ['KU', 1, false], ['RE', 2, false], ['IF', 1, false]],
@@ -130,22 +132,25 @@ export function erzeugeDatensatz(o) {
     const typ = zustand.faecher.find((f) => f.id === e.fach).raumtyp;
     if (typ) bedarfJeTyp[typ] = (bedarfJeTyp[typ] || 0) + e.stunden;
   }
-  const raumNamen = { turnhalle: 'Turnhalle', nawi: 'NaWi', musik: 'Musik', kunst: 'Kunst', informatik: 'Informatik' };
+  const raumNamen = { turnhalle: 'Turnhalle', schwimmhalle: 'Schwimmhalle', nawi: 'NaWi', musik: 'Musik', kunst: 'Kunst', informatik: 'Informatik' };
   for (const [typ, bedarf] of Object.entries(bedarfJeTyp)) {
     const anzahl = Math.ceil(bedarf / (slotsProWoche * 0.75));
     for (let i = 1; i <= anzahl; i++) {
-      const turnhalle = typ === 'turnhalle';
+      const sonderraum = Modell.SONDERRAUMTYPEN.includes(typ);
       raeume.push({
         id: `r-${typ}${i}`, name: `${raumNamen[typ]} ${i}`,
-        typ: turnhalle ? 'turnhalle' : 'fachraum',
-        ...(turnhalle ? {} : { fachraumtyp: typ }),
-        kapazitaet: turnhalle ? 60 : 32, nahe: [], gesperrt: [],
+        typ: sonderraum ? typ : 'fachraum',
+        ...(sonderraum ? {} : { fachraumtyp: typ }),
+        kapazitaet: typ === 'turnhalle' ? 60 : typ === 'schwimmhalle' ? 35 : 32, nahe: [], gesperrt: [],
       });
     }
   }
   // Eine Turnhalle ist dienstags in der letzten Stunde gesperrt (Vereinsnutzung) – für H5-Tests.
   const halle = raeume.find((r) => r.typ === 'turnhalle');
   if (halle) halle.gesperrt = [{ tag: 'Di', stunden: [o.stundenProTag] }];
+  // Die Schwimmhalle ist mittwochs in den ersten beiden Stunden belegt (öffentliches Schwimmen).
+  const bad = raeume.find((r) => r.typ === 'schwimmhalle');
+  if (bad) bad.gesperrt = [{ tag: 'Mi', stunden: [1, 2] }];
 
   // --- Bedarf je Fach (Wochenstunden über alle Klassen)
   const bedarf = {};

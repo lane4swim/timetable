@@ -233,7 +233,7 @@ Diese Punkte sollten vor bzw. während M1 bestätigt werden; bis dahin gelten di
 13. **Rang der Aufsichten:** *Bestätigt:* Unbesetzte Aufsichten (K1A) stehen direkt hinter dem Unterrichtsausfall (K1) und vor allen übrigen Zielen.
 14. **Anwesenheit für Aufsicht:** *Bestätigt:* hart nur „Unterricht an diesem Tag“ (H13); dass die Aufsicht direkt an eigenen Unterricht grenzt, ist weich (W12).
 15. **Aufsichtsbereiche** (Hof, Flur …): *Bestätigt:* nicht vorgesehen; je Pause zählt nur die Anzahl.
-16. **Zuordnung Fach ↔ Fachraum:** `raum.typ` bleibt bei den drei Werten aus §2. Fachräume erhalten zusätzlich `fachraumtyp` (z. B. `nawi`, `musik`, `kunst`, `informatik`); `fach.raumtyp` ist `null`, `turnhalle` oder ein Fachraumtyp. H5 prüft „passender Raumtyp“ über diese Felder (in M0 festgelegt, durch die Testdaten genutzt).
+16. **Zuordnung Fach ↔ Fachraum:** *Bestätigt:* `raum.typ` ist `klassenraum`, `fachraum`, `turnhalle` oder `schwimmhalle`. Fachräume erhalten zusätzlich `fachraumtyp` (z. B. `nawi`, `musik`, `kunst`, `informatik`); `fach.raumtyp` ist `null`, `turnhalle`, `schwimmhalle` oder ein Fachraumtyp. H5 prüft „passender Raumtyp“ über diese Felder.
 17. **Offene fachliche Fragen** (Bundesland, Obergrenzen für Gäste, PDF/CSV-Export, Priorität der Zweitbesetzung): werden konfigurierbar gehalten bzw. sind nicht Teil der ersten Version; CSV-Export ließe sich in M7 ergänzen.
 
 Neue optionale Felder ändern `schemaVersion: 1` nicht, da unbekannte Felder ohnehin erhalten bleiben und alle neuen Felder Standardwerte haben.
