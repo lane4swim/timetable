@@ -10,7 +10,7 @@ const App = (() => {
   const REITER = [
     { id: 'stammdaten', titel: 'Stammdaten', hinweis: 'Lehrkräfte, Fächer, Räume, Klassen und Zeitraster mit Pausen pflegen.' },
     { id: 'zuordnung', titel: 'Zuordnung', hinweis: 'Haupt- und Zweitlehrkräfte je Klasse und Fach festlegen.' },
-    { id: 'planung', titel: 'Planung', hinweis: 'Plan erstellen, Optionen einstellen, Kostenvektor verfolgen.' },
+    { id: 'planung', titel: 'Planung', hinweis: 'Plan erstellen, Optionen einstellen, Kostenvektor verfolgen.', modul: () => PlanungReiter },
     { id: 'plan', titel: 'Plan', hinweis: 'Wochenraster je Klasse, Lehrkraft, Raum oder Aufsicht.' },
     { id: 'ausfall', titel: 'Ausfall', hinweis: 'Abwesenheiten erfassen und datumsgenaue Vertretungen prüfen.' },
     { id: 'bericht', titel: 'Bericht', hinweis: 'Ausfall, Vertretungsquote, Auslastung und Aufsichten auswerten.' },
@@ -151,5 +151,5 @@ const App = (() => {
 })();
 
 // Zugriff für Tests und Fehlersuche in der Konsole.
-window.Stundenplan = { Kern, App, Rechenkern, DatenReiter };
+window.Stundenplan = { Kern, App, Rechenkern, DatenReiter, PlanungReiter };
 document.addEventListener('DOMContentLoaded', App.start);

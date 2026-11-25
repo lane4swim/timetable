@@ -53,5 +53,12 @@ const Rechenkern = (() => {
     });
   }
 
-  return { starte, anfrage };
+  /** Sendet eine Nachricht ohne Antwort (z. B. „abbrechen“). */
+  function sende(typ, daten = {}) {
+    if (!starte()) return false;
+    worker.postMessage({ ...daten, typ, id: naechsteId++ });
+    return true;
+  }
+
+  return { starte, anfrage, sende };
 })();

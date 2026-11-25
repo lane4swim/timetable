@@ -253,7 +253,14 @@ Diese Punkte sollten vor bzw. während M1 bestätigt werden; bis dahin gelten di
     - *K2* zählt Stunden (wie in §3); die Art der Vertretung (Klassenlehrkraft, Lehrkraft der Klasse, qualifiziert, Notfall) steht im Posten. Die Reihenfolge erzwingt die Eskalationskette.
     - *K5:* je Lehrkraft min(Soll − Reserve bzw. Höchstgrenze − Ist, Zahl der Slots, in denen sie frei und nicht gesperrt ist und eine Klasse Fachunterricht mit freiem Platz für eine Zweitbesetzung hat).
     - *W1:* späterer Beginn als Stunde 1 plus Stunden nach dem Ziel-Tagesende `⌈Wochenstunden/Tage⌉`. *W4:* „Vormittag“ = Beginn vor 12:00; „Sport“ = Fach mit Raumtyp Turn- oder Schwimmhalle. *W5:* weitere Blöcke desselben Fachs am Tag sowie Blöcke über 2 (bzw. über 1 bei nicht blockbaren Fächern). *W6:* Raumwechsel plus Stunden außerhalb des Heimatraums ohne Raumtyp-Bedarf. *W7:* Summe der Abweichungen vom Tagesmittel. *W9:* 1 − Priorität (Mittel aus Schülerzahl, niedriger Stufe, Knappheit des Fachs; gleiche Werte neutral). *W12:* Aufsicht ohne eigenen Unterricht direkt davor/danach sowie mehr als eine Aufsicht am Tag.
-19. **Offene fachliche Fragen** (Bundesland, Obergrenzen für Gäste, PDF/CSV-Export, Priorität der Zweitbesetzung): werden konfigurierbar gehalten bzw. sind nicht Teil der ersten Version; CSV-Export ließe sich in M7 ergänzen.
+19. **Festlegungen aus M4 (Planer)** – Abweichungen vom Verfahren in §6, bewusst einfach gehalten:
+    - *Ausfall vor Reserve:* Reicht das Kontingent bis `Soll − Reserve` nicht, nutzt die Zuweisung die Reserve und Mehrarbeit bis zur Höchstgrenze (Ziel 1 hat Vorrang; H7 erlaubt es). Die Reserve bleibt bei Zweitbesetzungen unangetastet (H11). Die untere Schranke für K1 berücksichtigt das.
+    - *Doppelstunden* sind keine festen Einheiten der Dauer 2, sondern ein Optimierungsziel (W3). So bleibt die Konstruktion einfach und robust; gewünschte Doppelstunden entstehen in der Nachoptimierung.
+    - *Klassentage beginnen immer in der 1. Stunde* (Ziel W1); Tageslängen verschieben sich in der Optimierung, Lücken entstehen nie.
+    - *Zweitbesetzung nach der Optimierung:* Die Nachoptimierung ordnet nur den Hauptunterricht; danach werden Zweitbesetzungen vergeben (Priorität W9, Beständigkeit W10, möglichst angrenzend an eigene Stunden) und zuletzt die Aufsichten.
+    - *Reproduzierbarkeit:* Die Zahl der Optimierungsschritte ist fest (3000 je Stunde, höchstens 4 Mio.). Greift vorher das Zeitbudget, wird das im Ergebnis vermerkt.
+    - *Nicht unterstützt:* Klassen mit gemeinsamem Heimatraum; Tausch von Lehrkräften zwischen Klassen in der Optimierung.
+20. **Offene fachliche Fragen** (Bundesland, Obergrenzen für Gäste, PDF/CSV-Export, Priorität der Zweitbesetzung): werden konfigurierbar gehalten bzw. sind nicht Teil der ersten Version; CSV-Export ließe sich in M7 ergänzen.
 
 Neue optionale Felder ändern `schemaVersion: 1` nicht, da unbekannte Felder ohnehin erhalten bleiben und alle neuen Felder Standardwerte haben.
 
@@ -264,8 +271,9 @@ Neue optionale Felder ändern `schemaVersion: 1` nicht, da unbekannte Felder ohn
 | M0 Grundgerüst | erledigt (25.11.2026): Build `tools/build.mjs`, Vorlage mit CSP, Kern-Module `Hilfen` (PRNG, IDs, Datum) und `Modell` (Standardwerte, Pausen), Blob-Worker mit Ping, Reiter-Gerüst mit Tastaturbedienung, Testdatengenerator mit vier Datensätzen, 31 Kern-/Build-Tests, 5 Browser-Tests, CI-Workflow |
 | M1 Daten & Persistenz | erledigt (25.11.2026): Module `Schema` (deklaratives Schema, Validator mit Pfaden, Querprüfungen, Standardwerte, kanonische Reihenfolge, Migrationsrahmen) und `Io` (Export gesamt/Stammdaten/Plan, atomarer Import, Teil-Import); Reiter „Daten“ mit Dateiauswahl, Drag-and-drop, Rückfrage mit Export-Angebot, Fehlerliste mit Pfad, Zurücksetzen, Speicherstand und `beforeunload`-Warnung. Abnahme 1 und 7 automatisiert (Kern und Browser) |
 | M2 Regeln & Kosten | erledigt (25.11.2026): Module `Index` (Nachschlagestrukturen), `Regeln` (H1–H14 für Wochen- und Tagesplan, Verstöße mit betroffenen Einträgen) und `Kosten` (Vektor K1, K1A, K2–K6 mit W1–W12 und Einzelposten); von Hand nachgerechnete Testschule; Reiter „Daten“ zeigt Gültigkeit und Kostenvektor des Regelplans |
-| M4 Planer | als Nächstes |
+| M4 Planer | erledigt (25.11.2026): Module `Fluss` (Minimalkosten-Maximalfluss) und `Planer` (Bedarf, Vorprüfung, Zuweisung mit unterer Ausfall-Schranke, Konstruktion mit lückenlosen Klassentagen und Tabu-Konfliktsuche, Simulated Annealing, Räume, Zweitbesetzung, Aufsichten); Worker-Protokoll mit Fortschritt und Abbruch; Reiter „Planung“ mit Optionen, Gewichten und Ergebnis. Großer Datensatz (30 Klassen, 60 Lehrkräfte) in ca. 3 s. Abnahme 2, 3, 4, 8, 12 automatisiert |
+| M3 Stammdaten-UI | als Nächstes |
 
 ## 10. Nächster Schritt
 
-Die Annahmen in Abschnitt 8 sind bestätigt (25.11.2026). Als Nächstes folgt **M4** (Planer: Bedarf, Vorprüfung, Lehrkräfte-Zuweisung, Konstruktion, Zweitbesetzung, Aufsichten, Nachoptimierung im Worker).
+Die Annahmen in Abschnitt 8 sind bestätigt (25.11.2026). Als Nächstes folgen **M3** (Stammdaten und Zuordnung bearbeiten, Rückgängig/Wiederholen) und **M5** (Plan-Ansicht mit Drag-and-drop).

@@ -114,6 +114,28 @@ body.ablage-aktiv::after {
 .dialog h2 { margin: 0 0 8px; font-size: 1.1rem; }
 .dialog-knoepfe { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
 
+/* ----------------------------- Formulare ---------------------------------- */
+.formular { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px 20px; margin-bottom: 12px; }
+.feld { display: flex; flex-direction: column; gap: 4px; }
+.feld > span:first-child { color: var(--text-leise); font-size: .9rem; }
+.feld input[type=number] { font: inherit; padding: 4px 8px; border: 1px solid var(--linie-kraeftig); border-radius: var(--radius); max-width: 200px; }
+.feld input[aria-invalid=true] { border-color: var(--fehler); border-width: 2px; }
+.feld-fehler { color: var(--fehler); font-size: .85rem; }
+.feld-haken { flex-direction: row; align-items: center; gap: 8px; grid-column: 1 / -1; }
+.feld-haken > span:first-child { color: var(--text); font-size: 1rem; }
+.gewichte summary, details summary { cursor: pointer; color: var(--akzent); margin: 8px 0; }
+.formular-gewichte { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+
+.fortschritt { margin-top: 12px; }
+.fortschritt progress { width: 100%; max-width: 640px; height: 14px; }
+.leise { color: var(--text-leise); font-size: .9rem; }
+
+.tabelle { border-collapse: collapse; margin: 8px 0 12px; min-width: 480px; }
+.tabelle caption { text-align: left; color: var(--text-leise); font-size: .9rem; padding-bottom: 4px; }
+.tabelle th, .tabelle td { border-bottom: 1px solid var(--linie); padding: 4px 12px 4px 0; text-align: left; vertical-align: top; }
+.tabelle thead th { font-weight: 600; border-bottom-color: var(--linie-kraeftig); }
+.tabelle .zahl { text-align: right; font-variant-numeric: tabular-nums; }
+
 /* Fokus immer sichtbar, unabhängig von Farbe des Elements */
 :focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; }
 

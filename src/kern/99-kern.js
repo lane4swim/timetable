@@ -11,5 +11,7 @@ const Kern = Object.freeze({
   Index,
   Regeln,
   Kosten,
+  Fluss,
+  Planer,
   Io,
 });
