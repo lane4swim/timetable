@@ -6,6 +6,7 @@
 const DatenReiter = (() => {
   'use strict';
   let panel = null;
+  let sichtbar = () => {};
   let meldungen = null;
 
   /* ---------------------------- Aufbau ---------------------------------- */
@@ -42,7 +43,7 @@ const DatenReiter = (() => {
         el('button', { type: 'button', class: 'knopf knopf-gefahr', id: 'daten-zuruecksetzen', text: 'Alle Daten zurücksetzen …', onclick: zuruecksetzen })),
     );
     richteSeitenAblageEin();
-    App.beobachte(aktualisiere);
+    sichtbar = App.beobachteSichtbar(panel, aktualisiere);
     aktualisiere();
   }
 
@@ -209,6 +210,7 @@ const DatenReiter = (() => {
     }
     // Ein vollständiger Import entspricht einem gespeicherten Stand; nach einem Teil-Import ist der Gesamtstand neu.
     App.setzeDaten(erg.zustand, {
+      beschreibung: `Import ${name}`,
       geaendert: erg.teil !== 'gesamt',
       letzterExport: erg.teil === 'gesamt' ? (erg.zustand.exportedAt || null) : App.zustand.letzterExport,
     });
@@ -243,9 +245,9 @@ const DatenReiter = (() => {
       const ja = await bestaetigeErsetzen('Alle Daten zurücksetzen?', 'Alle Stammdaten, Pläne und Einstellungen werden gelöscht.');
       if (!ja) return;
     }
-    App.setzeDaten(Kern.Modell.leererZustand(), { geaendert: false, letzterExport: null });
+    App.setzeDaten(Kern.Modell.leererZustand(), { geaendert: false, letzterExport: null, beschreibung: 'Daten zurückgesetzt' });
     zeige('ok', 'Daten zurückgesetzt', App.el('p', { text: 'Das Programm ist jetzt leer.' }));
   }
 
-  return { baue, importiereDatei, importiereText, exportiere };
+  return { sichtbar: () => sichtbar(), baue, importiereDatei, importiereText, exportiere };
 })();

@@ -75,10 +75,10 @@ const PlanungReiter = (() => {
 
   /** Schreibt eine Einstellung in den Zustand. */
   function setze(schluessel, wert) {
-    const e = App.zustand.daten.einstellungen;
-    if (schluessel.startsWith('gewichte.')) e.gewichte[schluessel.slice(9)] = wert;
-    else e[schluessel] = wert;
-    App.markiereGeaendert();
+    App.aendere(`Einstellung ${schluessel} = ${wert}`, (d) => {
+      if (schluessel.startsWith('gewichte.')) d.einstellungen.gewichte[schluessel.slice(9)] = wert;
+      else d.einstellungen[schluessel] = wert;
+    }, { pruefen: false });
   }
 
   function zeigeEinstellungen() {
@@ -196,10 +196,10 @@ const PlanungReiter = (() => {
     const { plan, bericht } = antwort;
     panel.querySelector('#planung-balken').value = 1;
     panel.querySelector('#planung-status').textContent = `Fertig nach ${(dauerMs / 1000).toFixed(1)} s${bericht.statistik.abgebrochen ? ' (abgebrochen)' : ''}.`;
-    const d = App.zustand.daten;
-    d.plan.regelplan = plan.regelplan;
-    d.plan.aufsichten = plan.aufsichten;
-    App.markiereGeaendert();
+    App.aendere('Regelplan erstellt', (d) => {
+      d.plan.regelplan = plan.regelplan;
+      d.plan.aufsichten = plan.aufsichten;
+    }, { pruefen: false });
     zeigeErgebnis(bericht, dauerMs);
   }
 

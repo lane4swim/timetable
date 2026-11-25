@@ -8,6 +8,7 @@ const Kern = Object.freeze({
   Hilfen,
   Modell,
   Schema,
+  Verweise,
   Index,
   Regeln,
   Kosten,

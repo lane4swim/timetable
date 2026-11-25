@@ -33,6 +33,8 @@ body { margin: 0; background: var(--hintergrund); color: var(--text); min-width:
 }
 .kopf h1 { font-size: 1.25rem; margin: 0; }
 .kopf .leise { color: var(--text-leise); font-size: .9rem; }
+.kopf-werkzeuge { margin-left: auto; display: flex; gap: 8px; }
+.knopf:disabled { opacity: .55; cursor: not-allowed; }
 
 #app { padding: 0 var(--abstand) var(--abstand); }
 
@@ -135,6 +137,28 @@ body.ablage-aktiv::after {
 .tabelle th, .tabelle td { border-bottom: 1px solid var(--linie); padding: 4px 12px 4px 0; text-align: left; vertical-align: top; }
 .tabelle thead th { font-weight: 600; border-bottom-color: var(--linie-kraeftig); }
 .tabelle .zahl { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ----------------------------- Stammdaten --------------------------------- */
+.umschalter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.umschalter .knopf[aria-pressed=true] { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); }
+.tabellen-rahmen { overflow-x: auto; max-width: 100%; }
+.tabelle.bearbeitbar input[type=text], .tabelle.bearbeitbar select { font: inherit; padding: 3px 6px; border: 1px solid var(--linie); border-radius: 4px; width: 100%; min-width: 4em; background: var(--flaeche); color: var(--text); }
+.tabelle.bearbeitbar input.zahl { width: 5em; text-align: right; }
+.tabelle.bearbeitbar input[aria-invalid=true], .matrix input[aria-invalid=true] { border: 2px solid var(--fehler); }
+.tabelle.bearbeitbar td { padding: 2px 8px 2px 0; }
+.knopf-klein { padding: 2px 8px; font-size: .85rem; }
+.tage { border: 1px solid var(--linie); border-radius: var(--radius); display: flex; gap: 16px; padding: 8px 12px; margin: 0 0 12px; }
+.tage .feld-haken { grid-column: auto; }
+
+.matrix { border-collapse: collapse; }
+.matrix th, .matrix td { border: 1px solid var(--linie); padding: 2px 4px; }
+.matrix-zelle { min-width: 118px; vertical-align: top; }
+.matrix-zelle.leer { background: var(--hintergrund); }
+.matrix-zelle label { display: flex; align-items: center; gap: 4px; font-size: .8rem; color: var(--text-leise); }
+.matrix-zelle label span { width: 2.2em; }
+.matrix-zelle input[type=text] { font: inherit; font-size: .9rem; width: 5em; padding: 1px 4px; border: 1px solid var(--linie); border-radius: 3px; }
+.matrix-zelle.warnung { box-shadow: inset 0 0 0 2px var(--warnung); }
+.marke { display: inline-block; font-size: .75rem; font-weight: 600; color: var(--warnung); }
 
 /* Fokus immer sichtbar, unabhängig von Farbe des Elements */
 :focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; }

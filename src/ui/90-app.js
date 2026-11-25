@@ -8,8 +8,8 @@ const App = (() => {
 
   /** Reiter in der Reihenfolge von §7. `modul` baut den Inhalt (sonst Platzhalter). */
   const REITER = [
-    { id: 'stammdaten', titel: 'Stammdaten', hinweis: 'Lehrkräfte, Fächer, Räume, Klassen und Zeitraster mit Pausen pflegen.' },
-    { id: 'zuordnung', titel: 'Zuordnung', hinweis: 'Haupt- und Zweitlehrkräfte je Klasse und Fach festlegen.' },
+    { id: 'stammdaten', titel: 'Stammdaten', hinweis: 'Lehrkräfte, Fächer, Räume, Klassen und Zeitraster mit Pausen pflegen.', modul: () => StammdatenReiter },
+    { id: 'zuordnung', titel: 'Zuordnung', hinweis: 'Stundentafeln sowie Haupt- und Zweitlehrkräfte je Klasse und Fach festlegen.', modul: () => ZuordnungReiter },
     { id: 'planung', titel: 'Planung', hinweis: 'Plan erstellen, Optionen einstellen, Kostenvektor verfolgen.', modul: () => PlanungReiter },
     { id: 'plan', titel: 'Plan', hinweis: 'Wochenraster je Klasse, Lehrkraft, Raum oder Aufsicht.' },
     { id: 'ausfall', titel: 'Ausfall', hinweis: 'Abwesenheiten erfassen und datumsgenaue Vertretungen prüfen.' },
@@ -30,6 +30,9 @@ const App = (() => {
     letzterExport: null,
   };
   const beobachter = new Set();
+  /** Verlauf für Rückgängig/Wiederholen: Schnappschüsse des Datenstands (§7: mindestens 50 Schritte). */
+  const MAX_VERLAUF = 100;
+  const verlauf = { zurueck: [], vor: [] };
 
   /** Kleiner Helfer zum Erzeugen von Elementen ohne innerHTML. */
   function el(tag, attribute = {}, ...kinder) {
@@ -51,15 +54,73 @@ const App = (() => {
   /** Registriert eine Funktion, die nach jeder Zustandsänderung aufgerufen wird. */
   function beobachte(fn) { beobachter.add(fn); return () => beobachter.delete(fn); }
 
-  /** Ersetzt den gesamten Datenstand (Import, Zurücksetzen). */
-  function setzeDaten(neu, { geaendert = false, letzterExport = zustand.letzterExport } = {}) {
+  /**
+   * Wie beobachte, aber nur solange `panel` sichtbar ist; sonst wird beim
+   * nächsten Einblenden einmal nachgezeichnet. Liefert die Funktion für `sichtbar`.
+   */
+  function beobachteSichtbar(panel, render) {
+    let veraltet = false;
+    beobachte(() => { if (panel.hidden) veraltet = true; else render(); });
+    return () => { if (veraltet) { veraltet = false; render(); } };
+  }
+
+  function merke(beschreibung) {
+    verlauf.zurueck.push({ beschreibung, daten: zustand.daten });
+    if (verlauf.zurueck.length > MAX_VERLAUF) verlauf.zurueck.shift();
+    verlauf.vor = [];
+  }
+
+  /** Ersetzt den gesamten Datenstand (Import, Zurücksetzen); rückgängig machbar. */
+  function setzeDaten(neu, { geaendert = false, letzterExport = zustand.letzterExport, beschreibung = 'Daten ersetzt' } = {}) {
+    merke(beschreibung);
     zustand.daten = neu;
     zustand.geaendert = geaendert;
     zustand.letzterExport = letzterExport;
     melde();
   }
 
-  /** Nach jeder Bearbeitung aufrufen (ab M3 über Undo/Redo). */
+  /**
+   * Führt eine Bearbeitung aus: `fn` verändert eine Kopie des Datenstands.
+   * Mit `pruefen` (Standard) wird die Kopie vollständig validiert; bei Fehlern
+   * bleibt der Stand unverändert. `fn` kann false liefern, um abzubrechen.
+   * @returns {{ok: boolean, fehler: {pfad: string, meldung: string}[]}}
+   */
+  function aendere(beschreibung, fn, { pruefen = true } = {}) {
+    const neu = structuredClone(zustand.daten);
+    if (fn(neu) === false) return { ok: false, fehler: [] };
+    if (pruefen) {
+      Kern.Schema.normalisiere(neu);
+      const { fehler } = Kern.Schema.validiere(neu);
+      if (fehler.length) return { ok: false, fehler };
+    }
+    merke(beschreibung);
+    zustand.daten = neu;
+    zustand.geaendert = true;
+    melde();
+    return { ok: true, fehler: [] };
+  }
+
+  function rueckgaengig() {
+    const schritt = verlauf.zurueck.pop();
+    if (!schritt) return false;
+    verlauf.vor.push({ beschreibung: schritt.beschreibung, daten: zustand.daten });
+    zustand.daten = schritt.daten;
+    zustand.geaendert = true;
+    melde();
+    return true;
+  }
+
+  function wiederholen() {
+    const schritt = verlauf.vor.pop();
+    if (!schritt) return false;
+    verlauf.zurueck.push({ beschreibung: schritt.beschreibung, daten: zustand.daten });
+    zustand.daten = schritt.daten;
+    zustand.geaendert = true;
+    melde();
+    return true;
+  }
+
+  /** Nur für Tests: markiert den Stand als geändert, ohne Inhalt zu ändern. */
   function markiereGeaendert() { zustand.geaendert = true; melde(); }
 
   /** Nach einem Export: Zeitpunkt merken; ein vollständiger Export sichert alle Änderungen. */
@@ -111,6 +172,7 @@ const App = (() => {
       knopf.setAttribute('aria-selected', String(an));
       knopf.tabIndex = an ? 0 : -1;
       panel.hidden = !an;
+      if (an) r.modul?.().sichtbar?.();
       if (an && fokus) knopf.focus();
     }
   }
@@ -126,6 +188,23 @@ const App = (() => {
   function zeigeSpeicherstand() {
     const s = document.getElementById('status-speicher');
     s.textContent = zustand.geaendert ? '⚠ Ungespeicherte Änderungen' : '';
+    const z = document.getElementById('knopf-rueckgaengig');
+    const v = document.getElementById('knopf-wiederholen');
+    const oben = (liste) => liste[liste.length - 1];
+    z.disabled = !verlauf.zurueck.length;
+    v.disabled = !verlauf.vor.length;
+    z.title = verlauf.zurueck.length ? `Rückgängig: ${oben(verlauf.zurueck).beschreibung} (Strg+Z)` : 'Nichts rückgängig zu machen';
+    v.title = verlauf.vor.length ? `Wiederholen: ${oben(verlauf.vor).beschreibung} (Strg+Y)` : 'Nichts zu wiederholen';
+  }
+
+  /** Strg+Z / Strg+Y (bzw. Strg+Umschalt+Z) außerhalb von Eingabefeldern. */
+  function tastenkuerzel(e) {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const ziel = e.target;
+    if (ziel && (ziel.tagName === 'INPUT' || ziel.tagName === 'TEXTAREA' || ziel.tagName === 'SELECT' || ziel.isContentEditable)) return;
+    if (document.querySelector('dialog[open]')) return;
+    const taste = e.key.toLowerCase();
+    if (taste === 'z' && !e.shiftKey) { e.preventDefault(); rueckgaengig(); } else if (taste === 'y' || (taste === 'z' && e.shiftKey)) { e.preventDefault(); wiederholen(); }
   }
 
   function start() {
@@ -133,6 +212,9 @@ const App = (() => {
     baueReiter(wurzel);
     aktiviere(zustand.aktiv);
     document.getElementById('version').textContent = 'Version ' + Kern.version;
+    document.getElementById('knopf-rueckgaengig').addEventListener('click', rueckgaengig);
+    document.getElementById('knopf-wiederholen').addEventListener('click', wiederholen);
+    document.addEventListener('keydown', tastenkuerzel);
     beobachte(zeigeSpeicherstand);
     zeigeSpeicherstand();
     // Warnung beim Schließen des Tabs, solange es ungespeicherte Änderungen gibt (§8).
@@ -147,9 +229,12 @@ const App = (() => {
       .catch((e) => setzeStatus('Rechenkern nicht verfügbar: ' + e.message, 'fehler'));
   }
 
-  return { REITER, zustand, el, start, aktiviere, beobachte, setzeDaten, markiereGeaendert, vermerkeExport };
+  return {
+    REITER, zustand, verlauf, el, start, aktiviere, beobachte, beobachteSichtbar, setzeDaten, aendere, rueckgaengig, wiederholen,
+    markiereGeaendert, vermerkeExport,
+  };
 })();
 
 // Zugriff für Tests und Fehlersuche in der Konsole.
-window.Stundenplan = { Kern, App, Rechenkern, DatenReiter, PlanungReiter };
+window.Stundenplan = { Kern, App, Rechenkern, DatenReiter, PlanungReiter, StammdatenReiter, ZuordnungReiter };
 document.addEventListener('DOMContentLoaded', App.start);

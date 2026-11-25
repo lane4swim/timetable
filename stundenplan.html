@@ -43,6 +43,8 @@ body { margin: 0; background: var(--hintergrund); color: var(--text); min-width:
 }
 .kopf h1 { font-size: 1.25rem; margin: 0; }
 .kopf .leise { color: var(--text-leise); font-size: .9rem; }
+.kopf-werkzeuge { margin-left: auto; display: flex; gap: 8px; }
+.knopf:disabled { opacity: .55; cursor: not-allowed; }
 
 #app { padding: 0 var(--abstand) var(--abstand); }
 
@@ -146,6 +148,28 @@ body.ablage-aktiv::after {
 .tabelle thead th { font-weight: 600; border-bottom-color: var(--linie-kraeftig); }
 .tabelle .zahl { text-align: right; font-variant-numeric: tabular-nums; }
 
+/* ----------------------------- Stammdaten --------------------------------- */
+.umschalter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.umschalter .knopf[aria-pressed=true] { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); }
+.tabellen-rahmen { overflow-x: auto; max-width: 100%; }
+.tabelle.bearbeitbar input[type=text], .tabelle.bearbeitbar select { font: inherit; padding: 3px 6px; border: 1px solid var(--linie); border-radius: 4px; width: 100%; min-width: 4em; background: var(--flaeche); color: var(--text); }
+.tabelle.bearbeitbar input.zahl { width: 5em; text-align: right; }
+.tabelle.bearbeitbar input[aria-invalid=true], .matrix input[aria-invalid=true] { border: 2px solid var(--fehler); }
+.tabelle.bearbeitbar td { padding: 2px 8px 2px 0; }
+.knopf-klein { padding: 2px 8px; font-size: .85rem; }
+.tage { border: 1px solid var(--linie); border-radius: var(--radius); display: flex; gap: 16px; padding: 8px 12px; margin: 0 0 12px; }
+.tage .feld-haken { grid-column: auto; }
+
+.matrix { border-collapse: collapse; }
+.matrix th, .matrix td { border: 1px solid var(--linie); padding: 2px 4px; }
+.matrix-zelle { min-width: 118px; vertical-align: top; }
+.matrix-zelle.leer { background: var(--hintergrund); }
+.matrix-zelle label { display: flex; align-items: center; gap: 4px; font-size: .8rem; color: var(--text-leise); }
+.matrix-zelle label span { width: 2.2em; }
+.matrix-zelle input[type=text] { font: inherit; font-size: .9rem; width: 5em; padding: 1px 4px; border: 1px solid var(--linie); border-radius: 3px; }
+.matrix-zelle.warnung { box-shadow: inset 0 0 0 2px var(--warnung); }
+.marke { display: inline-block; font-size: .75rem; font-weight: 600; color: var(--warnung); }
+
 /* Fokus immer sichtbar, unabhängig von Farbe des Elements */
 :focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; }
 
@@ -161,6 +185,10 @@ body.ablage-aktiv::after {
 <header class="kopf">
   <h1>Stundenplanplanung</h1>
   <span class="leise">Läuft lokal im Browser – Daten verlassen den Rechner nur über den Export.</span>
+  <span class="kopf-werkzeuge">
+    <button type="button" class="knopf" id="knopf-rueckgaengig" disabled><span aria-hidden="true">↶ </span>Rückgängig</button>
+    <button type="button" class="knopf" id="knopf-wiederholen" disabled><span aria-hidden="true">↷ </span>Wiederholen</button>
+  </span>
 </header>
 <main id="app"></main>
 <footer class="fuss">
@@ -1067,6 +1095,69 @@ const Schema = (() => {
   }
 
   return { T, ZUSTAND, TEILE, SAMMLUNGEN, MIGRATIONEN, validiere, normalisiere, ordne, migriere };
+})();
+
+/* ---- src/kern/25-verweise.js ---- */
+/* ==========================================================================
+ * Modul Verweise
+ * Findet alle Stellen im Zustand, die auf eine Entität verweisen. Durchläuft
+ * dazu das Schema, sodass jedes Referenzfeld erfasst ist – auch künftige.
+ * Grundlage für „Löschen blockiert, solange die Entität referenziert wird“ (§7).
+ * ========================================================================== */
+const Verweise = (() => {
+  'use strict';
+
+  const BEREICH = {
+    faecher: 'Fach', lehrkraefte: 'Lehrkraft', raeume: 'Raum', klassen: 'Klasse', zuordnungen: 'Zuordnung',
+    'plan.regelplan': 'Regelplan', 'plan.aufsichten': 'Pausenaufsicht', 'plan.vertretungen': 'Vertretung',
+    'plan.aufsichtsVertretungen': 'Aufsichtsvertretung',
+  };
+
+  /**
+   * @param {object} z Zustand
+   * @param {'faecher'|'lehrkraefte'|'raeume'|'klassen'} sammlung
+   * @param {string} id
+   * @returns {{pfad: string, text: string}[]}
+   */
+  function finde(z, sammlung, id) {
+    const treffer = [];
+    const besuche = (wert, s, pfad) => {
+      if (wert === null || wert === undefined || !s) return;
+      if (s.art === 'ref') {
+        if (s.ziel === sammlung && wert === id) treffer.push(pfad);
+      } else if (s.art === 'objekt' && typeof wert === 'object' && !Array.isArray(wert)) {
+        for (const [name, fs] of Object.entries(s.felder)) besuche(wert[name], fs, pfad ? pfad + '.' + name : name);
+      } else if (s.art === 'liste' && Array.isArray(wert)) {
+        wert.forEach((el, i) => besuche(el, s.element, `${pfad}[${i}]`));
+      }
+    };
+    besuche(z, Schema.ZUSTAND, '');
+    // Die Entität selbst (z. B. Raum „nahe“ sich selbst) zählt nicht als fremder Verweis
+    const eigenerIndex = (z[sammlung] || []).findIndex((e) => e.id === id);
+    const eigen = `${sammlung}[${eigenerIndex}]`;
+    return treffer.filter((p) => !p.startsWith(eigen + '.')).map((pfad) => ({ pfad, text: beschreibe(z, pfad) }));
+  }
+
+  /** Lesbare Beschreibung eines Pfads, z. B. „Klasse 1a: klassenlehrkraft“. */
+  function beschreibe(z, pfad) {
+    const m = /^((?:plan\.)?[a-zA-Z]+)\[(\d+)\]\.?(.*)$/.exec(pfad);
+    if (!m) return pfad;
+    const [, bereich, index, rest] = m;
+    const liste = bereich.startsWith('plan.') ? z.plan[bereich.slice(5)] : z[bereich];
+    const e = liste?.[Number(index)] || {};
+    const name = (id, sammlung) => (z[sammlung] || []).find((x) => x.id === id);
+    const klasse = name(e.klasse, 'klassen')?.name;
+    let wer;
+    if (bereich === 'zuordnungen') wer = `${klasse} ${name(e.fach, 'faecher')?.kuerzel} (${e.rolle})`;
+    else if (bereich === 'plan.regelplan') wer = `${klasse} ${e.tag} ${e.stunde}. Stunde`;
+    else if (bereich === 'plan.vertretungen') wer = `${klasse} ${e.datum} ${e.stunde}. Stunde`;
+    else if (bereich === 'plan.aufsichten') wer = `${e.tag} vor der ${e.vorStunde}. Stunde`;
+    else if (bereich === 'plan.aufsichtsVertretungen') wer = `${e.datum} vor der ${e.vorStunde}. Stunde`;
+    else wer = e.name || e.kuerzel || e.id || '#' + index;
+    return `${BEREICH[bereich] || bereich} ${wer}${rest ? ': ' + rest.replace(/\[\d+\]/g, '') : ''}`;
+  }
+
+  return { finde };
 })();
 
 /* ---- src/kern/30-index.js ---- */
@@ -2961,6 +3052,7 @@ const Kern = Object.freeze({
   Hilfen,
   Modell,
   Schema,
+  Verweise,
   Index,
   Regeln,
   Kosten,
@@ -3162,6 +3254,760 @@ const Dialog = (() => {
   return { frage };
 })();
 
+/* ---- src/ui/22-tabelle.js ---- */
+/* ==========================================================================
+ * Modul Tabelle (Oberfläche)
+ * Bearbeitbare Tabelle für Stammdaten (§7): Zeilen hinzufügen, bearbeiten,
+ * löschen; sofortige Prüfung jeder Eingabe; Tastaturbedienung:
+ *   Enter / ↓   übernehmen und eine Zeile nach unten (gleiche Spalte)
+ *   ↑           übernehmen und eine Zeile nach oben
+ *   Esc         Eingabe verwerfen
+ *   Tab         nächstes Feld (Standard des Browsers)
+ * Jede Änderung läuft über App.aendere (geprüft, rückgängig machbar).
+ * ========================================================================== */
+const Tabelle = (() => {
+  'use strict';
+
+  /** Hilfen zum Lesen und Schreiben kompakter Texteingaben. */
+  const Text = {
+    /** „1–4, 6“ → [1,2,3,4,6] */
+    zahlen(text) {
+      const ergebnis = [];
+      for (const teil of text.split(',').map((t) => t.trim()).filter(Boolean)) {
+        const m = /^(\d+)\s*(?:[-–]\s*(\d+))?$/.exec(teil);
+        if (!m) return null;
+        const von = Number(m[1]);
+        const bis = m[2] ? Number(m[2]) : von;
+        if (bis < von) return null;
+        for (let x = von; x <= bis; x++) ergebnis.push(x);
+      }
+      return [...new Set(ergebnis)].sort((a, b) => a - b);
+    },
+    /** [1,2,3,5] → „1–3, 5“ */
+    bereiche(zahlen) {
+      const s = [...zahlen].sort((a, b) => a - b);
+      const teile = [];
+      for (let i = 0; i < s.length;) {
+        let j = i;
+        while (j + 1 < s.length && s[j + 1] === s[j] + 1) j++;
+        teile.push(j > i ? `${s[i]}–${s[j]}` : String(s[i]));
+        i = j + 1;
+      }
+      return teile.join(', ');
+    },
+  };
+
+  /**
+   * @param {object} o
+   * @param {string} o.id              HTML-ID der Tabelle
+   * @param {string} o.beschriftung     Tabellenüberschrift
+   * @param {string} o.einzahl          z. B. „Lehrkraft“ (für Knöpfe und Verlauf)
+   * @param {(d: object) => object[]} o.liste       Zeilen im Datenstand
+   * @param {(zeile: object, i: number) => string} [o.schluessel]  stabiler Zeilenschlüssel (Standard: id)
+   * @param {(zeile: object) => string} [o.name]   lesbarer Zeilenname
+   * @param {object[]} o.spalten        { feld, titel, art: text|zahl|bool|wahl|anzeige, breite, min, max, ganz,
+   *                                     optionen(d) → [[wert, text]], anzeigen(zeile, d), setzen(zeile, wert, d) → Fehlertext|undefined }
+   * @param {(d: object) => (object|string)} [o.neu]   neue Zeile anlegen (oder Fehlertext)
+   * @param {(d: object, zeile: object) => ({pfad,text}[]|undefined)} [o.verweise] blockierende Verweise
+   * @param {(d: object, schluessel: string) => void} [o.entferne] Zeile entfernen (Standard: aus liste)
+   */
+  function erstelle(o) {
+    const el = App.el;
+    const schluessel = o.schluessel || ((z) => z.id);
+    const name = o.name || ((z) => z.name || z.kuerzel || z.id);
+    const tabelle = el('table', { class: 'tabelle bearbeitbar', id: o.id });
+    const meldung = el('div', { class: 'meldungen', 'aria-live': 'polite' });
+    const wurzel = el('div', { class: 'tabellen-block' }, el('div', { class: 'tabellen-rahmen' }, tabelle));
+    if (o.neu) {
+      wurzel.append(el('div', { class: 'knopfleiste' },
+        el('button', { type: 'button', class: 'knopf', 'data-aktion': 'neu', text: `+ ${o.einzahl} hinzufügen`, onclick: hinzufuegen })));
+    }
+    wurzel.append(meldung);
+    let fokusNach = null; // { zeile, spalte }
+
+    function zeige(art, titel, eintraege = []) {
+      meldung.replaceChildren(el('div', { class: 'meldung meldung-' + art, role: art === 'fehler' ? 'alert' : 'status' },
+        el('p', { class: 'meldung-titel', text: (art === 'fehler' ? '⚠ ' : art === 'ok' ? '✓ ' : 'ℹ ') + titel }),
+        eintraege.length ? el('ul', { class: 'pfadliste' }, ...eintraege.map((f) => el('li', {}, f.pfad ? el('code', { text: f.pfad }) : null, f.pfad ? ': ' : '', f.meldung || f.text))) : null));
+    }
+
+    function render() {
+      const d = App.zustand.daten;
+      const aktiv = document.activeElement;
+      if (!fokusNach && aktiv && tabelle.contains(aktiv) && aktiv.dataset.zeile) fokusNach = { zeile: aktiv.dataset.zeile, spalte: aktiv.dataset.spalte };
+      const zeilen = o.liste(d);
+      const kopf = el('tr', {}, ...o.spalten.map((s) => el('th', { scope: 'col', class: s.art === 'zahl' ? 'zahl' : null, style: s.breite ? `min-width:${s.breite}` : null, text: s.titel })));
+      if (o.verweise || o.entferne) kopf.append(el('th', { scope: 'col' }, el('span', { class: 'versteckt', text: 'Aktionen' })));
+      const koerper = el('tbody', {}, ...zeilen.map((z, i) => zeile(z, i, d)));
+      tabelle.replaceChildren(el('caption', { text: `${o.beschriftung} (${zeilen.length})` }), el('thead', {}, kopf), koerper);
+      if (!zeilen.length) koerper.append(el('tr', {}, el('td', { colspan: String(o.spalten.length + 1), class: 'leise', text: 'Noch keine Einträge.' })));
+      if (fokusNach) {
+        const ziel = tabelle.querySelector(`[data-zeile="${CSS.escape(fokusNach.zeile)}"][data-spalte="${CSS.escape(fokusNach.spalte)}"]`);
+        fokusNach = null;
+        if (ziel) { ziel.focus(); ziel.select?.(); }
+      }
+    }
+
+    function zeile(z, i, d) {
+      const key = schluessel(z, i);
+      const tr = el('tr', { 'data-schluessel': key });
+      for (const s of o.spalten) {
+        const beschr = `${s.titel} – ${name(z)}`;
+        const wert = s.anzeigen ? s.anzeigen(z, d) : z[s.feld];
+        const gemeinsam = { 'data-zeile': key, 'data-spalte': s.feld, 'aria-label': beschr };
+        let feld;
+        if (s.art === 'anzeige') {
+          feld = el('span', { text: String(wert ?? '') });
+        } else if (s.art === 'bool') {
+          feld = el('input', { type: 'checkbox', ...gemeinsam, checked: !!wert, onchange: (e) => uebernehme(key, s, e.target.checked, e.target) });
+        } else if (s.art === 'wahl') {
+          feld = el('select', { ...gemeinsam, onchange: (e) => uebernehme(key, s, e.target.value, e.target) },
+            ...s.optionen(d).map(([w, t]) => el('option', { value: w, text: t, selected: String(w) === String(wert ?? '') })));
+          feld.addEventListener('keydown', (e) => tasten(e, key, s, i, d));
+        } else {
+          feld = el('input', {
+            type: 'text', ...gemeinsam, value: String(wert ?? ''), spellcheck: 'false', autocomplete: 'off',
+            inputmode: s.art === 'zahl' ? 'decimal' : null, class: s.art === 'zahl' ? 'zahl' : null, list: s.liste || null,
+            placeholder: s.platzhalter || null,
+            onchange: (e) => uebernehme(key, s, e.target.value, e.target),
+          });
+          feld.addEventListener('keydown', (e) => tasten(e, key, s, i, d));
+        }
+        tr.append(el('td', { class: s.art === 'zahl' ? 'zahl' : null }, feld));
+      }
+      if (o.verweise || o.entferne) {
+        tr.append(el('td', {}, el('button', {
+          type: 'button', class: 'knopf knopf-klein knopf-gefahr', 'data-aktion': 'loeschen', 'aria-label': `${o.einzahl} ${name(z)} löschen`,
+          title: `${o.einzahl} ${name(z)} löschen`, text: 'Löschen', onclick: () => loesche(key),
+        })));
+      }
+      return tr;
+    }
+
+    function tasten(e, key, s, i) {
+      const zeilen = o.liste(App.zustand.daten);
+      const nachbar = (r) => {
+        const j = i + r;
+        if (j < 0 || j >= zeilen.length) return null;
+        return { zeile: schluessel(zeilen[j], j), spalte: s.feld };
+      };
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        render();
+        tabelle.querySelector(`[data-zeile="${CSS.escape(key)}"][data-spalte="${CSS.escape(s.feld)}"]`)?.focus();
+        meldung.replaceChildren();
+        return;
+      }
+      const richtung = e.key === 'Enter' || (e.key === 'ArrowDown' && e.target.tagName === 'INPUT') ? 1
+        : e.key === 'ArrowUp' && e.target.tagName === 'INPUT' ? -1 : 0;
+      if (!richtung) return;
+      e.preventDefault();
+      const ziel = nachbar(richtung);
+      const gespeichert = e.target.tagName === 'INPUT' && e.target.value !== String((s.anzeigen ? s.anzeigen(zeilen[i], App.zustand.daten) : zeilen[i][s.feld]) ?? '')
+        ? uebernehme(key, s, e.target.value, e.target, ziel) : true;
+      if (gespeichert && ziel && !fokusNach) {
+        tabelle.querySelector(`[data-zeile="${CSS.escape(ziel.zeile)}"][data-spalte="${CSS.escape(ziel.spalte)}"]`)?.focus();
+      }
+    }
+
+    function finde(d, key) {
+      return o.liste(d).find((z, i) => schluessel(z, i) === key);
+    }
+
+    /** Übernimmt eine Eingabe; liefert true bei Erfolg. */
+    function uebernehme(key, s, roh, eingabe, danach) {
+      let lokal = null;
+      const alt = finde(App.zustand.daten, key);
+      const r = App.aendere(`${o.einzahl} ${alt ? name(alt) : key}: ${s.titel} geändert`, (d) => {
+        const z = finde(d, key);
+        if (!z) return false;
+        lokal = s.setzen ? s.setzen(z, roh, d) : setzeStandard(z, s, roh);
+        if (lokal) return false;
+      });
+      if (lokal || !r.ok) {
+        eingabe.setAttribute('aria-invalid', 'true');
+        zeige('fehler', `${s.titel} von „${alt ? name(alt) : key}“ nicht übernommen`, lokal ? [{ meldung: lokal }] : r.fehler.slice(0, 8));
+        return false;
+      }
+      meldung.replaceChildren();
+      if (danach) fokusNach = danach;
+      render();
+      return true;
+    }
+
+    function hinzufuegen() {
+      let fehlerText = null;
+      let neueZeile = null;
+      const r = App.aendere(`${o.einzahl} hinzugefügt`, (d) => {
+        const z = o.neu(d);
+        if (typeof z === 'string') { fehlerText = z; return false; }
+        neueZeile = z;
+      });
+      if (fehlerText || !r.ok) { zeige('fehler', `${o.einzahl} nicht hinzugefügt`, fehlerText ? [{ meldung: fehlerText }] : r.fehler.slice(0, 8)); return; }
+      const liste = o.liste(App.zustand.daten);
+      fokusNach = { zeile: schluessel(neueZeile, liste.length - 1), spalte: o.spalten.find((s) => s.art !== 'anzeige' && s.art !== 'bool').feld };
+      zeige('ok', `${o.einzahl} „${name(neueZeile)}“ hinzugefügt – bitte Angaben ergänzen.`);
+      render();
+    }
+
+    function loesche(key) {
+      const d = App.zustand.daten;
+      const z = finde(d, key);
+      if (!z) return;
+      const verweise = o.verweise ? o.verweise(d, z) || [] : [];
+      if (verweise.length) {
+        zeige('fehler', `${o.einzahl} „${name(z)}“ kann nicht gelöscht werden – ${verweise.length} Verweis(e):`,
+          verweise.slice(0, 30).map((v) => ({ meldung: v.text })).concat(verweise.length > 30 ? [{ meldung: `… und ${verweise.length - 30} weitere` }] : []));
+        return;
+      }
+      const r = App.aendere(`${o.einzahl} ${name(z)} gelöscht`, (neu) => {
+        if (o.entferne) return o.entferne(neu, key);
+        const liste = o.liste(neu);
+        liste.splice(liste.findIndex((x, i) => schluessel(x, i) === key), 1);
+      });
+      if (!r.ok) { zeige('fehler', `${o.einzahl} „${name(z)}“ nicht gelöscht`, r.fehler.slice(0, 8)); return; }
+      zeige('ok', `${o.einzahl} „${name(z)}“ gelöscht (rückgängig mit Strg+Z).`);
+      render();
+    }
+
+    return { element: wurzel, render, zeige };
+  }
+
+  /** Standard-Übernahme nach Spaltenart. */
+  function setzeStandard(z, s, roh) {
+    if (s.art === 'bool') { z[s.feld] = !!roh; return; }
+    if (s.art === 'wahl') { z[s.feld] = roh === '' ? null : roh; return; }
+    if (s.art === 'zahl') {
+      const t = String(roh).trim().replace(',', '.');
+      const n = Number(t);
+      if (t === '' || !Number.isFinite(n)) return `Bitte eine Zahl eingeben${s.min !== undefined ? ` (${s.min}–${s.max})` : ''}.`;
+      if (s.ganz && !Number.isInteger(n)) return 'Bitte eine ganze Zahl eingeben.';
+      if ((s.min !== undefined && n < s.min) || (s.max !== undefined && n > s.max)) return `Erlaubt sind Werte von ${s.min} bis ${s.max}.`;
+      z[s.feld] = n;
+      return;
+    }
+    const t = String(roh).trim();
+    if (s.pflicht && !t) return `${s.titel} ist ein Pflichtfeld.`;
+    if (s.max && t.length > s.max) return `${s.titel} darf höchstens ${s.max} Zeichen lang sein.`;
+    z[s.feld] = t;
+  }
+
+  return { erstelle, Text };
+})();
+
+/* ---- src/ui/24-stammdaten.js ---- */
+/* ==========================================================================
+ * Modul StammdatenReiter (Oberfläche, Reiter „Stammdaten“)
+ * Tabellen für Lehrkräfte, Fächer, Räume, Klassen, Zeitraster mit Pausen und
+ * Schule (§7). Kompakte Eingaben:
+ *   Qualifikationen „MA 1–4; DE 5–10“  (Fachkürzel, optional Stufenbereich)
+ *   Sperrzeiten     „Fr 5–6; Mo 1“      (Tag, Stunden)
+ *   Nachbarräume    „102, 103“          (Raumnamen)
+ * Löschen ist gesperrt, solange die Entität referenziert wird (mit Liste).
+ * ========================================================================== */
+const StammdatenReiter = (() => {
+  'use strict';
+  let panel = null;
+  let sichtbar = () => {};
+  let aktiv = 'lehrkraefte';
+  const tabellen = {};
+
+  const BEREICHE = [
+    ['lehrkraefte', 'Lehrkräfte'], ['faecher', 'Fächer'], ['raeume', 'Räume'], ['klassen', 'Klassen'],
+    ['zeitraster', 'Zeitraster und Pausen'], ['schule', 'Schule'],
+  ];
+
+  /* ------------------------ Text ↔ Daten ------------------------------ */
+
+  const kuerzelVon = (d, id) => d.faecher.find((f) => f.id === id)?.kuerzel || id;
+
+  function qualiText(z, d) {
+    return z.qualifikationen.map((q) => `${kuerzelVon(d, q.fach)} ${q.stufenVon === q.stufenBis ? q.stufenVon : q.stufenVon + '–' + q.stufenBis}`).join('; ');
+  }
+  function qualiLesen(text, d) {
+    const ergebnis = [];
+    for (const teil of text.split(';').map((t) => t.trim()).filter(Boolean)) {
+      const m = /^(\S+)(?:\s+(\d+)(?:\s*[-–]\s*(\d+))?)?$/.exec(teil);
+      if (!m) return `„${teil}“ verstehe ich nicht. Beispiel: MA 1–4; DE 5–10`;
+      const fach = d.faecher.find((f) => f.kuerzel.toLowerCase() === m[1].toLowerCase());
+      if (!fach) return `Fachkürzel „${m[1]}“ gibt es nicht. Vorhanden: ${d.faecher.map((f) => f.kuerzel).join(', ') || '–'}`;
+      const von = m[2] ? Number(m[2]) : 1;
+      const bis = m[3] ? Number(m[3]) : m[2] ? von : 13;
+      if (von < 1 || bis > 13 || bis < von) return `Stufenbereich bei „${teil}“ muss zwischen 1 und 13 liegen.`;
+      ergebnis.push({ fach: fach.id, stufenVon: von, stufenBis: bis });
+    }
+    return ergebnis;
+  }
+  function sperrText(z) {
+    return (z.gesperrt || []).map((g) => `${g.tag} ${Tabelle.Text.bereiche(g.stunden)}`).join('; ');
+  }
+  function sperrLesen(text, d) {
+    const ergebnis = new Map();
+    for (const teil of text.split(';').map((t) => t.trim()).filter(Boolean)) {
+      const m = /^(Mo|Di|Mi|Do|Fr)\s+(.+)$/i.exec(teil);
+      if (!m) return `„${teil}“ verstehe ich nicht. Beispiel: Fr 5–6; Mo 1`;
+      const tag = m[1][0].toUpperCase() + m[1][1].toLowerCase();
+      if (!d.zeitraster.tage.includes(tag)) return `${tag} liegt nicht im Zeitraster.`;
+      const stunden = Tabelle.Text.zahlen(m[2]);
+      if (!stunden || !stunden.length) return `Stunden bei „${teil}“ verstehe ich nicht. Beispiel: 1–2, 5`;
+      const nr = d.zeitraster.stunden.map((s) => s.nr);
+      const fremd = stunden.filter((s) => !nr.includes(s));
+      if (fremd.length) return `Stunde ${fremd.join(', ')} gibt es im Zeitraster nicht.`;
+      ergebnis.set(tag, [...new Set([...(ergebnis.get(tag) || []), ...stunden])].sort((a, b) => a - b));
+    }
+    return [...ergebnis].map(([tag, stunden]) => ({ tag, stunden }));
+  }
+  const setzeMit = (leser, feld) => (z, roh, d) => {
+    const r = leser(String(roh), d);
+    if (typeof r === 'string') return r;
+    z[feld] = r;
+  };
+
+  const eindeutigesKuerzel = (liste, stamm) => {
+    for (let n = 1; ; n++) { const k = stamm + n; if (!liste.some((x) => (x.kuerzel || x.name).toLowerCase() === k.toLowerCase())) return k; }
+  };
+  const neueId = (liste, praefix, stamm) => Kern.Hilfen.neueId(praefix, new Set(liste.map((x) => x.id)), stamm);
+  const verweiseAuf = (sammlung) => (d, z) => Kern.Verweise.finde(d, sammlung, z.id);
+
+  /* ----------------------------- Tabellen ----------------------------- */
+
+  function baueTabellen() {
+    const lehrerOptionen = (d) => [['', '– keine –'], ...d.lehrkraefte.map((l) => [l.id, `${l.kuerzel} – ${l.name}`])];
+    const raumOptionen = (d) => [['', '– keiner –'], ...d.raeume.map((r) => [r.id, `${r.name} (${r.kapazitaet})`])];
+
+    tabellen.lehrkraefte = Tabelle.erstelle({
+      id: 'tabelle-lehrkraefte', beschriftung: 'Lehrkräfte', einzahl: 'Lehrkraft', liste: (d) => d.lehrkraefte,
+      spalten: [
+        { feld: 'name', titel: 'Name', art: 'text', pflicht: true, breite: '12em' },
+        { feld: 'kuerzel', titel: 'Kürzel', art: 'text', pflicht: true, max: 12, breite: '5em' },
+        { feld: 'qualifikationen', titel: 'Qualifikationen (Fach Stufen)', art: 'text', breite: '14em', platzhalter: 'z. B. MA 1–4; DE 1–4', anzeigen: qualiText, setzen: setzeMit(qualiLesen, 'qualifikationen') },
+        { feld: 'sollStunden', titel: 'Soll', art: 'zahl', min: 0, max: 40 },
+        { feld: 'minStunden', titel: 'Min', art: 'zahl', min: 0, max: 40 },
+        { feld: 'maxStunden', titel: 'Max', art: 'zahl', min: 0, max: 40 },
+        { feld: 'aufsichtenProWoche', titel: 'Aufsichten/Woche', art: 'zahl', min: 0, max: 50, ganz: true },
+        { feld: 'gesperrt', titel: 'Gesperrt (Tag Stunden)', art: 'text', breite: '10em', platzhalter: 'z. B. Fr 5–6', anzeigen: sperrText, setzen: setzeMit(sperrLesen, 'gesperrt') },
+        { feld: 'abwesenheiten', titel: 'Abwesenheiten', art: 'anzeige', anzeigen: (z) => (z.abwesenheiten.length ? `${z.abwesenheiten.length} (Reiter Ausfall)` : '–') },
+      ],
+      neu: (d) => {
+        const kuerzel = eindeutigesKuerzel(d.lehrkraefte, 'NEU');
+        const l = { id: neueId(d.lehrkraefte, 'l', kuerzel), name: 'Neue Lehrkraft', kuerzel, qualifikationen: [], sollStunden: 0, minStunden: 0, maxStunden: 0, aufsichtenProWoche: 0, gesperrt: [], abwesenheiten: [] };
+        d.lehrkraefte.push(l);
+        return l;
+      },
+      verweise: verweiseAuf('lehrkraefte'),
+    });
+
+    tabellen.faecher = Tabelle.erstelle({
+      id: 'tabelle-faecher', beschriftung: 'Fächer', einzahl: 'Fach', liste: (d) => d.faecher,
+      spalten: [
+        { feld: 'name', titel: 'Name', art: 'text', pflicht: true, breite: '12em' },
+        { feld: 'kuerzel', titel: 'Kürzel', art: 'text', pflicht: true, max: 12, breite: '5em' },
+        { feld: 'raumtyp', titel: 'Benötigter Raumtyp', art: 'text', liste: 'liste-raumtypen', platzhalter: 'Klassenraum', breite: '10em',
+          setzen: (z, roh) => { const t = String(roh).trim(); z.raumtyp = t ? t : null; } },
+        { feld: 'blockbar', titel: 'Doppelstunden erlaubt', art: 'bool' },
+        { feld: 'hauptfach', titel: 'Hauptfach', art: 'bool' },
+      ],
+      neu: (d) => {
+        const kuerzel = eindeutigesKuerzel(d.faecher, 'F');
+        const f = { id: neueId(d.faecher, 'f', kuerzel), name: 'Neues Fach', kuerzel, raumtyp: null, blockbar: true, hauptfach: false };
+        d.faecher.push(f);
+        return f;
+      },
+      verweise: verweiseAuf('faecher'),
+    });
+
+    tabellen.raeume = Tabelle.erstelle({
+      id: 'tabelle-raeume', beschriftung: 'Räume', einzahl: 'Raum', liste: (d) => d.raeume,
+      spalten: [
+        { feld: 'name', titel: 'Name', art: 'text', pflicht: true, breite: '8em' },
+        { feld: 'typ', titel: 'Typ', art: 'wahl', optionen: () => [['klassenraum', 'Klassenraum'], ['fachraum', 'Fachraum'], ['turnhalle', 'Turnhalle'], ['schwimmhalle', 'Schwimmhalle']],
+          setzen: (z, roh) => {
+            z.typ = roh;
+            if (roh === 'fachraum' && !z.fachraumtyp) z.fachraumtyp = 'fachraum';
+            if (roh !== 'fachraum') delete z.fachraumtyp;
+          } },
+        { feld: 'fachraumtyp', titel: 'Fachraumtyp', art: 'text', liste: 'liste-raumtypen', breite: '8em',
+          setzen: (z, roh) => {
+            const t = String(roh).trim();
+            if (z.typ !== 'fachraum') return t ? 'Ein Fachraumtyp gilt nur für Fachräume. Bitte zuerst den Typ „Fachraum“ wählen.' : undefined;
+            if (!t) return 'Fachräume brauchen einen Fachraumtyp (z. B. nawi, musik).';
+            z.fachraumtyp = t;
+          } },
+        { feld: 'kapazitaet', titel: 'Plätze', art: 'zahl', min: 1, max: 500, ganz: true },
+        { feld: 'nahe', titel: 'Nachbarräume (Namen)', art: 'text', breite: '10em', platzhalter: 'z. B. 102, 103',
+          anzeigen: (z, d) => z.nahe.map((id) => d.raeume.find((r) => r.id === id)?.name || id).join(', '),
+          setzen: (z, roh, d) => {
+            const namen = String(roh).split(',').map((t) => t.trim()).filter(Boolean);
+            const ids = [];
+            for (const n of namen) {
+              const r = d.raeume.find((x) => x.name.toLowerCase() === n.toLowerCase());
+              if (!r) return `Raum „${n}“ gibt es nicht.`;
+              if (r.id === z.id) return 'Ein Raum kann nicht neben sich selbst liegen.';
+              ids.push(r.id);
+            }
+            // „nahe“ ist symmetrisch: Gegenseite mitpflegen
+            for (const r of d.raeume) {
+              if (r.id === z.id) continue;
+              const soll = ids.includes(r.id);
+              const ist = r.nahe.includes(z.id);
+              if (soll && !ist) r.nahe.push(z.id);
+              if (!soll && ist) r.nahe = r.nahe.filter((x) => x !== z.id);
+            }
+            z.nahe = [...new Set(ids)];
+          } },
+        { feld: 'gesperrt', titel: 'Gesperrt (Tag Stunden)', art: 'text', breite: '10em', platzhalter: 'z. B. Mi 1–2', anzeigen: sperrText, setzen: setzeMit(sperrLesen, 'gesperrt') },
+      ],
+      neu: (d) => {
+        const name = eindeutigesKuerzel(d.raeume, 'Raum ');
+        const r = { id: neueId(d.raeume, 'r', name), name, typ: 'klassenraum', kapazitaet: 30, nahe: [], gesperrt: [], abwesenheiten: [] };
+        d.raeume.push(r);
+        return r;
+      },
+      verweise: verweiseAuf('raeume'),
+    });
+
+    tabellen.klassen = Tabelle.erstelle({
+      id: 'tabelle-klassen', beschriftung: 'Klassen', einzahl: 'Klasse', liste: (d) => d.klassen,
+      spalten: [
+        { feld: 'name', titel: 'Name', art: 'text', pflicht: true, breite: '6em' },
+        { feld: 'stufe', titel: 'Stufe', art: 'zahl', min: 1, max: 13, ganz: true },
+        { feld: 'schueler', titel: 'Schüler:innen', art: 'zahl', min: 1, max: 60, ganz: true },
+        { feld: 'klassenlehrkraft', titel: 'Klassenlehrkraft', art: 'wahl', optionen: lehrerOptionen },
+        { feld: 'heimatraum', titel: 'Heimatraum', art: 'wahl', optionen: raumOptionen },
+        { feld: 'stundentafel', titel: 'Wochenstunden (Reiter Zuordnung)', art: 'anzeige', anzeigen: (z) => z.stundentafel.reduce((s, e) => s + e.stunden, 0) },
+      ],
+      neu: (d) => {
+        const name = eindeutigesKuerzel(d.klassen, 'Klasse ');
+        const k = { id: neueId(d.klassen, 'k', name), name, stufe: 1, schueler: 20, klassenlehrkraft: null, heimatraum: null, stundentafel: [] };
+        d.klassen.push(k);
+        return k;
+      },
+      verweise: verweiseAuf('klassen'),
+    });
+
+    tabellen.zeitraster = Tabelle.erstelle({
+      id: 'tabelle-zeitraster', beschriftung: 'Unterrichtsstunden und Pausen', einzahl: 'Stunde',
+      liste: (d) => d.zeitraster.stunden, schluessel: (z) => String(z.nr), name: (z) => `${z.nr}. Stunde`,
+      spalten: [
+        { feld: 'nr', titel: 'Stunde', art: 'anzeige' },
+        { feld: 'von', titel: 'Beginn', art: 'text', platzhalter: '08:00', setzen: zeit('von') },
+        { feld: 'bis', titel: 'Ende', art: 'text', platzhalter: '08:45', setzen: zeit('bis') },
+        { feld: 'doppel', titel: 'Doppelstunde kann hier beginnen', art: 'bool',
+          anzeigen: (z, d) => d.zeitraster.doppelstundenStart.includes(z.nr),
+          setzen: (z, an, d) => {
+            const liste = d.zeitraster.doppelstundenStart.filter((n) => n !== z.nr);
+            if (an) liste.push(z.nr);
+            d.zeitraster.doppelstundenStart = liste.sort((a, b) => a - b);
+          } },
+        { feld: 'pause', titel: 'Pause davor', art: 'bool',
+          anzeigen: (z, d) => d.zeitraster.pausen.some((p) => p.vorStunde === z.nr),
+          setzen: (z, an, d) => {
+            const ohne = d.zeitraster.pausen.filter((p) => p.vorStunde !== z.nr);
+            if (an) ohne.push({ vorStunde: z.nr, name: z.nr === 1 ? 'Frühaufsicht' : 'Pause', aufsichten: 1 });
+            d.zeitraster.pausen = ohne.sort((a, b) => a.vorStunde - b.vorStunde);
+          } },
+        { feld: 'pausenname', titel: 'Name der Pause', art: 'text',
+          anzeigen: (z, d) => d.zeitraster.pausen.find((p) => p.vorStunde === z.nr)?.name ?? '',
+          setzen: (z, roh, d) => {
+            const p = d.zeitraster.pausen.find((x) => x.vorStunde === z.nr);
+            if (!p) return 'Vor dieser Stunde ist keine Pause – zuerst „Pause davor“ ankreuzen.';
+            p.name = String(roh).trim();
+          } },
+        { feld: 'aufsichten', titel: 'Aufsichten', art: 'zahl', min: 0, max: 50, ganz: true,
+          anzeigen: (z, d) => d.zeitraster.pausen.find((p) => p.vorStunde === z.nr)?.aufsichten ?? '',
+          setzen: (z, roh, d) => {
+            const p = d.zeitraster.pausen.find((x) => x.vorStunde === z.nr);
+            if (!p) return 'Vor dieser Stunde ist keine Pause – zuerst „Pause davor“ ankreuzen.';
+            const n = Number(String(roh).trim());
+            if (!Number.isInteger(n) || n < 0 || n > 50) return 'Bitte eine ganze Zahl von 0 bis 50 eingeben.';
+            p.aufsichten = n;
+          } },
+      ],
+      neu: (d) => {
+        const st = d.zeitraster.stunden;
+        if (st.length >= 10) return 'Höchstens 10 Stunden je Tag.';
+        const letzte = st[st.length - 1];
+        const minuten = letzte ? Number(letzte.bis.slice(0, 2)) * 60 + Number(letzte.bis.slice(3)) + 5 : 8 * 60;
+        const fmt = (m) => String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+        const s = { nr: st.length + 1, von: fmt(minuten), bis: fmt(minuten + 45) };
+        st.push(s);
+        return s;
+      },
+      entferne: (d, key) => {
+        const st = d.zeitraster.stunden;
+        if (String(st[st.length - 1]?.nr) !== key) return false; // nur die letzte Stunde
+        const nr = st.pop().nr;
+        d.zeitraster.pausen = d.zeitraster.pausen.filter((p) => p.vorStunde !== nr);
+        d.zeitraster.doppelstundenStart = d.zeitraster.doppelstundenStart.filter((n) => n !== nr && n + 1 !== nr);
+      },
+      verweise: (d, z) => {
+        if (z.nr !== d.zeitraster.stunden.length) return [{ text: 'Nur die letzte Stunde des Tages kann entfernt werden.' }];
+        const treffer = [];
+        d.plan.regelplan.forEach((s) => { if (s.stunde === z.nr) treffer.push({ text: `Regelplan ${d.klassen.find((k) => k.id === s.klasse)?.name} ${s.tag} ${s.stunde}. Stunde` }); });
+        d.plan.vertretungen.forEach((s) => { if (s.stunde === z.nr) treffer.push({ text: `Vertretung ${s.datum} ${s.stunde}. Stunde` }); });
+        for (const l of d.lehrkraefte) for (const g of l.gesperrt) if (g.stunden.includes(z.nr)) treffer.push({ text: `Lehrkraft ${l.kuerzel}: gesperrt ${g.tag}` });
+        for (const r of d.raeume) for (const g of r.gesperrt) if (g.stunden.includes(z.nr)) treffer.push({ text: `Raum ${r.name}: gesperrt ${g.tag}` });
+        return treffer;
+      },
+    });
+  }
+
+  function zeit(feld) {
+    return (z, roh) => {
+      const t = String(roh).trim().replace(/^(\d):/, '0$1:').replace('.', ':');
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(t)) return 'Bitte eine Uhrzeit im Format HH:MM eingeben, z. B. 08:00.';
+      z[feld] = t;
+    };
+  }
+
+  /* ----------------------------- Aufbau ------------------------------- */
+
+  function baue(ziel) {
+    panel = ziel;
+    const el = App.el;
+    baueTabellen();
+    const auswahl = el('div', { class: 'umschalter', role: 'group', 'aria-label': 'Bereich der Stammdaten' },
+      ...BEREICHE.map(([id, titel]) => el('button', { type: 'button', class: 'knopf', id: 'stamm-' + id, 'aria-pressed': String(id === aktiv), text: titel, onclick: () => wechsle(id) })));
+    const tage = el('fieldset', { class: 'tage', id: 'stamm-tage' }, el('legend', { text: 'Unterrichtstage' }),
+      ...Kern.Modell.TAGE.map((t) => el('label', { class: 'feld-haken' },
+        el('input', { type: 'checkbox', 'data-tag': t, onchange: (e) => setzeTag(t, e.target.checked, e.target) }), el('span', { text: t }))));
+    const meldungTage = el('div', { class: 'meldungen', id: 'stamm-tage-meldung', 'aria-live': 'polite' });
+    const schule = el('div', { class: 'formular', id: 'stamm-schule-formular' },
+      ...[['name', 'Name der Schule'], ['schuljahr', 'Schuljahr']].map(([feld, titel]) => el('label', { class: 'feld' },
+        el('span', { text: titel }),
+        el('input', { type: 'text', 'data-schulfeld': feld, onchange: (e) => App.aendere(`Schule: ${titel} geändert`, (d) => { d.schule[feld] = e.target.value.trim(); }) }))));
+    const listen = el('datalist', { id: 'liste-raumtypen' });
+    const bereiche = {
+      lehrkraefte: el('div', {}, el('p', { class: 'hinweis', text: 'Qualifikationen als „Fachkürzel Stufen“, mehrere durch Semikolon: MA 1–4; DE 1–4. Sperrzeiten als „Tag Stunden“: Fr 5–6; Mo 1.' }), tabellen.lehrkraefte.element),
+      faecher: el('div', {}, el('p', { class: 'hinweis', text: 'Raumtyp leer lassen für Unterricht im Klassenraum; sonst turnhalle, schwimmhalle oder ein Fachraumtyp wie nawi.' }), tabellen.faecher.element),
+      raeume: el('div', {}, tabellen.raeume.element),
+      klassen: el('div', {}, el('p', { class: 'hinweis', text: 'Stundentafeln und Lehrkräfte je Fach werden im Reiter „Zuordnung“ gepflegt.' }), tabellen.klassen.element),
+      zeitraster: el('div', {}, tage, meldungTage, el('p', { class: 'hinweis', text: 'Neue Stunden werden am Tagesende angehängt; entfernt werden kann nur die letzte Stunde.' }), tabellen.zeitraster.element),
+      schule: el('div', {}, schule),
+    };
+    for (const [id, b] of Object.entries(bereiche)) { b.id = 'stamm-bereich-' + id; b.hidden = id !== aktiv; }
+    panel.append(auswahl, listen, ...Object.values(bereiche));
+    sichtbar = App.beobachteSichtbar(panel, render);
+    render();
+  }
+
+  function wechsle(id) {
+    aktiv = id;
+    for (const [b] of BEREICHE) {
+      panel.querySelector('#stamm-' + b).setAttribute('aria-pressed', String(b === id));
+      panel.querySelector('#stamm-bereich-' + b).hidden = b !== id;
+    }
+    render();
+  }
+
+  function setzeTag(tag, an, eingabe) {
+    const r = App.aendere(`Unterrichtstag ${tag} ${an ? 'hinzugefügt' : 'entfernt'}`, (d) => {
+      const tage = new Set(d.zeitraster.tage);
+      if (an) tage.add(tag); else tage.delete(tag);
+      d.zeitraster.tage = Kern.Modell.TAGE.filter((t) => tage.has(t));
+    });
+    const meldung = panel.querySelector('#stamm-tage-meldung');
+    if (!r.ok) {
+      eingabe.checked = !an;
+      meldung.replaceChildren(App.el('div', { class: 'meldung meldung-fehler', role: 'alert' },
+        App.el('p', { class: 'meldung-titel', text: `⚠ ${tag} kann nicht ${an ? 'hinzugefügt' : 'entfernt'} werden – der Tag wird noch verwendet:` }),
+        App.el('ul', { class: 'pfadliste' }, ...r.fehler.slice(0, 8).map((f) => App.el('li', {}, App.el('code', { text: f.pfad }), ': ' + f.meldung)))));
+    } else meldung.replaceChildren();
+  }
+
+  function render() {
+    const d = App.zustand.daten;
+    const typen = new Set(['turnhalle', 'schwimmhalle', ...d.raeume.map((r) => r.fachraumtyp).filter(Boolean), ...d.faecher.map((f) => f.raumtyp).filter(Boolean)]);
+    panel.querySelector('#liste-raumtypen').replaceChildren(...[...typen].map((t) => App.el('option', { value: t })));
+    for (const input of panel.querySelectorAll('#stamm-tage input')) input.checked = d.zeitraster.tage.includes(input.dataset.tag);
+    for (const input of panel.querySelectorAll('[data-schulfeld]')) if (input !== document.activeElement) input.value = d.schule[input.dataset.schulfeld] || '';
+    tabellen[aktiv]?.render();
+  }
+
+  return { sichtbar: () => sichtbar(), baue, wechsle, qualiLesen, sperrLesen };
+})();
+
+/* ---- src/ui/26-zuordnung.js ---- */
+/* ==========================================================================
+ * Modul ZuordnungReiter (Oberfläche, Reiter „Zuordnung“)
+ * Matrix Klasse × Fach (§7): Wochenstunden der Stundentafel, Haupt- und
+ * Zweitlehrkraft (Kürzel), Doppelstunde gewünscht. Daneben Soll-/Ist-Stunden
+ * je Lehrkraft mit Warnung bei Überschreitung.
+ * Tastatur: Enter/↓/↑ wechseln in dieselbe Spalte der nächsten/vorigen Klasse.
+ * ========================================================================== */
+const ZuordnungReiter = (() => {
+  'use strict';
+  let panel = null;
+  let sichtbar = () => {};
+  let fokusNach = null;
+
+  function baue(ziel) {
+    panel = ziel;
+    const el = App.el;
+    panel.append(
+      el('p', { class: 'hinweis', text: 'Je Zelle: Wochenstunden (Std), Hauptlehrkraft (H) und Zweitlehrkraft (Z) als Kürzel, D = Doppelstunde gewünscht. Leere Stunden entfernen das Fach aus der Stundentafel.' }),
+      el('datalist', { id: 'liste-lehrkraefte' }),
+      el('div', { class: 'meldungen', id: 'zuordnung-meldung', 'aria-live': 'polite' }),
+      el('div', { class: 'tabellen-rahmen' }, el('table', { class: 'tabelle matrix', id: 'zuordnung-matrix' })),
+      el('h3', { text: 'Soll- und Ist-Stunden laut Zuordnung' }),
+      el('div', { class: 'tabellen-rahmen' }, el('table', { class: 'tabelle', id: 'zuordnung-soll-ist' })),
+    );
+    sichtbar = App.beobachteSichtbar(panel, render);
+    render();
+  }
+
+  const kuerzel = (d, id) => d.lehrkraefte.find((l) => l.id === id)?.kuerzel || '';
+
+  function render() {
+    const d = App.zustand.daten;
+    const el = App.el;
+    const aktiv = document.activeElement;
+    if (!fokusNach && aktiv && panel.contains(aktiv) && aktiv.dataset.zeile) fokusNach = { zeile: aktiv.dataset.zeile, spalte: aktiv.dataset.spalte };
+    panel.querySelector('#liste-lehrkraefte').replaceChildren(...d.lehrkraefte.map((l) => el('option', { value: l.kuerzel, label: l.name })));
+    const ix = Kern.Index.erstelle(d);
+    const matrix = panel.querySelector('#zuordnung-matrix');
+    const kopf = el('tr', {}, el('th', { scope: 'col', text: 'Klasse' }), ...d.faecher.map((f) => el('th', { scope: 'col', text: f.kuerzel, title: f.name })), el('th', { scope: 'col', class: 'zahl', text: 'Summe' }));
+    const zeilen = d.klassen.map((k) => {
+      const tafel = new Map(k.stundentafel.map((e) => [e.fach, e]));
+      return el('tr', {}, el('th', { scope: 'row', text: k.name }),
+        ...d.faecher.map((f) => zelle(d, ix, k, f, tafel.get(f.id))),
+        el('td', { class: 'zahl', text: String(k.stundentafel.reduce((s, e) => s + e.stunden, 0)) }));
+    });
+    matrix.replaceChildren(el('caption', { text: 'Stundentafel und Lehrkräfte je Klasse und Fach' }), el('thead', {}, kopf),
+      el('tbody', {}, ...(zeilen.length ? zeilen : [el('tr', {}, el('td', { colspan: String(d.faecher.length + 2), class: 'leise', text: 'Noch keine Klassen – bitte im Reiter „Stammdaten“ anlegen.' }))])));
+    renderSollIst(d, ix);
+    if (fokusNach) {
+      const z = panel.querySelector(`[data-zeile="${CSS.escape(fokusNach.zeile)}"][data-spalte="${CSS.escape(fokusNach.spalte)}"]`);
+      fokusNach = null;
+      if (z) { z.focus(); z.select?.(); }
+    }
+  }
+
+  function zelle(d, ix, k, f, eintrag) {
+    const el = App.el;
+    const zu = ix.zuordnungVon(k.id, f.id);
+    const wo = `${f.kuerzel} ${k.name}`;
+    const feld = (art, wert, beschr, extra = {}) => el('input', {
+      type: 'text', class: 'eingabe-' + art, value: wert, 'data-zeile': k.id, 'data-spalte': f.id + '|' + art,
+      'aria-label': `${beschr} ${wo}`, spellcheck: 'false', autocomplete: 'off', ...extra,
+      onchange: (e) => uebernehme(k.id, f.id, art, e.target.value, e.target),
+      onkeydown: (e) => tasten(e, k.id, f.id, art),
+    });
+    const td = el('td', { class: 'matrix-zelle' + (eintrag ? '' : ' leer') },
+      el('label', {}, el('span', { text: 'Std' }), feld('std', eintrag ? String(eintrag.stunden) : '', 'Wochenstunden', { inputmode: 'numeric' })),
+      el('label', {}, el('span', { text: 'H' }), feld('haupt', kuerzel(d, zu.haupt), 'Hauptlehrkraft', { list: 'liste-lehrkraefte' })),
+      el('label', {}, el('span', { text: 'Z' }), feld('zweit', kuerzel(d, zu.zweit[0]), 'Zweitlehrkraft', { list: 'liste-lehrkraefte' })),
+      el('label', { class: 'matrix-doppel' }, el('input', {
+        type: 'checkbox', checked: !!eintrag?.doppelt, disabled: !eintrag, 'aria-label': `Doppelstunde gewünscht ${wo}`,
+        'data-zeile': k.id, 'data-spalte': f.id + '|doppelt', onchange: (e) => uebernehme(k.id, f.id, 'doppelt', e.target.checked, e.target),
+      }), el('span', { text: 'D' })));
+    if (zu.haupt && eintrag && !ix.istQualifiziert(zu.haupt, f.id, k.stufe)) {
+      td.classList.add('warnung');
+      td.append(el('span', { class: 'marke', title: `${kuerzel(d, zu.haupt)} ist für ${f.kuerzel} in Stufe ${k.stufe} nicht qualifiziert (H8) – der Planer weist die Stunden neu zu`, text: '⚠ H8' }));
+    }
+    return td;
+  }
+
+  function tasten(e, klasse, fach, art) {
+    const d = App.zustand.daten;
+    const i = d.klassen.findIndex((k) => k.id === klasse);
+    const r = e.key === 'Enter' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
+    if (e.key === 'Escape') { e.preventDefault(); render(); return; }
+    if (!r) return;
+    e.preventDefault();
+    const ziel = d.klassen[i + r];
+    const naechstes = ziel ? { zeile: ziel.id, spalte: fach + '|' + art } : null;
+    const vorher = e.target.defaultValue;
+    if (e.target.value !== vorher) {
+      if (!uebernehme(klasse, fach, art, e.target.value, e.target, naechstes)) return;
+    } else if (naechstes) {
+      panel.querySelector(`[data-zeile="${CSS.escape(naechstes.zeile)}"][data-spalte="${CSS.escape(naechstes.spalte)}"]`)?.focus();
+    }
+  }
+
+  /** Übernimmt eine Zelleneingabe; liefert true bei Erfolg. */
+  function uebernehme(klasseId, fachId, art, roh, eingabe, danach) {
+    let lokal = null;
+    const d0 = App.zustand.daten;
+    const wo = `${d0.faecher.find((f) => f.id === fachId)?.kuerzel} ${d0.klassen.find((k) => k.id === klasseId)?.name}`;
+    const titel = { std: 'Wochenstunden', haupt: 'Hauptlehrkraft', zweit: 'Zweitlehrkraft', doppelt: 'Doppelstunde' }[art];
+    const r = App.aendere(`Zuordnung ${wo}: ${titel} geändert`, (d) => {
+      const k = d.klassen.find((x) => x.id === klasseId);
+      const eintrag = k.stundentafel.find((e) => e.fach === fachId);
+      if (art === 'std') {
+        const t = String(roh).trim();
+        if (t === '' || t === '0') {
+          k.stundentafel = k.stundentafel.filter((e) => e.fach !== fachId);
+          d.zuordnungen = d.zuordnungen.filter((z) => !(z.klasse === klasseId && z.fach === fachId));
+          return;
+        }
+        const n = Number(t);
+        if (!Number.isInteger(n) || n < 1 || n > 20) { lokal = 'Bitte eine ganze Zahl von 0 bis 20 eingeben.'; return false; }
+        if (eintrag) eintrag.stunden = n;
+        else {
+          k.stundentafel.push({ fach: fachId, stunden: n, doppelt: false });
+          const reihenfolge = d.faecher.map((f) => f.id);
+          k.stundentafel.sort((a, b) => reihenfolge.indexOf(a.fach) - reihenfolge.indexOf(b.fach));
+        }
+        return;
+      }
+      if (!eintrag) { lokal = 'Bitte zuerst Wochenstunden eintragen.'; return false; }
+      if (art === 'doppelt') { eintrag.doppelt = !!roh; return; }
+      const t = String(roh).trim();
+      let lehrkraft = null;
+      if (t) {
+        lehrkraft = d.lehrkraefte.find((l) => l.kuerzel.toLowerCase() === t.toLowerCase());
+        if (!lehrkraft) { lokal = `Kürzel „${t}“ gibt es nicht.`; return false; }
+      }
+      // bisherige Einträge dieser Rolle entfernen, ebenso dieselbe Lehrkraft in der anderen Rolle
+      d.zuordnungen = d.zuordnungen.filter((z) => !(z.klasse === klasseId && z.fach === fachId && (z.rolle === art || (lehrkraft && z.lehrkraft === lehrkraft.id))));
+      if (lehrkraft) d.zuordnungen.push({ klasse: klasseId, fach: fachId, lehrkraft: lehrkraft.id, rolle: art });
+    });
+    const meldung = panel.querySelector('#zuordnung-meldung');
+    if (lokal || !r.ok) {
+      eingabe.setAttribute('aria-invalid', 'true');
+      if (eingabe.type === 'checkbox') eingabe.checked = !eingabe.checked;
+      meldung.replaceChildren(App.el('div', { class: 'meldung meldung-fehler', role: 'alert' },
+        App.el('p', { class: 'meldung-titel', text: `⚠ ${titel} für ${wo} nicht übernommen` }),
+        App.el('ul', { class: 'pfadliste' }, ...(lokal ? [{ meldung: lokal }] : r.fehler.slice(0, 8)).map((f) => App.el('li', {}, f.pfad ? App.el('code', { text: f.pfad }) : null, f.pfad ? ': ' : '', f.meldung)))));
+      return false;
+    }
+    meldung.replaceChildren();
+    if (danach) fokusNach = danach;
+    render();
+    return true;
+  }
+
+  function renderSollIst(d, ix) {
+    const el = App.el;
+    const haupt = new Map();
+    const zweit = new Map();
+    for (const z of d.zuordnungen) {
+      const h = ix.tafel.get(z.klasse)?.get(z.fach)?.stunden || 0;
+      const ziel = z.rolle === 'haupt' ? haupt : zweit;
+      ziel.set(z.lehrkraft, (ziel.get(z.lehrkraft) || 0) + h);
+    }
+    const tabelle = panel.querySelector('#zuordnung-soll-ist');
+    tabelle.replaceChildren(
+      el('caption', { text: 'Stunden laut Festzuordnung (der Planer verteilt Stunden ohne Zuordnung und vergibt weitere Zweitbesetzungen)' }),
+      el('thead', {}, el('tr', {}, ...['Kürzel', 'Name', 'Soll', 'Reserve', 'Max', 'Haupt', 'Zweit', 'Gesamt', 'Hinweis'].map((t, i) => el('th', { scope: 'col', class: i >= 2 && i <= 7 ? 'zahl' : null, text: t })))),
+      el('tbody', {}, ...d.lehrkraefte.map((l) => {
+        const h = haupt.get(l.id) || 0;
+        const z = zweit.get(l.id) || 0;
+        const g = h + z;
+        const reserve = ix.reserve(l);
+        let hinweis = '';
+        let art = '';
+        if (g > l.maxStunden) { hinweis = `⚠ ${g - l.maxStunden} über der Höchstgrenze (H7)`; art = 'fehler-text'; } else if (z > 0 && g > l.sollStunden - reserve) { hinweis = '⚠ Zweitbesetzung greift die Vertretungsreserve an (H11)'; art = 'fehler-text'; } else if (g > l.sollStunden - reserve) { hinweis = 'Reserve wird für Hauptunterricht genutzt'; art = 'warnung-text'; } else if (g < l.minStunden) { hinweis = `unter Mindeststunden (${l.minStunden})`; art = 'leise'; }
+        return el('tr', { 'data-lehrkraft': l.id }, el('th', { scope: 'row', text: l.kuerzel }), el('td', { text: l.name }),
+          ...[l.sollStunden, reserve, l.maxStunden, h, z, g].map((x) => el('td', { class: 'zahl', text: String(x) })),
+          el('td', { class: art, text: hinweis }));
+      })));
+  }
+
+  return { sichtbar: () => sichtbar(), baue };
+})();
+
 /* ---- src/ui/30-daten.js ---- */
 /* ==========================================================================
  * Modul DatenReiter (Oberfläche, Reiter „Daten“)
@@ -3171,6 +4017,7 @@ const Dialog = (() => {
 const DatenReiter = (() => {
   'use strict';
   let panel = null;
+  let sichtbar = () => {};
   let meldungen = null;
 
   /* ---------------------------- Aufbau ---------------------------------- */
@@ -3207,7 +4054,7 @@ const DatenReiter = (() => {
         el('button', { type: 'button', class: 'knopf knopf-gefahr', id: 'daten-zuruecksetzen', text: 'Alle Daten zurücksetzen …', onclick: zuruecksetzen })),
     );
     richteSeitenAblageEin();
-    App.beobachte(aktualisiere);
+    sichtbar = App.beobachteSichtbar(panel, aktualisiere);
     aktualisiere();
   }
 
@@ -3374,6 +4221,7 @@ const DatenReiter = (() => {
     }
     // Ein vollständiger Import entspricht einem gespeicherten Stand; nach einem Teil-Import ist der Gesamtstand neu.
     App.setzeDaten(erg.zustand, {
+      beschreibung: `Import ${name}`,
       geaendert: erg.teil !== 'gesamt',
       letzterExport: erg.teil === 'gesamt' ? (erg.zustand.exportedAt || null) : App.zustand.letzterExport,
     });
@@ -3408,11 +4256,11 @@ const DatenReiter = (() => {
       const ja = await bestaetigeErsetzen('Alle Daten zurücksetzen?', 'Alle Stammdaten, Pläne und Einstellungen werden gelöscht.');
       if (!ja) return;
     }
-    App.setzeDaten(Kern.Modell.leererZustand(), { geaendert: false, letzterExport: null });
+    App.setzeDaten(Kern.Modell.leererZustand(), { geaendert: false, letzterExport: null, beschreibung: 'Daten zurückgesetzt' });
     zeige('ok', 'Daten zurückgesetzt', App.el('p', { text: 'Das Programm ist jetzt leer.' }));
   }
 
-  return { baue, importiereDatei, importiereText, exportiere };
+  return { sichtbar: () => sichtbar(), baue, importiereDatei, importiereText, exportiere };
 })();
 
 /* ---- src/ui/40-planung.js ---- */
@@ -3493,10 +4341,10 @@ const PlanungReiter = (() => {
 
   /** Schreibt eine Einstellung in den Zustand. */
   function setze(schluessel, wert) {
-    const e = App.zustand.daten.einstellungen;
-    if (schluessel.startsWith('gewichte.')) e.gewichte[schluessel.slice(9)] = wert;
-    else e[schluessel] = wert;
-    App.markiereGeaendert();
+    App.aendere(`Einstellung ${schluessel} = ${wert}`, (d) => {
+      if (schluessel.startsWith('gewichte.')) d.einstellungen.gewichte[schluessel.slice(9)] = wert;
+      else d.einstellungen[schluessel] = wert;
+    }, { pruefen: false });
   }
 
   function zeigeEinstellungen() {
@@ -3614,10 +4462,10 @@ const PlanungReiter = (() => {
     const { plan, bericht } = antwort;
     panel.querySelector('#planung-balken').value = 1;
     panel.querySelector('#planung-status').textContent = `Fertig nach ${(dauerMs / 1000).toFixed(1)} s${bericht.statistik.abgebrochen ? ' (abgebrochen)' : ''}.`;
-    const d = App.zustand.daten;
-    d.plan.regelplan = plan.regelplan;
-    d.plan.aufsichten = plan.aufsichten;
-    App.markiereGeaendert();
+    App.aendere('Regelplan erstellt', (d) => {
+      d.plan.regelplan = plan.regelplan;
+      d.plan.aufsichten = plan.aufsichten;
+    }, { pruefen: false });
     zeigeErgebnis(bericht, dauerMs);
   }
 
@@ -3674,8 +4522,8 @@ const App = (() => {
 
   /** Reiter in der Reihenfolge von §7. `modul` baut den Inhalt (sonst Platzhalter). */
   const REITER = [
-    { id: 'stammdaten', titel: 'Stammdaten', hinweis: 'Lehrkräfte, Fächer, Räume, Klassen und Zeitraster mit Pausen pflegen.' },
-    { id: 'zuordnung', titel: 'Zuordnung', hinweis: 'Haupt- und Zweitlehrkräfte je Klasse und Fach festlegen.' },
+    { id: 'stammdaten', titel: 'Stammdaten', hinweis: 'Lehrkräfte, Fächer, Räume, Klassen und Zeitraster mit Pausen pflegen.', modul: () => StammdatenReiter },
+    { id: 'zuordnung', titel: 'Zuordnung', hinweis: 'Stundentafeln sowie Haupt- und Zweitlehrkräfte je Klasse und Fach festlegen.', modul: () => ZuordnungReiter },
     { id: 'planung', titel: 'Planung', hinweis: 'Plan erstellen, Optionen einstellen, Kostenvektor verfolgen.', modul: () => PlanungReiter },
     { id: 'plan', titel: 'Plan', hinweis: 'Wochenraster je Klasse, Lehrkraft, Raum oder Aufsicht.' },
     { id: 'ausfall', titel: 'Ausfall', hinweis: 'Abwesenheiten erfassen und datumsgenaue Vertretungen prüfen.' },
@@ -3696,6 +4544,9 @@ const App = (() => {
     letzterExport: null,
   };
   const beobachter = new Set();
+  /** Verlauf für Rückgängig/Wiederholen: Schnappschüsse des Datenstands (§7: mindestens 50 Schritte). */
+  const MAX_VERLAUF = 100;
+  const verlauf = { zurueck: [], vor: [] };
 
   /** Kleiner Helfer zum Erzeugen von Elementen ohne innerHTML. */
   function el(tag, attribute = {}, ...kinder) {
@@ -3717,15 +4568,73 @@ const App = (() => {
   /** Registriert eine Funktion, die nach jeder Zustandsänderung aufgerufen wird. */
   function beobachte(fn) { beobachter.add(fn); return () => beobachter.delete(fn); }
 
-  /** Ersetzt den gesamten Datenstand (Import, Zurücksetzen). */
-  function setzeDaten(neu, { geaendert = false, letzterExport = zustand.letzterExport } = {}) {
+  /**
+   * Wie beobachte, aber nur solange `panel` sichtbar ist; sonst wird beim
+   * nächsten Einblenden einmal nachgezeichnet. Liefert die Funktion für `sichtbar`.
+   */
+  function beobachteSichtbar(panel, render) {
+    let veraltet = false;
+    beobachte(() => { if (panel.hidden) veraltet = true; else render(); });
+    return () => { if (veraltet) { veraltet = false; render(); } };
+  }
+
+  function merke(beschreibung) {
+    verlauf.zurueck.push({ beschreibung, daten: zustand.daten });
+    if (verlauf.zurueck.length > MAX_VERLAUF) verlauf.zurueck.shift();
+    verlauf.vor = [];
+  }
+
+  /** Ersetzt den gesamten Datenstand (Import, Zurücksetzen); rückgängig machbar. */
+  function setzeDaten(neu, { geaendert = false, letzterExport = zustand.letzterExport, beschreibung = 'Daten ersetzt' } = {}) {
+    merke(beschreibung);
     zustand.daten = neu;
     zustand.geaendert = geaendert;
     zustand.letzterExport = letzterExport;
     melde();
   }
 
-  /** Nach jeder Bearbeitung aufrufen (ab M3 über Undo/Redo). */
+  /**
+   * Führt eine Bearbeitung aus: `fn` verändert eine Kopie des Datenstands.
+   * Mit `pruefen` (Standard) wird die Kopie vollständig validiert; bei Fehlern
+   * bleibt der Stand unverändert. `fn` kann false liefern, um abzubrechen.
+   * @returns {{ok: boolean, fehler: {pfad: string, meldung: string}[]}}
+   */
+  function aendere(beschreibung, fn, { pruefen = true } = {}) {
+    const neu = structuredClone(zustand.daten);
+    if (fn(neu) === false) return { ok: false, fehler: [] };
+    if (pruefen) {
+      Kern.Schema.normalisiere(neu);
+      const { fehler } = Kern.Schema.validiere(neu);
+      if (fehler.length) return { ok: false, fehler };
+    }
+    merke(beschreibung);
+    zustand.daten = neu;
+    zustand.geaendert = true;
+    melde();
+    return { ok: true, fehler: [] };
+  }
+
+  function rueckgaengig() {
+    const schritt = verlauf.zurueck.pop();
+    if (!schritt) return false;
+    verlauf.vor.push({ beschreibung: schritt.beschreibung, daten: zustand.daten });
+    zustand.daten = schritt.daten;
+    zustand.geaendert = true;
+    melde();
+    return true;
+  }
+
+  function wiederholen() {
+    const schritt = verlauf.vor.pop();
+    if (!schritt) return false;
+    verlauf.zurueck.push({ beschreibung: schritt.beschreibung, daten: zustand.daten });
+    zustand.daten = schritt.daten;
+    zustand.geaendert = true;
+    melde();
+    return true;
+  }
+
+  /** Nur für Tests: markiert den Stand als geändert, ohne Inhalt zu ändern. */
   function markiereGeaendert() { zustand.geaendert = true; melde(); }
 
   /** Nach einem Export: Zeitpunkt merken; ein vollständiger Export sichert alle Änderungen. */
@@ -3777,6 +4686,7 @@ const App = (() => {
       knopf.setAttribute('aria-selected', String(an));
       knopf.tabIndex = an ? 0 : -1;
       panel.hidden = !an;
+      if (an) r.modul?.().sichtbar?.();
       if (an && fokus) knopf.focus();
     }
   }
@@ -3792,6 +4702,23 @@ const App = (() => {
   function zeigeSpeicherstand() {
     const s = document.getElementById('status-speicher');
     s.textContent = zustand.geaendert ? '⚠ Ungespeicherte Änderungen' : '';
+    const z = document.getElementById('knopf-rueckgaengig');
+    const v = document.getElementById('knopf-wiederholen');
+    const oben = (liste) => liste[liste.length - 1];
+    z.disabled = !verlauf.zurueck.length;
+    v.disabled = !verlauf.vor.length;
+    z.title = verlauf.zurueck.length ? `Rückgängig: ${oben(verlauf.zurueck).beschreibung} (Strg+Z)` : 'Nichts rückgängig zu machen';
+    v.title = verlauf.vor.length ? `Wiederholen: ${oben(verlauf.vor).beschreibung} (Strg+Y)` : 'Nichts zu wiederholen';
+  }
+
+  /** Strg+Z / Strg+Y (bzw. Strg+Umschalt+Z) außerhalb von Eingabefeldern. */
+  function tastenkuerzel(e) {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const ziel = e.target;
+    if (ziel && (ziel.tagName === 'INPUT' || ziel.tagName === 'TEXTAREA' || ziel.tagName === 'SELECT' || ziel.isContentEditable)) return;
+    if (document.querySelector('dialog[open]')) return;
+    const taste = e.key.toLowerCase();
+    if (taste === 'z' && !e.shiftKey) { e.preventDefault(); rueckgaengig(); } else if (taste === 'y' || (taste === 'z' && e.shiftKey)) { e.preventDefault(); wiederholen(); }
   }
 
   function start() {
@@ -3799,6 +4726,9 @@ const App = (() => {
     baueReiter(wurzel);
     aktiviere(zustand.aktiv);
     document.getElementById('version').textContent = 'Version ' + Kern.version;
+    document.getElementById('knopf-rueckgaengig').addEventListener('click', rueckgaengig);
+    document.getElementById('knopf-wiederholen').addEventListener('click', wiederholen);
+    document.addEventListener('keydown', tastenkuerzel);
     beobachte(zeigeSpeicherstand);
     zeigeSpeicherstand();
     // Warnung beim Schließen des Tabs, solange es ungespeicherte Änderungen gibt (§8).
@@ -3813,11 +4743,14 @@ const App = (() => {
       .catch((e) => setzeStatus('Rechenkern nicht verfügbar: ' + e.message, 'fehler'));
   }
 
-  return { REITER, zustand, el, start, aktiviere, beobachte, setzeDaten, markiereGeaendert, vermerkeExport };
+  return {
+    REITER, zustand, verlauf, el, start, aktiviere, beobachte, beobachteSichtbar, setzeDaten, aendere, rueckgaengig, wiederholen,
+    markiereGeaendert, vermerkeExport,
+  };
 })();
 
 // Zugriff für Tests und Fehlersuche in der Konsole.
-window.Stundenplan = { Kern, App, Rechenkern, DatenReiter, PlanungReiter };
+window.Stundenplan = { Kern, App, Rechenkern, DatenReiter, PlanungReiter, StammdatenReiter, ZuordnungReiter };
 document.addEventListener('DOMContentLoaded', App.start);
 </script>
 </body>
