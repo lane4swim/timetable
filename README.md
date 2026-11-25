@@ -5,9 +5,23 @@ Browserbasiertes Werkzeug zur Erstellung von Stundenplänen, Pausenaufsichten un
 - [Spezifikation](docs/Spezifikation_Stundenplanplanung.md)
 - [Implementierungsplan](docs/Implementierungsplan.md)
 
+- [Abnahmekriterien und Nachweise](docs/Abnahme.md)
+
 ## Benutzung
 
-`stundenplan.html` herunterladen und per Doppelklick im Browser öffnen. Daten werden nur über den JSON-Export gespeichert.
+`stundenplan.html` herunterladen und per Doppelklick im Browser öffnen. Daten werden nur über den JSON-Export gespeichert (Reiter „Daten“); beim Schließen mit ungespeicherten Änderungen warnt der Browser.
+
+| Reiter | Wozu |
+| --- | --- |
+| Stammdaten | Lehrkräfte, Fächer, Räume, Klassen, Zeitraster mit Pausen und Aufsichtsbedarf, Schule |
+| Zuordnung | Stundentafel je Klasse, Haupt- und Zweitlehrkraft je Fach, Soll/Ist je Lehrkraft |
+| Planung | Regelplan erstellen (im Hintergrund, mit Fortschritt und Abbruch), Optionen und Gewichte |
+| Plan | Wochenraster je Klasse, Lehrkraft, Raum oder Aufsicht; Verschieben per Drag-and-drop oder Tastatur; Konflikte mit Regelnummer; Druck |
+| Ausfall | Abwesenheiten erfassen, datumsgenaue Vertretungsvorschläge übernehmen/ändern/verwerfen, Tagesvertretungsplan |
+| Bericht | Ausfall, Vertretungsquote, Auslastung, Aufsichten, weiche Regeln |
+| Daten | JSON exportieren (alles, nur Stammdaten, nur Plan), importieren, zurücksetzen |
+
+Rückgängig/Wiederholen über die Knöpfe oben rechts oder Strg+Z / Strg+Y.
 
 ## Entwicklung
 
@@ -24,7 +38,8 @@ Voraussetzung: Node.js ≥ 22. Es gibt keine npm-Abhängigkeiten.
 ### Aufbau
 
 ```
-src/kern/      Rechenkern ohne DOM: Modell, Validierung, Planer, Vertretung, Import/Export
+src/kern/      Rechenkern ohne DOM: Hilfen, Modell, Schema, Verweise, Index, Regeln, Kosten,
+               Fluss, Planer, Bearbeitung, Vertretung, Bericht, Io
                (läuft im Hauptthread, im Blob-Worker und in Node-Tests)
 src/worker/    Nachrichtenprotokoll des Web Workers
 src/ui/        Oberfläche

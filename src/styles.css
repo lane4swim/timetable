@@ -13,7 +13,7 @@
   --akzent-text: #ffffff;
   --ok: #1d6b35;
   --fehler: #b3261e;
-  --fokus: #f2a900;
+  --fokus: #c2410c;       /* Fokusrahmen: ≥ 3 : 1 zu Weiß und Hintergrund */
   --warnung: #8a5300;     /* 6,1:1 auf Weiß */
   --linie-kraeftig: #8a92a3;
   --radius: 6px;
@@ -217,6 +217,12 @@ body.ablage-aktiv::after {
 .vorschlaege select { max-width: 520px; font: inherit; font-size: .85rem; margin-top: 4px; }
 .vs-problem { background: #fdecea; }
 #tag-inhalt .tabelle { margin-top: 12px; }
+
+/* ------------------------------ Bericht ----------------------------------- */
+.bericht-spalten { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; }
+.bericht-posten details { margin: 2px 0; }
+.bericht-posten ul { font-size: .85rem; margin: 4px 0 8px; }
+#panel-bericht h3 { margin-top: 20px; }
 
 /* Fokus immer sichtbar, unabhängig von Farbe des Elements */
 :focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; }

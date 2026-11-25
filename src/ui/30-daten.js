@@ -15,7 +15,7 @@ const DatenReiter = (() => {
     panel = ziel;
     const el = App.el;
     const dateiwahl = el('input', {
-      type: 'file', accept: '.json,application/json', id: 'daten-datei', class: 'versteckt',
+      type: 'file', accept: '.json,application/json', id: 'daten-datei', class: 'versteckt', 'aria-label': 'JSON-Datei zum Importieren', tabindex: '-1',
       onchange: (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) importiereDatei(f); },
     });
     meldungen = el('div', { id: 'daten-meldungen', class: 'meldungen', 'aria-live': 'polite' });

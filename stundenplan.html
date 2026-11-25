@@ -23,7 +23,7 @@
   --akzent-text: #ffffff;
   --ok: #1d6b35;
   --fehler: #b3261e;
-  --fokus: #f2a900;
+  --fokus: #c2410c;       /* Fokusrahmen: ≥ 3 : 1 zu Weiß und Hintergrund */
   --warnung: #8a5300;     /* 6,1:1 auf Weiß */
   --linie-kraeftig: #8a92a3;
   --radius: 6px;
@@ -227,6 +227,12 @@ body.ablage-aktiv::after {
 .vorschlaege select { max-width: 520px; font: inherit; font-size: .85rem; margin-top: 4px; }
 .vs-problem { background: #fdecea; }
 #tag-inhalt .tabelle { margin-top: 12px; }
+
+/* ------------------------------ Bericht ----------------------------------- */
+.bericht-spalten { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; }
+.bericht-posten details { margin: 2px 0; }
+.bericht-posten ul { font-size: .85rem; margin: 4px 0 8px; }
+#panel-bericht h3 { margin-top: 20px; }
 
 /* Fokus immer sichtbar, unabhängig von Farbe des Elements */
 :focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; }
@@ -3612,6 +3618,112 @@ const Vertretung = (() => {
   return { STUFEN, GRUENDE, tagesplan, betroffen, vorschlaege, loese, uebernehmen, ausfallbericht };
 })();
 
+/* ---- src/kern/75-bericht.js ---- */
+/* ==========================================================================
+ * Modul Bericht
+ * Kennzahlen für den Reiter „Bericht“ (Spezifikation §7):
+ *   - Regelplan: Kostenvektor, harte Verstöße, Ausfall je Klasse und Fach
+ *   - Vertretungen im Zeitraum: Fälle, Ausfall je Klasse und Fach,
+ *     Vertretungsquote, offene (noch nicht vertretene) Fälle
+ *   - Auslastung je Lehrkraft: Soll, Haupt- und Zweitbesetzungsstunden,
+ *     ungenutztes Kontingent, Vertretungen, Aufsichten (Soll, Ist, Mehraufsichten)
+ *   - Pausenaufsichten: unbesetzt im Regelplan und im Zeitraum
+ *   - weiche Regeln mit Einzelposten
+ * ========================================================================== */
+const Bericht = (() => {
+  'use strict';
+
+  /**
+   * @param {object} z Zustand
+   * @param {string} von  ISO-Datum (Beginn des Auswertungszeitraums)
+   * @param {string} bis  ISO-Datum (Ende)
+   */
+  function erstelle(z, von, bis) {
+    const ix = Index.erstelle(z);
+    const n = ix.name;
+    const bewertung = Kosten.bewerte(z);
+    const verstoesse = Regeln.pruefeHart(z);
+
+    // Ausfall im Regelplan je Klasse und Fach (Stundentafel gegen Plan)
+    const imPlan = new Map();
+    for (const s of z.plan.regelplan) if (s.fach && Index.STATUS.abgedeckt(s)) imPlan.set(s.klasse + '|' + s.fach, (imPlan.get(s.klasse + '|' + s.fach) || 0) + 1);
+    const ausfallRegel = [];
+    for (const k of z.klassen) {
+      for (const e of k.stundentafel) {
+        const ist = imPlan.get(k.id + '|' + e.fach) || 0;
+        if (ist < e.stunden) ausfallRegel.push({ klasse: k.id, fach: e.fach, soll: e.stunden, ist, ausfall: e.stunden - ist });
+      }
+    }
+
+    // Vertretungen im Zeitraum
+    const imZeitraum = (d) => d >= von && d <= bis;
+    const faelle = z.plan.vertretungen.filter((v) => imZeitraum(v.datum));
+    const nachStatus = {};
+    for (const v of faelle) nachStatus[v.status] = (nachStatus[v.status] || 0) + 1;
+    const ausfallZeitraum = new Map();
+    for (const v of faelle) {
+      if (v.status !== 'entfaellt' && v.status !== 'aufsicht') continue;
+      const fach = v.fach ?? z.plan.regelplan.find((s) => s.klasse === v.klasse && s.tag === Hilfen.wochentag(v.datum) && s.stunde === v.stunde)?.fach ?? null;
+      const k = v.klasse + '|' + fach;
+      ausfallZeitraum.set(k, (ausfallZeitraum.get(k) || 0) + 1);
+    }
+    const ausfallStunden = (nachStatus.entfaellt || 0) + (nachStatus.aufsicht || 0);
+    const offen = [];
+    const tage = Hilfen.istIsoDatum(von) && Hilfen.istIsoDatum(bis) && von <= bis ? Hilfen.unterrichtstage(von, bis, z.zeitraster.tage) : [];
+    for (const d of tage) offen.push(...Vertretung.betroffen(z, d));
+
+    // Auslastung je Lehrkraft
+    const stunden = Regeln.lehrkraftStunden(z.plan.regelplan);
+    const aufsichtenRegel = new Map();
+    for (const a of z.plan.aufsichten) aufsichtenRegel.set(a.lehrkraft, (aufsichtenRegel.get(a.lehrkraft) || 0) + 1);
+    const vertretungenJe = new Map();
+    for (const v of faelle) {
+      if (!['vertreten', 'doppeltBetreut', 'aufsicht'].includes(v.status)) continue;
+      const l = v.lehrkraefte?.[0];
+      if (l) vertretungenJe.set(l, (vertretungenJe.get(l) || 0) + 1);
+    }
+    const mehrAufsichten = new Map();
+    for (const a of z.plan.aufsichtsVertretungen) if (imZeitraum(a.datum) && a.status === 'vertreten' && a.lehrkraft) mehrAufsichten.set(a.lehrkraft, (mehrAufsichten.get(a.lehrkraft) || 0) + 1);
+    const auslastung = z.lehrkraefte.map((l) => {
+      const info = stunden.get(l.id);
+      const gesamt = info?.slots.size || 0;
+      const zweit = info?.zweit.size || 0;
+      const reserve = ix.reserve(l);
+      return {
+        lehrkraft: l.id, kuerzel: l.kuerzel, name: l.name, soll: l.sollStunden, min: l.minStunden, max: l.maxStunden, reserve,
+        haupt: gesamt - zweit, zweit, gesamt, ungenutzt: Math.max(0, Math.min(l.sollStunden - reserve, l.maxStunden) - gesamt),
+        vertretungen: vertretungenJe.get(l.id) || 0,
+        aufsichtenSoll: l.aufsichtenProWoche, aufsichtenIst: aufsichtenRegel.get(l.id) || 0, mehrAufsichten: mehrAufsichten.get(l.id) || 0,
+      };
+    });
+
+    // Aufsichten
+    const unbesetztRegel = bewertung.ziele.K1A.posten.map((p) => ({ text: p.text, anzahl: p.menge }));
+    const unbesetztZeitraum = z.plan.aufsichtsVertretungen.filter((a) => imZeitraum(a.datum) && a.status === 'unbesetzt')
+      .map((a) => ({ datum: a.datum, vorStunde: a.vorStunde, fuer: a.fuer, text: `${a.datum} ${n.pause(Hilfen.wochentag(a.datum), a.vorStunde)} (für ${n.lehrkraft(a.fuer)})` }));
+
+    return {
+      zeitraum: { von, bis, unterrichtstage: tage.length },
+      regelplan: {
+        vektor: bewertung.vektor, ziele: bewertung.ziele, weich: bewertung.weich,
+        verstoesse: verstoesse.length, verstoesseJeRegel: Regeln.zaehle(verstoesse),
+        stunden: z.plan.regelplan.length, ausfall: ausfallRegel,
+      },
+      vertretung: {
+        faelle: faelle.length, nachStatus, ausfallStunden,
+        quote: faelle.length ? (faelle.length - ausfallStunden) / faelle.length : null,
+        ausfall: [...ausfallZeitraum].map(([k, anzahl]) => { const [klasse, fach] = k.split('|'); return { klasse, fach: fach === 'null' ? null : fach, anzahl }; })
+          .sort((a, b) => b.anzahl - a.anzahl || a.klasse.localeCompare(b.klasse)),
+        offen: offen.length, offeneFaelle: offen,
+      },
+      auslastung,
+      aufsichten: { unbesetztRegel, unbesetztZeitraum },
+    };
+  }
+
+  return { erstelle };
+})();
+
 /* ---- src/kern/80-io.js ---- */
 /* ==========================================================================
  * Modul Io (Import/Export)
@@ -3742,6 +3854,7 @@ const Kern = Object.freeze({
   Planer,
   Bearbeitung,
   Vertretung,
+  Bericht,
   Io,
 });
 </script>
@@ -4710,7 +4823,7 @@ const DatenReiter = (() => {
     panel = ziel;
     const el = App.el;
     const dateiwahl = el('input', {
-      type: 'file', accept: '.json,application/json', id: 'daten-datei', class: 'versteckt',
+      type: 'file', accept: '.json,application/json', id: 'daten-datei', class: 'versteckt', 'aria-label': 'JSON-Datei zum Importieren', tabindex: '-1',
       onchange: (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) importiereDatei(f); },
     });
     meldungen = el('div', { id: 'daten-meldungen', class: 'meldungen', 'aria-live': 'polite' });
@@ -5941,6 +6054,116 @@ const AusfallReiter = (() => {
   return { sichtbar: () => sichtbar(), baue, berechne, setzeZeitraum, vorschlaege: () => vorschlaege };
 })();
 
+/* ---- src/ui/70-bericht.js ---- */
+/* ==========================================================================
+ * Modul BerichtReiter (Oberfläche, Reiter „Bericht“)
+ * Ausfallstunden je Klasse und Fach, Vertretungsquote, Auslastung je
+ * Lehrkraft (mit Zweitbesetzungsstunden und ungenutztem Kontingent),
+ * Pausenaufsichten und Verstöße gegen weiche Regeln (§7). Druckbar.
+ * ========================================================================== */
+const BerichtReiter = (() => {
+  'use strict';
+  let panel = null;
+  let sichtbar = () => {};
+  const zeitraum = { von: null, bis: null };
+
+  function baue(ziel) {
+    panel = ziel;
+    const el = App.el;
+    const montag = Kern.Hilfen.wochenbeginn(Kern.Hilfen.heuteIso());
+    zeitraum.von = montag;
+    zeitraum.bis = Kern.Hilfen.plusTage(montag, 4);
+    panel.append(
+      el('div', { class: 'formular formular-zeile' },
+        el('label', { class: 'feld' }, el('span', { text: 'Vertretungen von' }), el('input', { type: 'date', id: 'bericht-von', value: zeitraum.von, onchange: (e) => { zeitraum.von = e.target.value; render(); } })),
+        el('label', { class: 'feld' }, el('span', { text: 'bis' }), el('input', { type: 'date', id: 'bericht-bis', value: zeitraum.bis, onchange: (e) => { zeitraum.bis = e.target.value; render(); } })),
+        el('div', { class: 'feld feld-knopf' }, el('button', { type: 'button', class: 'knopf', id: 'bericht-drucken', text: 'Bericht drucken', onclick: drucke }))),
+      el('div', { id: 'bericht-inhalt' }),
+    );
+    sichtbar = App.beobachteSichtbar(panel, render);
+    render();
+  }
+
+  const prozent = (x) => (x === null ? '–' : `${Math.round(x * 1000) / 10} %`);
+
+  function inhalt(d) {
+    const el = App.el;
+    const ix = Kern.Index.erstelle(d);
+    const n = ix.name;
+    if (!Kern.Hilfen.istIsoDatum(zeitraum.von) || !Kern.Hilfen.istIsoDatum(zeitraum.bis) || zeitraum.bis < zeitraum.von) {
+      return [el('p', { class: 'fehler-text', text: '⚠ Bitte einen gültigen Zeitraum wählen.' })];
+    }
+    const b = Kern.Bericht.erstelle(d, zeitraum.von, zeitraum.bis);
+    const tabelle = (id, titel, kopf, zeilen, zahlenAb = 99) => el('div', { class: 'tabellen-rahmen' }, el('table', { class: 'tabelle', id },
+      el('caption', { text: titel }),
+      el('thead', {}, el('tr', {}, ...kopf.map((t, i) => el('th', { scope: 'col', class: i >= zahlenAb ? 'zahl' : null, text: t })))),
+      el('tbody', {}, ...(zeilen.length ? zeilen : [el('tr', {}, el('td', { colspan: String(kopf.length), class: 'leise', text: 'Keine Einträge.' }))]))));
+    const zeile = (werte, zahlenAb = 99, attr = {}) => el('tr', attr, ...werte.map((w, i) => (i === 0 ? el('th', { scope: 'row', text: String(w) }) : el('td', { class: i >= zahlenAb ? 'zahl' : null, text: String(w) }))));
+
+    const r = b.regelplan;
+    const v = b.vertretung;
+    const ueberblick = el('dl', { class: 'uebersicht', id: 'bericht-ueberblick' },
+      ...[
+        ['Regelplan', r.stunden ? (r.verstoesse ? `⚠ ungültig – ${r.verstoesse} Verstoß/Verstöße (${Object.entries(r.verstoesseJeRegel).map(([k, x]) => `${k} ×${x}`).join(', ')})` : '✓ gültig') : 'noch nicht erstellt'],
+        ['Kostenvektor', Kern.Kosten.formatiere(r.vektor)],
+        ['Ausfall im Regelplan', `${r.vektor[0]} Stunde(n) je Woche`],
+        ['Unterrichtstage im Zeitraum', String(b.zeitraum.unterrichtstage)],
+        ['Vertretungsfälle', String(v.faelle)],
+        ['Vertretungsquote', `${prozent(v.quote)}${v.quote !== null ? ` (${v.faelle - v.ausfallStunden} von ${v.faelle} ohne Ausfall)` : ''}`],
+        ['Ausfallstunden im Zeitraum', String(v.ausfallStunden)],
+        ['Noch nicht vertreten', v.offen ? `⚠ ${v.offen} Stunde(n)/Aufsicht(en)` : '0'],
+        ['Unbesetzte Aufsichten', `${b.aufsichten.unbesetztRegel.reduce((s, x) => s + x.anzahl, 0)} je Woche im Regelplan, ${b.aufsichten.unbesetztZeitraum.length} im Zeitraum`],
+      ].flatMap(([k, w]) => [el('dt', { text: k }), el('dd', { 'data-feld': k, class: /^⚠/.test(w) ? 'fehler-text' : null, text: w })]));
+
+    const teile = [
+      el('h3', { text: 'Überblick' }), ueberblick,
+      el('h3', { text: 'Ausfallstunden je Klasse und Fach' }),
+      el('div', { class: 'bericht-spalten' },
+        tabelle('bericht-ausfall-regel', 'Regelplan (Stunden je Woche, die nicht im Plan stehen)', ['Klasse', 'Fach', 'Stundentafel', 'im Plan', 'Ausfall'],
+          r.ausfall.map((a) => zeile([n.klasse(a.klasse), n.fach(a.fach), a.soll, a.ist, a.ausfall], 2)), 2),
+        tabelle('bericht-ausfall-zeitraum', `Vertretungen ${zeitraum.von} bis ${zeitraum.bis} (Entfall und Aufsicht)`, ['Klasse', 'Fach', 'Ausfallstunden'],
+          v.ausfall.map((a) => zeile([n.klasse(a.klasse), a.fach ? n.fach(a.fach) : '–', a.anzahl], 2)), 2)),
+      el('h3', { text: 'Vertretungsfälle nach Art' }),
+      tabelle('bericht-status', `Einträge im Zeitraum (${v.faelle})`, ['Status', 'Anzahl'],
+        Object.entries(v.nachStatus).map(([s, x]) => zeile([{ regulaer: 'regulär (verschoben, Ersatzraum, ohne Zweitbesetzung)', vertreten: 'vertreten', doppeltBetreut: 'Doppelbetreuung', aufgeteilt: 'aufgeteilt', entfaellt: 'entfällt', aufsicht: 'Aufsicht statt Unterricht' }[s] || s, x], 1)), 1),
+      el('h3', { text: 'Auslastung je Lehrkraft (Regelplan)' }),
+      tabelle('bericht-auslastung', 'Stunden je Woche; Vertretungen und Mehraufsichten im gewählten Zeitraum',
+        ['Kürzel', 'Name', 'Soll', 'Reserve', 'Max', 'Haupt', 'Zweitbes.', 'Gesamt', 'Ungenutzt', 'Vertretungen', 'Aufsichten Soll', 'Aufsichten Ist', 'Mehraufsichten', 'Hinweis'],
+        b.auslastung.map((a) => {
+          const hinweis = a.gesamt > a.max ? '⚠ über Höchstgrenze' : a.gesamt < a.min ? 'unter Mindeststunden' : a.ungenutzt ? 'Kontingent frei' : '';
+          return zeile([a.kuerzel, a.name, a.soll, a.reserve, a.max, a.haupt, a.zweit, a.gesamt, a.ungenutzt, a.vertretungen, a.aufsichtenSoll, a.aufsichtenIst, a.mehrAufsichten, hinweis], 2, { 'data-lehrkraft': a.lehrkraft });
+        }), 2),
+      el('h3', { text: 'Unbesetzte Pausenaufsichten' }),
+      el('ul', { id: 'bericht-aufsichten' }, ...[...b.aufsichten.unbesetztRegel.map((x) => `Regelplan: ${x.text}`), ...b.aufsichten.unbesetztZeitraum.map((x) => `Vertretung: ${x.text}`)]
+        .map((t) => el('li', { text: t })), ...(b.aufsichten.unbesetztRegel.length + b.aufsichten.unbesetztZeitraum.length ? [] : [el('li', { class: 'leise', text: 'Keine.' })])),
+      el('h3', { text: 'Verstöße gegen weiche Regeln (Regelplan, Ziel 6)' }),
+      tabelle('bericht-weich', `Planqualität K6 = ${r.vektor[6]}`, ['Regel', 'Bedeutung', 'Anzahl', 'Gewicht', 'Beitrag'],
+        Kern.Kosten.WEICH.map((w) => zeile([w, r.weich[w].titel, r.weich[w].anzahl, r.weich[w].gewicht, r.weich[w].beitrag], 2)), 2),
+      el('div', { class: 'bericht-posten' }, ...Kern.Kosten.WEICH.filter((w) => r.weich[w].posten.length).map((w) => el('details', {},
+        el('summary', { text: `${w} – ${r.weich[w].titel} (${r.weich[w].posten.length} Posten)` }),
+        el('ul', {}, ...r.weich[w].posten.slice(0, 50).map((p) => el('li', { text: `${p.text} (${p.menge})` })),
+          ...(r.weich[w].posten.length > 50 ? [el('li', { class: 'leise', text: `… und ${r.weich[w].posten.length - 50} weitere` })] : []))))),
+    ];
+    return teile;
+  }
+
+  function render() {
+    panel.querySelector('#bericht-inhalt').replaceChildren(...inhalt(App.zustand.daten));
+  }
+
+  function drucke() {
+    const d = App.zustand.daten;
+    const el = App.el;
+    document.getElementById('druckbereich').replaceChildren(el('section', { class: 'druckseite bericht-druck' },
+      el('h2', { text: `Bericht ${d.schule?.name || ''} ${d.schule?.schuljahr || ''}`.trim() }),
+      el('p', { class: 'leise', text: `Vertretungen ${zeitraum.von} bis ${zeitraum.bis}` }),
+      ...inhalt(d)));
+    window.print();
+  }
+
+  return { sichtbar: () => sichtbar(), baue };
+})();
+
 /* ---- src/ui/90-app.js ---- */
 /* ==========================================================================
  * Modul App (Oberfläche)
@@ -5957,7 +6180,7 @@ const App = (() => {
     { id: 'planung', titel: 'Planung', hinweis: 'Plan erstellen, Optionen einstellen, Kostenvektor verfolgen.', modul: () => PlanungReiter },
     { id: 'plan', titel: 'Plan', hinweis: 'Wochenraster je Klasse, Lehrkraft, Raum oder Aufsicht.', modul: () => PlanReiter },
     { id: 'ausfall', titel: 'Ausfall', hinweis: 'Abwesenheiten erfassen und datumsgenaue Vertretungen prüfen.', modul: () => AusfallReiter },
-    { id: 'bericht', titel: 'Bericht', hinweis: 'Ausfall, Vertretungsquote, Auslastung und Aufsichten auswerten.' },
+    { id: 'bericht', titel: 'Bericht', hinweis: 'Ausfall, Vertretungsquote, Auslastung und Aufsichten auswerten.', modul: () => BerichtReiter },
     { id: 'daten', titel: 'Daten', hinweis: 'JSON exportieren, importieren oder zurücksetzen.', modul: () => DatenReiter },
   ];
 
@@ -6180,7 +6403,7 @@ const App = (() => {
 })();
 
 // Zugriff für Tests und Fehlersuche in der Konsole.
-window.Stundenplan = { Kern, App, Rechenkern, DatenReiter, PlanungReiter, StammdatenReiter, ZuordnungReiter, PlanReiter, AusfallReiter };
+window.Stundenplan = { Kern, App, Rechenkern, DatenReiter, PlanungReiter, StammdatenReiter, ZuordnungReiter, PlanReiter, AusfallReiter, BerichtReiter };
 document.addEventListener('DOMContentLoaded', App.start);
 </script>
 </body>
