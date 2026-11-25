@@ -207,6 +207,17 @@ body.ablage-aktiv::after {
 .chips { display: flex; flex-wrap: wrap; gap: 4px; }
 #druckbereich { display: none; }
 
+/* ------------------------------ Ausfall ----------------------------------- */
+.formular-zeile { grid-template-columns: repeat(auto-fill, minmax(170px, max-content)); align-items: end; }
+.feld input[type=date], .feld input[type=text], .feld select { font: inherit; padding: 4px 8px; border: 1px solid var(--linie-kraeftig); border-radius: var(--radius); }
+.feld-knopf { justify-content: flex-end; }
+.abschnitt-breit { max-width: none; }
+.vorschlaege td { font-size: .9rem; }
+.vorschlaege .vs-text { color: var(--text-leise); }
+.vorschlaege select { max-width: 520px; font: inherit; font-size: .85rem; margin-top: 4px; }
+.vs-problem { background: #fdecea; }
+#tag-inhalt .tabelle { margin-top: 12px; }
+
 /* Fokus immer sichtbar, unabhängig von Farbe des Elements */
 :focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; }
 

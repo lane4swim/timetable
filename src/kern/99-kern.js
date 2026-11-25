@@ -15,5 +15,6 @@ const Kern = Object.freeze({
   Fluss,
   Planer,
   Bearbeitung,
+  Vertretung,
   Io,
 });

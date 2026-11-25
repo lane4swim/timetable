@@ -267,7 +267,16 @@ Diese Punkte sollten vor bzw. während M1 bestätigt werden; bis dahin gelten di
     - *Zuordnung:* In der Matrix ist je Klasse und Fach eine Zweitlehrkraft einstellbar; mehrere sind im JSON möglich, die Eingabe ersetzt sie. Eine Lehrkraft wechselt automatisch die Rolle, wenn sie in der anderen Spalte eingetragen wird.
     - *Zeitraster:* Stunden werden am Tagesende angehängt; entfernt werden kann nur die letzte und nur, wenn sie nicht verwendet wird.
     - *Plan-Ansicht:* Verschieben auf einen belegten Slot derselben Klasse tauscht beide Stunden (Lücken entstehen so nicht); Ablegen auf einen freien Slot verschiebt. Zweitbesetzung nur in Unterrichtsstunden mit Hauptlehrkraft. Die Plan-Ansicht zeigt den Regelplan; datumsgenaue Vertretungen folgen in M6.
-21. **Offene fachliche Fragen** (Bundesland, Obergrenzen für Gäste, PDF/CSV-Export, Priorität der Zweitbesetzung): werden konfigurierbar gehalten bzw. sind nicht Teil der ersten Version; CSV-Export ließe sich in M7 ergänzen.
+21. **Festlegungen aus M6 (Vertretung):**
+    - *Darstellung:* Eine Vertretung ersetzt für ihr Datum den Eintrag des Regelplans mit gleicher Klasse und Stunde (oder ergänzt ihn). Status `regulaer` steht für verschobene Stunden mit der eigenen Lehrkraft (Umplanen, Nachrücken, Ersatzraum, entfallene Zweitbesetzung); das Feld `grund` enthält einen Code (z. B. `zweitbesetzungRueckt`, `umgeplant`, `nachgerueckt`).
+    - *Zulässigkeit:* Ein Kandidat gilt nur, wenn er an keinem betroffenen Datum einen neuen Verstoß gegen harte Regeln erzeugt und keine Lehrkraft ihre Höchststunden der Woche überschreitet. Die Vertretungsreserve darf hier genutzt werden.
+    - *Umplanen (Stufe 2)* ist ein Tausch mit einer regulären Stunde derselben Klasse an einem anderen Unterrichtstag derselben Woche, an dem die ausgefallene Lehrkraft anwesend ist.
+    - *Stufe 4* umfasst in dieser Reihenfolge: Springerpool, freie qualifizierte Lehrkräfte, Abzug einer qualifizierten Zweitbesetzung, Notfalleinsatz ohne Fachqualifikation (frei oder als abgezogene Zweitbesetzung). Ein Notfalleinsatz ist damit besser als Doppelbetreuung, Aufteilung oder Aufsicht (Ziel 1 vor Ziel 3/4).
+    - *Stufe 7:* Am Tagesrand Entfall; in der Tagesmitte zuerst Nachrücken der folgenden Stunden (die letzte entfällt), sonst Aufsicht. Gibt es keine regelkonforme Lösung, wird ein Entfall mit Warnung „prüfen“ vorgeschlagen.
+    - *Aufteilung:* möglichst wenige Zielklassen (gleiche Stufe zuerst), gleichmäßig nach freien Plätzen; war die Klasse in der Nachbarstunde aufgeteilt, wird Stufe 7 vorgezogen.
+    - *Raumausfall:* Ersatzraum gleicher Art mit genug Plätzen (Nachbarraum bevorzugt), sonst Aufteilung, sonst Entfall/Nachrücken.
+    - *Vorschläge* werden der Reihe nach berechnet (Datum, Pause/Stunde) und bauen aufeinander auf; nach jeder Übernahme wird neu gerechnet. Verworfene Vorschläge bleiben bis „Vorschläge berechnen“ ausgeblendet.
+22. **Offene fachliche Fragen** (Bundesland, Obergrenzen für Gäste, PDF/CSV-Export, Priorität der Zweitbesetzung): werden konfigurierbar gehalten bzw. sind nicht Teil der ersten Version; CSV-Export ließe sich in M7 ergänzen.
 
 Neue optionale Felder ändern `schemaVersion: 1` nicht, da unbekannte Felder ohnehin erhalten bleiben und alle neuen Felder Standardwerte haben.
 
@@ -281,8 +290,9 @@ Neue optionale Felder ändern `schemaVersion: 1` nicht, da unbekannte Felder ohn
 | M4 Planer | erledigt (25.11.2026): Module `Fluss` (Minimalkosten-Maximalfluss) und `Planer` (Bedarf, Vorprüfung, Zuweisung mit unterer Ausfall-Schranke, Konstruktion mit lückenlosen Klassentagen und Tabu-Konfliktsuche, Simulated Annealing, Räume, Zweitbesetzung, Aufsichten); Worker-Protokoll mit Fortschritt und Abbruch; Reiter „Planung“ mit Optionen, Gewichten und Ergebnis. Großer Datensatz (30 Klassen, 60 Lehrkräfte) in ca. 3 s. Abnahme 2, 3, 4, 8, 12 automatisiert |
 | M3 Stammdaten-UI | erledigt (25.11.2026): Rückgängig/Wiederholen (100 Schritte, Strg+Z/Y), jede Bearbeitung geprüft über `App.aendere`; Modul `Verweise`; bearbeitbare Tabellen (Enter/↑/↓/Esc) für Lehrkräfte, Fächer, Räume, Klassen, Zeitraster mit Pausen, Schule; Löschen gesperrt mit Verweisliste; Matrix Klasse × Fach mit Soll/Ist-Warnungen |
 | M5 Plan-Ansicht | erledigt (25.11.2026): Modul `Bearbeitung`; Wochenraster Klasse/Lehrkraft/Raum/Aufsicht mit Pausenzeilen; Drag-and-drop und Tastatur (aufnehmen, bewegen, ablegen, Entf); Konflikte rot mit ⚠ und Regelnummer, Konfliktliste mit Sprung; Zweitbesetzung aus „Freie Kontingente“, Aufsichten aus „Aufsichtssoll offen“; Druckansicht je Entität oder alle; Reaktionszeit im großen Plan deutlich unter 100 ms |
-| M6 Vertretung | als Nächstes |
+| M6 Vertretung | erledigt (25.11.2026): Modul `Vertretung` (Tagesplan je Datum, betroffene Stunden und Aufsichten, Eskalationskette mit Prüfung jedes Kandidaten auf neue Verstöße und Höchststunden, Alternativen, Ausfallbericht); Reiter „Ausfall“ mit Erfassen von Abwesenheiten, Vorschlägen (übernehmen, andere Lösung wählen, verwerfen, alle übernehmen) und Tagesvertretungsplan mit Konfliktprüfung und Druck. Abnahme 5, 6, 9, 10, 11, 13 automatisiert |
+| M7 Bericht & Feinschliff | als Nächstes |
 
 ## 10. Nächster Schritt
 
-Die Annahmen in Abschnitt 8 sind bestätigt (25.11.2026). Als Nächstes folgen **M6** (datumsgenaue Vertretung mit Eskalationskette und Aufsichtsvertretung) und **M7** (Bericht, Barrierefreiheit, Browsertests).
+Die Annahmen in Abschnitt 8 sind bestätigt (25.11.2026). Als Nächstes folgt **M7** (Bericht, Barrierefreiheit, Feinschliff).

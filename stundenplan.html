@@ -217,6 +217,17 @@ body.ablage-aktiv::after {
 .chips { display: flex; flex-wrap: wrap; gap: 4px; }
 #druckbereich { display: none; }
 
+/* ------------------------------ Ausfall ----------------------------------- */
+.formular-zeile { grid-template-columns: repeat(auto-fill, minmax(170px, max-content)); align-items: end; }
+.feld input[type=date], .feld input[type=text], .feld select { font: inherit; padding: 4px 8px; border: 1px solid var(--linie-kraeftig); border-radius: var(--radius); }
+.feld-knopf { justify-content: flex-end; }
+.abschnitt-breit { max-width: none; }
+.vorschlaege td { font-size: .9rem; }
+.vorschlaege .vs-text { color: var(--text-leise); }
+.vorschlaege select { max-width: 520px; font: inherit; font-size: .85rem; margin-top: 4px; }
+.vs-problem { background: #fdecea; }
+#tag-inhalt .tabelle { margin-top: 12px; }
+
 /* Fokus immer sichtbar, unabhängig von Farbe des Elements */
 :focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; }
 
@@ -3089,6 +3100,518 @@ const Bearbeitung = (() => {
   return { verschiebeStunde, setzeZweit, verschiebeAufsicht, neueAufsicht, entferneAufsicht, freieKontingente, offeneAufsichten };
 })();
 
+/* ---- src/kern/70-vertretung.js ---- */
+/* ==========================================================================
+ * Modul Vertretung
+ * Datumsgenaue Vertretungsplanung (Spezifikation §5):
+ *   - tagesplan(z, datum): Regelplan des Wochentags + bestätigte Vertretungen
+ *   - betroffen(z, datum): Stunden/Aufsichten mit abwesender Lehrkraft bzw.
+ *     nicht verfügbarem Raum
+ *   - vorschlaege(z, von, bis): je betroffener Stunde die günstigste Lösung
+ *     nach der Eskalationskette, dazu Alternativen. Die Stufen werden in
+ *     fester Reihenfolge versucht; die erste Stufe mit einer zulässigen Lösung
+ *     gewinnt, innerhalb der Stufe entscheidet der Kostenvektor (§3).
+ *     „Zulässig“ heißt: die Lösung erzeugt in keinem betroffenen Tagesplan
+ *     einen neuen Verstoß gegen harte Regeln und hält die Höchststunden ein.
+ *   - uebernehmen(z, vorschlag): trägt die Einträge in plan.vertretungen bzw.
+ *     plan.aufsichtsVertretungen ein (Bestätigung durch die Nutzerin, §5)
+ * Der Regelplan wird nie verändert.
+ * ========================================================================== */
+const Vertretung = (() => {
+  'use strict';
+
+  /** Stufen der Eskalationskette je Art des Ausfalls. */
+  const STUFEN = {
+    lehrkraft: {
+      0: 'Zweitbesetzung entfällt', 1: 'Zweitbesetzung rückt auf', 2: 'Umplanen in der Woche',
+      3: 'Vertretung durch Lehrkraft der Klasse', 4: 'Vertretung durch andere Lehrkraft', 5: 'Doppelbetreuung',
+      6: 'Aufteilung der Klasse', 7: 'Entfall, Nachrücken oder Aufsicht',
+    },
+    raum: { 1: 'Ersatzraum', 2: 'Umplanen in der Woche', 6: 'Aufteilung der Klasse', 7: 'Entfall, Nachrücken oder Aufsicht' },
+    aufsicht: { 1: 'Aufsicht mit angrenzendem Unterricht', 2: 'Aufsicht durch anwesende Lehrkraft', 7: 'Aufsicht bleibt unbesetzt' },
+  };
+
+  const S = Index.schluessel;
+  const kopie = (x) => JSON.parse(JSON.stringify(x));
+
+  /* ------------------------------ Tagesplan ---------------------------- */
+
+  /** Tagesplan eines Datums: Regelplan des Wochentags, überlagert von bestätigten Vertretungen. */
+  function tagesplan(z, datum) {
+    const tag = Hilfen.wochentag(datum);
+    const je = new Map();
+    for (const s of z.plan.regelplan) {
+      if (s.tag === tag) je.set(S(s.klasse, s.stunde), { ...kopie(s), quelle: 'regel' });
+    }
+    for (const v of z.plan.vertretungen) {
+      if (v.datum !== datum) continue;
+      const alt = je.get(S(v.klasse, v.stunde));
+      const e = { klasse: v.klasse, fach: v.fach ?? alt?.fach ?? null, lehrkraefte: v.lehrkraefte || [], raum: v.raum ?? null, tag, stunde: v.stunde, status: v.status, quelle: 'vertretung', grund: v.grund };
+      if (v.mitKlasse) e.mitKlasse = v.mitKlasse;
+      if (v.verteilung) e.verteilung = v.verteilung;
+      je.set(S(v.klasse, v.stunde), e);
+    }
+    const aufsichten = z.plan.aufsichten.filter((a) => a.tag === tag).map((a) => ({ ...a }));
+    for (const av of z.plan.aufsichtsVertretungen) {
+      if (av.datum !== datum) continue;
+      const i = aufsichten.findIndex((a) => a.vorStunde === av.vorStunde && a.lehrkraft === av.fuer);
+      if (i >= 0) aufsichten.splice(i, 1);
+      if (av.status === 'vertreten' && av.lehrkraft) aufsichten.push({ tag, vorStunde: av.vorStunde, lehrkraft: av.lehrkraft, quelle: 'vertretung' });
+    }
+    const stunden = [...je.values()].sort((a, b) => a.stunde - b.stunde || a.klasse.localeCompare(b.klasse));
+    return { stunden, aufsichten };
+  }
+
+  const abwesend = (e, datum) => (e?.abwesenheiten || []).some((a) => a.von <= datum && datum <= a.bis);
+
+  /** Betroffene Stunden und Aufsichten eines Datums (nach Stunde sortiert). */
+  function betroffen(z, datum, tp = tagesplan(z, datum)) {
+    const L = new Map(z.lehrkraefte.map((l) => [l.id, l]));
+    const R = new Map(z.raeume.map((r) => [r.id, r]));
+    const liste = [];
+    for (const s of tp.stunden) {
+      if (!Index.STATUS.belegt(s)) continue;
+      const [haupt, zweit] = s.lehrkraefte;
+      if (haupt && abwesend(L.get(haupt), datum)) liste.push({ art: 'lehrkraft', datum, klasse: s.klasse, stunde: s.stunde, lehrkraft: haupt });
+      else if (zweit && abwesend(L.get(zweit), datum)) liste.push({ art: 'zweit', datum, klasse: s.klasse, stunde: s.stunde, lehrkraft: zweit });
+      else if (s.raum && Index.STATUS.mitRaum(s) && abwesend(R.get(s.raum), datum)) liste.push({ art: 'raum', datum, klasse: s.klasse, stunde: s.stunde, raum: s.raum });
+    }
+    for (const a of tp.aufsichten) {
+      if (abwesend(L.get(a.lehrkraft), datum)) liste.push({ art: 'aufsicht', datum, vorStunde: a.vorStunde, lehrkraft: a.lehrkraft });
+    }
+    return liste.sort((a, b) => (a.stunde ?? a.vorStunde - 0.5) - (b.stunde ?? b.vorStunde - 0.5));
+  }
+
+  /* ------------------------------ Kontext ------------------------------ */
+
+  /** Arbeitskontext für ein Datum (wird nach jeder übernommenen Lösung neu gebildet). */
+  function kontext(z, datum) {
+    const ix = Index.erstelle(z);
+    const tag = Hilfen.wochentag(datum);
+    const tp = tagesplan(z, datum);
+    const montag = Hilfen.wochenbeginn(datum);
+    const wochentage = Array.from({ length: 7 }, (_, i) => Hilfen.plusTage(montag, i)).filter((d) => ix.tage.includes(Hilfen.wochentag(d)));
+    // Wochenstunden je Lehrkraft (Tagespläne der ganzen Woche, inkl. bestätigter Vertretungen)
+    const woche = new Map();
+    const aufsichtenWoche = new Map();
+    for (const d of wochentage) {
+      const t = d === datum ? tp : tagesplan(z, d);
+      for (const [l, info] of Regeln.lehrkraftStunden(t.stunden)) woche.set(l, (woche.get(l) || 0) + info.slots.size);
+      for (const a of t.aufsichten) aufsichtenWoche.set(a.lehrkraft, (aufsichtenWoche.get(a.lehrkraft) || 0) + 1);
+    }
+    const belegtIm = (l, stunde) => tp.stunden.filter((s) => s.stunde === stunde && Index.STATUS.belegt(s) && s.lehrkraefte.includes(l));
+    const frei = (l, stunde) => !abwesend(ix.lehrkraefte.get(l), datum) && !ix.lehrkraftGesperrt(l, tag, stunde) && !belegtIm(l, stunde).length;
+    const stundenAmTag = (l) => new Set(tp.stunden.filter((s) => Index.STATUS.belegt(s) && s.lehrkraefte.includes(l)).map((s) => s.stunde));
+    const reserveFrei = (l) => (woche.get(l) || 0) + 1 <= ix.lehrkraefte.get(l).maxStunden;
+    return { z, ix, datum, tag, tp, wochentage, woche, aufsichtenWoche, belegtIm, frei, stundenAmTag, reserveFrei };
+  }
+
+  /* ------------------------- Bewertung von Lösungen --------------------- */
+
+  /** Wendet eine Lösung auf eine Kopie an. */
+  function mitLoesung(z, loesung) {
+    const neu = kopie(z);
+    eintragen(neu, loesung);
+    return neu;
+  }
+
+  /** Trägt Einträge ein; gleiche Schlüssel (Datum, Klasse, Stunde bzw. Datum, Pause, Lehrkraft) werden ersetzt. */
+  function eintragen(z, loesung) {
+    for (const e of loesung.eintraege || []) {
+      z.plan.vertretungen = z.plan.vertretungen.filter((v) => !(v.datum === e.datum && v.klasse === e.klasse && v.stunde === e.stunde));
+      z.plan.vertretungen.push(e);
+    }
+    for (const e of loesung.aufsichtsEintraege || []) {
+      z.plan.aufsichtsVertretungen = z.plan.aufsichtsVertretungen.filter((v) => !(v.datum === e.datum && v.vorStunde === e.vorStunde && v.fuer === e.fuer));
+      z.plan.aufsichtsVertretungen.push(e);
+    }
+    const ordnung = (a, b) => a.datum.localeCompare(b.datum) || (a.stunde ?? a.vorStunde) - (b.stunde ?? b.vorStunde) || String(a.klasse ?? a.fuer).localeCompare(String(b.klasse ?? b.fuer));
+    z.plan.vertretungen.sort(ordnung);
+    z.plan.aufsichtsVertretungen.sort(ordnung);
+  }
+
+  const verstossSchluessel = (v) => v.regel + '|' + v.text;
+
+  /**
+   * Prüft eine Lösung: keine neuen Verstöße an den betroffenen Daten,
+   * Höchststunden der Woche eingehalten. Liefert den Kostenvektor oder null.
+   */
+  function pruefe(z, loesung, vorherVerstoesse) {
+    const neu = mitLoesung(z, loesung);
+    const daten = [...new Set([...(loesung.eintraege || []), ...(loesung.aufsichtsEintraege || [])].map((e) => e.datum))];
+    let vektor = null;
+    for (const d of daten) {
+      const tp = tagesplan(neu, d);
+      const vorher = vorherVerstoesse(d);
+      // Aufsichten abwesender Lehrkräfte werden ohnehin noch vertreten – ihre H13-Meldungen blockieren nicht
+      const offeneAufsicht = (v) => v.regel === 'H13' && v.aufsichten.length
+        && v.aufsichten.every((i) => abwesend(neu.lehrkraefte.find((l) => l.id === tp.aufsichten[i]?.lehrkraft), d));
+      const nachher = Regeln.pruefeHart(neu, tp, { datum: d }).filter((v) => !offeneAufsicht(v));
+      const zaehler = new Map();
+      for (const v of vorher) zaehler.set(verstossSchluessel(v), (zaehler.get(verstossSchluessel(v)) || 0) + 1);
+      for (const v of nachher) {
+        const k = verstossSchluessel(v);
+        if (!zaehler.get(k)) return null; // neuer Verstoß
+        zaehler.set(k, zaehler.get(k) - 1);
+      }
+      const b = Kosten.bewerte(neu, tp, { datum: d, mitPosten: false }).vektor;
+      vektor = vektor ? vektor.map((x, i) => x + b[i]) : b;
+    }
+    // Höchststunden der Woche (H7) für alle beteiligten Lehrkräfte
+    const ix = Index.erstelle(neu);
+    for (const e of loesung.eintraege || []) {
+      for (const l of e.lehrkraefte || []) {
+        const ctx = kontext(neu, e.datum);
+        if ((ctx.woche.get(l) || 0) > ix.lehrkraefte.get(l).maxStunden) return null;
+      }
+    }
+    return vektor || [0, 0, 0, 0, 0, 0, 0];
+  }
+
+  /* ------------------------------ Kandidaten --------------------------- */
+
+  function eintrag(ctx, s, aenderung) {
+    const e = { datum: ctx.datum, klasse: s.klasse, fach: s.fach, stunde: s.stunde, status: s.status, lehrkraefte: s.lehrkraefte.slice(), raum: s.raum, ...aenderung };
+    for (const k of Object.keys(e)) if (e[k] === undefined) delete e[k];
+    return e;
+  }
+
+  /** Lösungskandidaten für eine Stunde mit abwesender Hauptlehrkraft (Stufen 1–7). */
+  function kandidatenLehrkraft(ctx, s, abw) {
+    const { ix, z } = ctx;
+    const n = ix.name;
+    const k = ix.klassen.get(s.klasse);
+    const wo = `${n.klasse(s.klasse)} ${ctx.datum} ${s.stunde}. Stunde ${n.fach(s.fach)}`;
+    const liste = [];
+    const zweit = s.lehrkraefte[1];
+
+    // Stufe 1: Zweitbesetzung rückt auf
+    if (zweit && !abwesend(ix.lehrkraefte.get(zweit), ctx.datum)) {
+      liste.push({ stufe: 1, text: `${n.lehrkraft(zweit)} (Zweitbesetzung) übernimmt; Raum und Zeit bleiben`, eintraege: [eintrag(ctx, s, { lehrkraefte: [zweit], status: 'vertreten', grund: 'zweitbesetzungRueckt' })] });
+    }
+
+    // Stufe 2: Umplanen – Tausch mit einer Stunde derselben Klasse an einem anderen Tag der Woche
+    for (const d2 of ctx.wochentage) {
+      if (d2 === ctx.datum || abwesend(ix.lehrkraefte.get(abw), d2)) continue;
+      const tp2 = tagesplan(z, d2);
+      for (const m of tp2.stunden) {
+        if (m.klasse !== s.klasse || m.status !== 'regulaer' || m.quelle !== 'regel' || m.lehrkraefte.includes(abw)) continue;
+        if (m.lehrkraefte.some((l) => abwesend(ix.lehrkraefte.get(l), ctx.datum))) continue;
+        liste.push({
+          stufe: 2,
+          text: `Tausch mit ${n.fach(m.fach)} (${m.lehrkraefte.map(n.lehrkraft).join(', ')}) vom ${d2} ${m.stunde}. Stunde; ${n.lehrkraft(abw)} unterrichtet ${n.fach(s.fach)} dann am ${d2}`,
+          eintraege: [
+            eintrag(ctx, s, { fach: m.fach, lehrkraefte: m.lehrkraefte.slice(), raum: m.raum, status: 'regulaer', grund: 'umgeplant' }),
+            { datum: d2, klasse: s.klasse, fach: s.fach, stunde: m.stunde, status: 'regulaer', lehrkraefte: [abw], raum: s.raum, grund: 'umgeplant' },
+          ],
+        });
+      }
+    }
+
+    // Stufen 3 und 4: freie Lehrkräfte
+    const eigene = new Set([k.klassenlehrkraft, ...(ix.lehrkraefteDerKlasse.get(s.klasse) || [])].filter(Boolean));
+    const springer = new Set(Bearbeitung.freieKontingente(z).map((x) => x.lehrkraft));
+    const angrenzend = (l) => { const st = ctx.stundenAmTag(l); return st.has(s.stunde - 1) || st.has(s.stunde + 1); };
+    const kandidaten = [];
+    for (const l of z.lehrkraefte) {
+      if (l.id === abw || !ctx.reserveFrei(l.id)) continue;
+      const qual = ix.istQualifiziert(l.id, s.fach, k.stufe);
+      if (ctx.frei(l.id, s.stunde)) {
+        const stufe = eigene.has(l.id) ? 3 : 4;
+        const art = stufe === 3 ? (l.id === k.klassenlehrkraft ? 'Klassenlehrkraft' : 'Lehrkraft der Klasse') : qual ? (springer.has(l.id) ? 'Springerpool' : 'freie qualifizierte Lehrkraft') : 'Notfalleinsatz ohne Fachqualifikation';
+        const rang = stufe === 3 ? (qual ? 0 : 1) : qual ? (springer.has(l.id) ? 0 : 1) : 3;
+        kandidaten.push({ l, stufe, rang, art, qual });
+      } else if (!abwesend(l, ctx.datum) && !ix.lehrkraftGesperrt(l.id, ctx.tag, s.stunde)) {
+        // nur Zweitbesetzung im Slot → abziehen (Stufe 4)
+        const dort = ctx.belegtIm(l.id, s.stunde);
+        // (qualifiziert vor Notfalleinsatz; fachfremd nur, wenn niemand anderes frei ist)
+        if (dort.length === 1 && dort[0].lehrkraefte[1] === l.id && dort[0].lehrkraefte[0] !== l.id) {
+          kandidaten.push({ l, stufe: 4, rang: qual ? 2 : 4, art: `Zweitbesetzung in ${n.klasse(dort[0].klasse)} wird abgezogen${qual ? '' : ', Notfalleinsatz ohne Fachqualifikation'}`, qual, abzug: dort[0] });
+        }
+      }
+    }
+    kandidaten.sort((a, b) => a.stufe - b.stufe || a.rang - b.rang || angrenzend(b.l.id) - angrenzend(a.l.id) || (ctx.woche.get(a.l.id) || 0) - (ctx.woche.get(b.l.id) || 0) || a.l.id.localeCompare(b.l.id));
+    const proStufe = { 3: 0, 4: 0 };
+    for (const c of kandidaten) {
+      if (proStufe[c.stufe]++ >= 8) continue; // je Stufe die aussichtsreichsten prüfen
+      const eintraege = [eintrag(ctx, s, { lehrkraefte: [c.l.id], status: 'vertreten', grund: c.stufe === 3 ? 'vertretungEigeneLehrkraft' : c.abzug ? 'zweitbesetzungAbgezogen' : c.qual ? 'vertretungQualifiziert' : 'notfalleinsatz' })];
+      if (c.abzug) eintraege.push(eintrag(ctx, c.abzug, { lehrkraefte: [c.abzug.lehrkraefte[0]], grund: 'zweitbesetzungAbgezogen' }));
+      liste.push({ stufe: c.stufe, text: `${n.lehrkraft(c.l.id)} vertritt (${c.art}${c.qual || c.stufe === 4 ? '' : ', fachfremd'})`, eintraege, rang: c.rang });
+      if (c.abzug && !c.qual) eintraege[0].grund = 'notfalleinsatz';
+    }
+
+    // Stufe 5: Doppelbetreuung durch eine Lehrkraft, die im Slot eine andere Klasse unterrichtet
+    const raumVon = (id) => ix.raeume.get(id);
+    const partner = ctx.tp.stunden
+      .filter((p) => p.stunde === s.stunde && p.klasse !== s.klasse && Index.STATUS.fachunterricht(p) && p.lehrkraefte.length === 1 && p.raum)
+      .map((p) => ({ p, k2: ix.klassen.get(p.klasse) }))
+      // bevorzugt Parallelklassen derselben Stufe im Klassenraum
+      .sort((a, b) => (raumVon(a.p.raum)?.typ !== 'klassenraum') - (raumVon(b.p.raum)?.typ !== 'klassenraum') || Math.abs(a.k2.stufe - k.stufe) - Math.abs(b.k2.stufe - k.stufe));
+    let zahl5 = 0;
+    for (const { p, k2 } of partner) {
+      if (zahl5 >= 6) break;
+      const t = p.lehrkraefte[0];
+      if (abwesend(ix.lehrkraefte.get(t), ctx.datum)) continue;
+      const r2 = raumVon(p.raum);
+      const eigenerRaum = s.raum && raumVon(s.raum);
+      let raum = null;
+      if (r2 && r2.kapazitaet >= k.schueler + k2.schueler) raum = p.raum;
+      else if (eigenerRaum && eigenerRaum.typ === 'klassenraum' && (r2?.nahe || []).includes(s.raum)) raum = s.raum;
+      if (!raum) continue;
+      zahl5++;
+      liste.push({
+        stufe: 5,
+        text: `${n.lehrkraft(t)} betreut zusätzlich zu ${n.klasse(p.klasse)} (${raum === p.raum ? 'gemeinsam in ' + n.raum(raum) : 'Räume nebeneinander'})`,
+        eintraege: [eintrag(ctx, s, { lehrkraefte: [t], raum, status: 'doppeltBetreut', mitKlasse: p.klasse, grund: 'doppelbetreuung' })],
+      });
+    }
+
+    liste.push(...kandidatenAufteilung(ctx, s), ...kandidatenEntfall(ctx, s, abw));
+    return liste.map((c) => ({ ...c, wo }));
+  }
+
+  /** Stufe 6: Aufteilung auf Klassen, die im Slot Unterricht haben (Kapazität, H6). */
+  function kandidatenAufteilung(ctx, s) {
+    const { ix } = ctx;
+    const n = ix.name;
+    const k = ix.klassen.get(s.klasse);
+    const gaeste = new Map();
+    for (const x of ctx.tp.stunden) {
+      if (x.stunde !== s.stunde || x.status !== 'aufgeteilt') continue;
+      for (const v of x.verteilung || []) gaeste.set(v.zielKlasse, (gaeste.get(v.zielKlasse) || 0) + v.anzahl);
+    }
+    const ziele = ctx.tp.stunden
+      .filter((x) => x.stunde === s.stunde && x.klasse !== s.klasse && Index.STATUS.mitRaum(x) && x.raum && x.status !== 'aufgeteilt')
+      .map((x) => {
+        const k2 = ix.klassen.get(x.klasse);
+        const raum = ix.raeume.get(x.raum);
+        const belegt = ctx.tp.stunden.filter((y) => y.stunde === s.stunde && y.raum === x.raum && Index.STATUS.mitRaum(y)).reduce((sum, y) => sum + (ix.klassen.get(y.klasse)?.schueler || 0), 0);
+        return { klasse: x.klasse, frei: (raum?.kapazitaet || 0) - belegt - (gaeste.get(x.klasse) || 0), abstand: Math.abs(k2.stufe - k.stufe) };
+      })
+      .filter((x) => x.frei > 0)
+      .sort((a, b) => a.abstand - b.abstand || b.frei - a.frei || a.klasse.localeCompare(b.klasse));
+    // möglichst wenige Zielklassen, gleichmäßig verteilt (Wasserstand)
+    for (let anzahl = 1; anzahl <= ziele.length; anzahl++) {
+      const auswahl = ziele.slice(0, anzahl);
+      if (auswahl.reduce((sum, x) => sum + x.frei, 0) < k.schueler) continue;
+      const verteilung = auswahl.map((x) => ({ zielKlasse: x.klasse, anzahl: 0, frei: x.frei }));
+      let rest = k.schueler;
+      while (rest > 0) {
+        const offen = verteilung.filter((v) => v.anzahl < v.frei).sort((a, b) => a.anzahl - b.anzahl);
+        offen[0].anzahl++;
+        rest--;
+      }
+      const gruppen = verteilung.map((v, i) => ({ zielKlasse: v.zielKlasse, anzahl: v.anzahl, gruppe: String.fromCharCode(65 + i) }));
+      return [{
+        stufe: 6,
+        text: `Aufteilung: ${gruppen.map((g) => `Gruppe ${g.gruppe} → ${n.klasse(g.zielKlasse)}: ${g.anzahl} Schüler:innen`).join('; ')}`,
+        eintraege: [eintrag(ctx, s, { lehrkraefte: [], raum: null, status: 'aufgeteilt', verteilung: gruppen, grund: 'aufteilung' })],
+      }];
+    }
+    return [];
+  }
+
+  /** Stufe 7: Entfall am Tagesrand, Nachrücken der folgenden Stunden oder Aufsicht. */
+  function kandidatenEntfall(ctx, s, abw) {
+    const { ix, z } = ctx;
+    const n = ix.name;
+    const tagesStunden = ctx.tp.stunden.filter((x) => x.klasse === s.klasse && Index.STATUS.belegt(x)).sort((a, b) => a.stunde - b.stunde);
+    const erste = tagesStunden[0]?.stunde;
+    const letzte = tagesStunden[tagesStunden.length - 1]?.stunde;
+    const liste = [];
+    const entfall = (x, grund) => eintrag(ctx, x, { lehrkraefte: [], raum: null, status: 'entfaellt', grund });
+    if (s.stunde === erste || s.stunde === letzte) {
+      liste.push({ stufe: 7, rang: 0, text: s.stunde === erste ? 'Entfall: späterer Unterrichtsbeginn' : 'Entfall: früherer Unterrichtsschluss', eintraege: [entfall(s, 'entfallRand')] });
+      return liste;
+    }
+    // Nachrücken: alle folgenden Stunden eine Stunde nach vorn, die letzte entfällt
+    const folgende = tagesStunden.filter((x) => x.stunde > s.stunde);
+    const eintraege = [];
+    let vorher = s.stunde;
+    for (const x of folgende) {
+      eintraege.push(eintrag(ctx, { ...x, stunde: vorher }, { fach: x.fach, lehrkraefte: x.lehrkraefte.filter((l) => l !== abw), raum: x.raum, status: x.status === 'regulaer' ? 'regulaer' : x.status, grund: 'nachgerueckt' }));
+      vorher = x.stunde;
+    }
+    eintraege.push(entfall({ ...s, stunde: letzte }, 'nachgerueckt')); // es entfällt das Fach der ausgefallenen Stunde
+    if (eintraege.every((e) => e.status === 'entfaellt' || e.lehrkraefte.length)) {
+      liste.push({ stufe: 7, rang: 1, text: `Nachrücken: die folgenden ${folgende.length} Stunde(n) rücken vor, Unterrichtsschluss eine Stunde früher (${n.fach(s.fach)} entfällt)`, eintraege });
+    }
+    // Aufsicht durch eine freie Lehrkraft (zählt als Ausfall)
+    const raum = s.raum && ix.raeume.get(s.raum)?.typ === 'klassenraum' ? s.raum : ix.klassen.get(s.klasse).heimatraum;
+    const frei = z.lehrkraefte.filter((l) => l.id !== abw && ctx.frei(l.id, s.stunde) && ctx.reserveFrei(l.id))
+      .sort((a, b) => {
+        const nah = (l) => { const st = ctx.stundenAmTag(l.id); return st.has(s.stunde - 1) || st.has(s.stunde + 1) ? 0 : 1; };
+        return nah(a) - nah(b) || (ctx.woche.get(a.id) || 0) - (ctx.woche.get(b.id) || 0) || a.id.localeCompare(b.id);
+      }).slice(0, 4);
+    for (const l of frei) {
+      liste.push({ stufe: 7, rang: 2, text: `Aufsicht durch ${n.lehrkraft(l.id)} (ohne Fachunterricht)`, eintraege: [eintrag(ctx, s, { lehrkraefte: [l.id], raum, status: 'aufsicht', grund: 'aufsicht' })] });
+    }
+    return liste;
+  }
+
+  /** Lösungskandidaten bei Raumausfall. */
+  function kandidatenRaum(ctx, s) {
+    const { ix, z } = ctx;
+    const n = ix.name;
+    const k = ix.klassen.get(s.klasse);
+    const liste = [];
+    const typ = ix.faecher.get(s.fach)?.raumtyp || null;
+    const belegt = new Set(ctx.tp.stunden.filter((x) => x.stunde === s.stunde && x.raum && Index.STATUS.mitRaum(x)).map((x) => x.raum));
+    const passend = z.raeume.filter((r) => !belegt.has(r.id) && r.kapazitaet >= k.schueler && !abwesend(r, ctx.datum) && !ix.raumGesperrt(r.id, ctx.tag, s.stunde)
+      && (typ ? ix.raumPasst(r.id, s.fach) : r.typ === 'klassenraum'))
+      .sort((a, b) => ((ix.raeume.get(s.raum)?.nahe || []).includes(b.id) - (ix.raeume.get(s.raum)?.nahe || []).includes(a.id)) || a.kapazitaet - b.kapazitaet);
+    for (const r of passend.slice(0, 6)) {
+      liste.push({ stufe: 1, text: `Ersatzraum ${n.raum(r.id)} (${r.kapazitaet} Plätze)`, eintraege: [eintrag(ctx, s, { raum: r.id, grund: 'raumausfall' })] });
+    }
+    liste.push(...kandidatenAufteilung(ctx, s), ...kandidatenEntfall(ctx, s, null).filter((c) => c.rang !== 2));
+    return liste.map((c) => ({ ...c, wo: `${n.klasse(s.klasse)} ${ctx.datum} ${s.stunde}. Stunde ${n.fach(s.fach)}` }));
+  }
+
+  /** Lösungskandidaten für eine Aufsicht der abwesenden Lehrkraft. */
+  function kandidatenAufsicht(ctx, a) {
+    const { ix, z } = ctx;
+    const n = ix.name;
+    const erste = a.vorStunde === ix.stunden[0];
+    const angrenzendeStunden = erste ? [a.vorStunde] : [a.vorStunde - 1, a.vorStunde];
+    const schonDa = new Set(ctx.tp.aufsichten.filter((x) => x.vorStunde === a.vorStunde).map((x) => x.lehrkraft));
+    const liste = [];
+    const kandidaten = z.lehrkraefte.filter((l) => l.id !== a.lehrkraft && !schonDa.has(l.id) && !abwesend(l, ctx.datum)
+      && ctx.stundenAmTag(l.id).size > 0 && !angrenzendeStunden.some((st) => ix.lehrkraftGesperrt(l.id, ctx.tag, st)))
+      .map((l) => ({ l, nah: angrenzendeStunden.some((st) => ctx.stundenAmTag(l.id).has(st)) }))
+      .sort((x, y) => y.nah - x.nah || (ctx.aufsichtenWoche.get(x.l.id) || 0) - (ctx.aufsichtenWoche.get(y.l.id) || 0) || x.l.id.localeCompare(y.l.id))
+      .slice(0, 6);
+    for (const { l, nah } of kandidaten) {
+      liste.push({
+        stufe: nah ? 1 : 2,
+        text: `${n.lehrkraft(l.id)} übernimmt die Aufsicht (${nah ? 'hat direkt davor/danach Unterricht' : 'am Tag anwesend'}; ${ctx.aufsichtenWoche.get(l.id) || 0} Aufsichten in dieser Woche)`,
+        aufsichtsEintraege: [{ datum: ctx.datum, vorStunde: a.vorStunde, fuer: a.lehrkraft, lehrkraft: l.id, status: 'vertreten' }],
+      });
+    }
+    liste.push({ stufe: 7, text: 'Aufsicht bleibt unbesetzt (keine anwesende Lehrkraft frei)', aufsichtsEintraege: [{ datum: ctx.datum, vorStunde: a.vorStunde, fuer: a.lehrkraft, lehrkraft: null, status: 'unbesetzt' }] });
+    return liste.map((c) => ({ ...c, wo: n.pause(ctx.tag, a.vorStunde) + ' am ' + ctx.datum }));
+  }
+
+  /* ------------------------------ Vorschläge --------------------------- */
+
+  /**
+   * Berechnet Vorschläge für alle betroffenen Stunden und Aufsichten im Zeitraum.
+   * Die Vorschläge werden der Reihe nach (Datum, Stunde) auf einer Arbeitskopie
+   * angewandt, damit spätere Vorschläge frühere berücksichtigen.
+   * @param {{ausgeschlossen?: Set<string>, maxAlternativen?: number}} [optionen]
+   *        ausgeschlossen: Schlüssel verworfener Vorschläge (werden übersprungen)
+   * @returns {object[]} Vorschläge mit { schluessel, art, datum, stufe, stufeText, text, eintraege, aufsichtsEintraege, vektor, alternativen }
+   */
+  function vorschlaege(z, von, bis, optionen = {}) {
+    const ausgeschlossen = optionen.ausgeschlossen || new Set();
+    const maxAlt = optionen.maxAlternativen ?? 6;
+    let arbeit = kopie(z);
+    const ergebnis = [];
+    for (const datum of Hilfen.unterrichtstage(von, bis, z.zeitraster.tage)) {
+      const erledigt = new Set();
+      for (let schutz = 0; schutz < 500; schutz++) {
+        const offen = betroffen(arbeit, datum).filter((b) => !erledigt.has(schluesselVon(b)) && !ausgeschlossen.has(schluesselVon(b)));
+        if (!offen.length) break;
+        const b = offen[0];
+        erledigt.add(schluesselVon(b));
+        const v = loese(arbeit, b, maxAlt);
+        if (!v) continue;
+        ergebnis.push(v);
+        arbeit = mitLoesung(arbeit, v);
+      }
+    }
+    return ergebnis;
+  }
+
+  const schluesselVon = (b) => [b.datum, b.art, b.klasse ?? b.lehrkraft, b.stunde ?? b.vorStunde].join('|');
+
+  /** Löst einen betroffenen Eintrag nach der Eskalationskette. */
+  function loese(z, b, maxAlt = 6) {
+    const ctx = kontext(z, b.datum);
+    const vorherCache = new Map();
+    const vorherVerstoesse = (d) => {
+      if (!vorherCache.has(d)) vorherCache.set(d, Regeln.pruefeHart(z, tagesplan(z, d), { datum: d }));
+      return vorherCache.get(d);
+    };
+    let kandidaten;
+    let art = b.art;
+    if (b.art === 'aufsicht') {
+      kandidaten = kandidatenAufsicht(ctx, b);
+    } else {
+      const s = ctx.tp.stunden.find((x) => x.klasse === b.klasse && x.stunde === b.stunde);
+      if (!s) return null;
+      if (b.art === 'zweit') {
+        kandidaten = [{ stufe: 0, text: `Zweitbesetzung ${ctx.ix.name.lehrkraft(b.lehrkraft)} entfällt; ${ctx.ix.name.lehrkraft(s.lehrkraefte[0])} unterrichtet allein`, eintraege: [eintrag(ctx, s, { lehrkraefte: [s.lehrkraefte[0]], grund: 'zweitbesetzungAbwesend' })], wo: `${ctx.ix.name.klasse(s.klasse)} ${b.datum} ${s.stunde}. Stunde` }];
+        art = 'lehrkraft';
+      } else if (b.art === 'raum') {
+        kandidaten = kandidatenRaum(ctx, s);
+      } else {
+        kandidaten = kandidatenLehrkraft(ctx, s, b.lehrkraft);
+        // „Nicht zweimal hintereinander aufteilen, wenn es eine Alternative gibt“: Aufteilung hinter Stufe 7 einordnen
+        const nachbarAufgeteilt = ctx.tp.stunden.some((x) => x.klasse === s.klasse && Math.abs(x.stunde - s.stunde) === 1 && x.status === 'aufgeteilt');
+        if (nachbarAufgeteilt) kandidaten = kandidaten.map((c) => (c.stufe === 6 ? { ...c, stufe: 6.5, text: c.text + ' (Klasse war bereits in der Nachbarstunde aufgeteilt)' } : c));
+      }
+    }
+    // Bewerten: Stufe für Stufe; zulässige Kandidaten mit Kostenvektor
+    const bewertet = [];
+    for (const c of kandidaten) {
+      const vektor = pruefe(z, c, vorherVerstoesse);
+      if (vektor) bewertet.push({ ...c, vektor });
+    }
+    if (!bewertet.length) {
+      // keine zulässige Lösung: Entfall (ggf. mit Verstoß) als letzte Möglichkeit anbieten
+      const s = ctx.tp.stunden.find((x) => x.klasse === b.klasse && x.stunde === b.stunde);
+      if (!s) return null;
+      const notfall = { stufe: 8, text: 'Keine Lösung ohne Regelverstoß – Stunde entfällt (prüfen!)', eintraege: [eintrag(ctx, s, { lehrkraefte: [], raum: null, status: 'entfaellt', grund: 'keineLoesung' })], wo: `${ctx.ix.name.klasse(s.klasse)} ${b.datum} ${s.stunde}. Stunde` };
+      bewertet.push({ ...notfall, vektor: null });
+    }
+    bewertet.sort((x, y) => x.stufe - y.stufe || (x.vektor && y.vektor ? Kosten.vergleiche(x.vektor, y.vektor) : 0) || (x.rang ?? 0) - (y.rang ?? 0));
+    const [beste, ...rest] = bewertet;
+    // Alternativen: weitere der gleichen Stufe und die besten späteren Stufen
+    const alternativen = [];
+    const stufenGesehen = new Set([beste.stufe]);
+    for (const c of rest) {
+      if (alternativen.length >= maxAlt) break;
+      if (c.stufe === beste.stufe || !stufenGesehen.has(c.stufe) || alternativen.filter((x) => x.stufe === c.stufe).length < 2) {
+        alternativen.push(c);
+        stufenGesehen.add(c.stufe);
+      }
+    }
+    const stufenText = (st) => STUFEN[art][Math.floor(st)] || (st === 8 ? 'Keine regelkonforme Lösung' : '');
+    const form = (c) => ({
+      stufe: Math.floor(c.stufe), stufeText: stufenText(c.stufe), text: c.text, vektor: c.vektor,
+      eintraege: c.eintraege || [], aufsichtsEintraege: c.aufsichtsEintraege || [],
+    });
+    return {
+      schluessel: schluesselVon(b), art: b.art, datum: b.datum, klasse: b.klasse, stunde: b.stunde, vorStunde: b.vorStunde,
+      lehrkraft: b.lehrkraft, raum: b.raum, wo: beste.wo, ...form(beste), alternativen: alternativen.map(form),
+    };
+  }
+
+  /** Übernimmt einen (bestätigten) Vorschlag in den Zustand. */
+  function uebernehmen(z, vorschlag) {
+    eintragen(z, vorschlag);
+  }
+
+  /** Ausfallbericht (§5 Stufe 7): Entfall und Aufsicht im Zeitraum, mit Grund. */
+  function ausfallbericht(z, von, bis) {
+    const ix = Index.erstelle(z);
+    return z.plan.vertretungen
+      .filter((v) => v.datum >= von && v.datum <= bis && (v.status === 'entfaellt' || v.status === 'aufsicht'))
+      .map((v) => ({ datum: v.datum, klasse: ix.name.klasse(v.klasse), stunde: v.stunde, fach: ix.name.fach(v.fach), status: v.status, grund: GRUENDE[v.grund] || v.grund || '' }));
+  }
+
+  /** Lesbare Gründe (Feld „grund“ der Vertretungen). */
+  const GRUENDE = {
+    zweitbesetzungRueckt: 'Zweitbesetzung rückt auf', zweitbesetzungAbwesend: 'Zweitbesetzung abwesend', umgeplant: 'Umgeplant (Tausch in der Woche)',
+    vertretungEigeneLehrkraft: 'Vertretung durch Lehrkraft der Klasse', vertretungQualifiziert: 'Vertretung durch qualifizierte Lehrkraft',
+    zweitbesetzungAbgezogen: 'Zweitbesetzung für Vertretung abgezogen', notfalleinsatz: 'Notfalleinsatz (fachfremd)', doppelbetreuung: 'Doppelbetreuung',
+    aufteilung: 'Aufteilung der Klasse', entfallRand: 'Entfall am Tagesrand', nachgerueckt: 'Folgende Stunden nachgerückt', aufsicht: 'Aufsicht statt Unterricht',
+    raumausfall: 'Raumausfall – Ersatzraum', keineLoesung: 'Keine regelkonforme Lösung gefunden',
+  };
+
+  return { STUFEN, GRUENDE, tagesplan, betroffen, vorschlaege, loese, uebernehmen, ausfallbericht };
+})();
+
 /* ---- src/kern/80-io.js ---- */
 /* ==========================================================================
  * Modul Io (Import/Export)
@@ -3218,6 +3741,7 @@ const Kern = Object.freeze({
   Fluss,
   Planer,
   Bearbeitung,
+  Vertretung,
   Io,
 });
 </script>
@@ -5129,6 +5653,294 @@ const PlanReiter = (() => {
   return { sichtbar: () => sichtbar(), baue, wechsle, druckvorbereitung, fuehreAus, dauer: () => letzteDauerMs };
 })();
 
+/* ---- src/ui/60-ausfall.js ---- */
+/* ==========================================================================
+ * Modul AusfallReiter (Oberfläche, Reiter „Ausfall“)
+ * Abwesenheiten erfassen (Lehrkraft oder Raum, Zeitraum), datumsgenaue
+ * Vertretungsvorschläge je Stunde und Pause prüfen, übernehmen, ändern
+ * (Alternative wählen) oder verwerfen (§5, §7). Nichts wird ohne Bestätigung
+ * übernommen. Dazu der Tagesvertretungsplan mit Konflikten und Ausfallbericht.
+ * ========================================================================== */
+const AusfallReiter = (() => {
+  'use strict';
+  let panel = null;
+  let sichtbar = () => {};
+  const zeitraum = { von: null, bis: null };
+  let vorschlaege = [];
+  let berechnet = false;
+  const verworfen = new Set();
+  let tagesDatum = null;
+
+  /* ------------------------------ Aufbau ------------------------------- */
+
+  function baue(ziel) {
+    panel = ziel;
+    const el = App.el;
+    const heute = Kern.Hilfen.heuteIso();
+    zeitraum.von = heute;
+    zeitraum.bis = Kern.Hilfen.plusTage(heute, 4);
+    tagesDatum = heute;
+    panel.append(
+      el('section', { class: 'abschnitt', 'aria-labelledby': 'ausfall-erfassen-titel' },
+        el('h3', { id: 'ausfall-erfassen-titel', text: 'Abwesenheit erfassen' }),
+        el('div', { class: 'formular formular-zeile' },
+          el('label', { class: 'feld' }, el('span', { text: 'Art' }),
+            el('select', { id: 'abw-art', onchange: () => fuelleWer() }, el('option', { value: 'lehrkraft', text: 'Lehrkraft' }), el('option', { value: 'raum', text: 'Raum' }))),
+          el('label', { class: 'feld' }, el('span', { text: 'Wer / welcher Raum' }), el('select', { id: 'abw-wer' })),
+          el('label', { class: 'feld' }, el('span', { text: 'Von' }), el('input', { type: 'date', id: 'abw-von', value: heute })),
+          el('label', { class: 'feld' }, el('span', { text: 'Bis' }), el('input', { type: 'date', id: 'abw-bis', value: heute })),
+          el('label', { class: 'feld' }, el('span', { text: 'Grund (optional)' }), el('input', { type: 'text', id: 'abw-grund' })),
+          el('div', { class: 'feld feld-knopf' }, el('button', { type: 'button', class: 'knopf knopf-primaer', id: 'abw-erfassen', text: 'Erfassen', onclick: erfasse }))),
+        el('div', { class: 'meldungen', id: 'abw-meldung', 'aria-live': 'polite' }),
+        el('div', { class: 'tabellen-rahmen' }, el('table', { class: 'tabelle', id: 'abw-liste' }))),
+      el('section', { class: 'abschnitt abschnitt-breit', 'aria-labelledby': 'ausfall-vorschlaege-titel' },
+        el('h3', { id: 'ausfall-vorschlaege-titel', text: 'Vertretungsvorschläge' }),
+        el('p', { class: 'hinweis', text: 'Je betroffener Stunde und Pause die günstigste Lösung nach der Eskalationskette (Zweitbesetzung rückt auf → Umplanen → Lehrkraft der Klasse → andere Lehrkraft → Doppelbetreuung → Aufteilung → Entfall/Nachrücken/Aufsicht). Nichts wird ohne Bestätigung übernommen.' }),
+        el('div', { class: 'formular formular-zeile' },
+          el('label', { class: 'feld' }, el('span', { text: 'Von' }), el('input', { type: 'date', id: 'vs-von', value: zeitraum.von, onchange: (e) => { zeitraum.von = e.target.value; } })),
+          el('label', { class: 'feld' }, el('span', { text: 'Bis' }), el('input', { type: 'date', id: 'vs-bis', value: zeitraum.bis, onchange: (e) => { zeitraum.bis = e.target.value; } })),
+          el('div', { class: 'feld feld-knopf knopfleiste' },
+            el('button', { type: 'button', class: 'knopf knopf-primaer', id: 'vs-berechnen', text: 'Vorschläge berechnen', onclick: () => { berechne(true); renderTag(); } }),
+            el('button', { type: 'button', class: 'knopf', id: 'vs-alle', text: 'Alle übernehmen', onclick: alleUebernehmen }))),
+        el('p', { id: 'vs-status', class: 'leise', 'aria-live': 'polite' }),
+        el('div', { class: 'tabellen-rahmen' }, el('table', { class: 'tabelle vorschlaege', id: 'vs-tabelle' }))),
+      el('section', { class: 'abschnitt abschnitt-breit', 'aria-labelledby': 'ausfall-tag-titel' },
+        el('h3', { id: 'ausfall-tag-titel', text: 'Tagesvertretungsplan' }),
+        el('div', { class: 'formular formular-zeile' },
+          el('label', { class: 'feld' }, el('span', { text: 'Datum' }), el('input', { type: 'date', id: 'tag-datum', value: tagesDatum, onchange: (e) => { tagesDatum = e.target.value; renderTag(); } })),
+          el('div', { class: 'feld feld-knopf' }, el('button', { type: 'button', class: 'knopf', id: 'tag-drucken', text: 'Tagesplan drucken', onclick: drucke }))),
+        el('div', { id: 'tag-inhalt' })),
+    );
+    fuelleWer();
+    sichtbar = App.beobachteSichtbar(panel, render);
+    render();
+  }
+
+  function fuelleWer() {
+    const d = App.zustand.daten;
+    const art = panel.querySelector('#abw-art').value;
+    const liste = art === 'raum' ? d.raeume.map((r) => [r.id, r.name]) : d.lehrkraefte.map((l) => [l.id, `${l.kuerzel} – ${l.name}`]);
+    const wahl = panel.querySelector('#abw-wer');
+    const alt = wahl.value;
+    wahl.replaceChildren(...liste.map(([id, t]) => App.el('option', { value: id, text: t, selected: id === alt })));
+  }
+
+  /* ---------------------------- Abwesenheiten -------------------------- */
+
+  function meldung(art, titel, text) {
+    panel.querySelector('#abw-meldung').replaceChildren(App.el('div', { class: 'meldung meldung-' + art, role: art === 'fehler' ? 'alert' : 'status' },
+      App.el('p', { class: 'meldung-titel', text: (art === 'fehler' ? '⚠ ' : '✓ ') + titel }), text ? App.el('p', { text }) : null));
+  }
+
+  function erfasse() {
+    const art = panel.querySelector('#abw-art').value;
+    const id = panel.querySelector('#abw-wer').value;
+    const von = panel.querySelector('#abw-von').value;
+    const bis = panel.querySelector('#abw-bis').value || von;
+    const grund = panel.querySelector('#abw-grund').value.trim();
+    if (!id) return meldung('fehler', 'Bitte eine Lehrkraft oder einen Raum wählen.');
+    if (!Kern.Hilfen.istIsoDatum(von) || !Kern.Hilfen.istIsoDatum(bis)) return meldung('fehler', 'Bitte gültige Daten eingeben.');
+    if (bis < von) return meldung('fehler', 'Das Ende liegt vor dem Beginn.');
+    const sammlung = art === 'raum' ? 'raeume' : 'lehrkraefte';
+    const d0 = App.zustand.daten;
+    const name = art === 'raum' ? d0.raeume.find((r) => r.id === id)?.name : d0.lehrkraefte.find((l) => l.id === id)?.kuerzel;
+    const alt = { ...zeitraum, tagesDatum, berechnet };
+    setzeZeitraum(von, bis);
+    berechnet = true; // die Änderung zeichnet neu und berechnet die Vorschläge für den neuen Zeitraum
+    const r = App.aendere(`Abwesenheit ${name} ${von}–${bis} erfasst`, (d) => {
+      d[sammlung].find((x) => x.id === id).abwesenheiten.push({ von, bis, grund });
+    });
+    if (!r.ok) {
+      setzeZeitraum(alt.von, alt.bis);
+      tagesDatum = alt.tagesDatum;
+      berechnet = alt.berechnet;
+      return meldung('fehler', 'Abwesenheit nicht erfasst', r.fehler[0]?.meldung);
+    }
+    meldung('ok', `Abwesenheit ${name} vom ${von} bis ${bis} erfasst.`, 'Die Vorschläge für diesen Zeitraum stehen unten.');
+    return undefined;
+  }
+
+  function setzeZeitraum(von, bis) {
+    zeitraum.von = von;
+    zeitraum.bis = bis;
+    panel.querySelector('#vs-von').value = von;
+    panel.querySelector('#vs-bis').value = bis;
+    tagesDatum = Kern.Hilfen.unterrichtstage(von, bis, App.zustand.daten.zeitraster.tage)[0] || von;
+    panel.querySelector('#tag-datum').value = tagesDatum;
+  }
+
+  function renderAbwesenheiten(d) {
+    const el = App.el;
+    const zeilen = [
+      ...d.lehrkraefte.flatMap((l) => l.abwesenheiten.map((a, i) => ({ art: 'Lehrkraft', sammlung: 'lehrkraefte', id: l.id, name: `${l.kuerzel} – ${l.name}`, a, i }))),
+      ...d.raeume.flatMap((r) => r.abwesenheiten.map((a, i) => ({ art: 'Raum', sammlung: 'raeume', id: r.id, name: r.name, a, i }))),
+    ].sort((x, y) => x.a.von.localeCompare(y.a.von));
+    panel.querySelector('#abw-liste').replaceChildren(
+      el('caption', { text: `Erfasste Abwesenheiten (${zeilen.length})` }),
+      el('thead', {}, el('tr', {}, ...['Art', 'Wer', 'Von', 'Bis', 'Grund', 'Aktionen'].map((t) => el('th', { scope: 'col', text: t })))),
+      el('tbody', {}, ...(zeilen.length ? zeilen.map((z) => el('tr', {},
+        el('td', { text: z.art }), el('th', { scope: 'row', text: z.name }), el('td', { text: z.a.von }), el('td', { text: z.a.bis }), el('td', { text: z.a.grund || '–' }),
+        el('td', { class: 'knopfleiste' },
+          el('button', { type: 'button', class: 'knopf knopf-klein', text: 'Vorschläge', 'aria-label': `Vorschläge für ${z.name} ${z.a.von}–${z.a.bis}`, onclick: () => { setzeZeitraum(z.a.von, z.a.bis); berechne(true); renderTag(); } }),
+          el('button', {
+            type: 'button', class: 'knopf knopf-klein knopf-gefahr', text: 'Löschen', 'aria-label': `Abwesenheit ${z.name} ${z.a.von}–${z.a.bis} löschen`,
+            onclick: () => App.aendere(`Abwesenheit ${z.name} ${z.a.von}–${z.a.bis} gelöscht`, (x) => { x[z.sammlung].find((e) => e.id === z.id).abwesenheiten.splice(z.i, 1); }),
+          }))))
+        : [el('tr', {}, el('td', { colspan: '6', class: 'leise', text: 'Keine Abwesenheiten erfasst.' }))])));
+  }
+
+  /* ----------------------------- Vorschläge ---------------------------- */
+
+  function berechne(verworfeneZuruecksetzen) {
+    if (verworfeneZuruecksetzen) verworfen.clear();
+    const status = panel.querySelector('#vs-status');
+    const d = App.zustand.daten;
+    if (!d.plan.regelplan.length) { vorschlaege = []; berechnet = true; status.textContent = 'Noch kein Regelplan – bitte zuerst im Reiter „Planung“ erstellen.'; renderVorschlaege(); return; }
+    if (!Kern.Hilfen.istIsoDatum(zeitraum.von) || !Kern.Hilfen.istIsoDatum(zeitraum.bis) || zeitraum.bis < zeitraum.von) { status.textContent = '⚠ Bitte einen gültigen Zeitraum wählen.'; return; }
+    const t0 = performance.now();
+    vorschlaege = Kern.Vertretung.vorschlaege(d, zeitraum.von, zeitraum.bis, { ausgeschlossen: verworfen });
+    berechnet = true;
+    const ohne = vorschlaege.filter((v) => v.stufe === 8).length;
+    status.textContent = vorschlaege.length
+      ? `${vorschlaege.length === 1 ? 'Ein Vorschlag' : vorschlaege.length + ' Vorschläge'} für ${zeitraum.von} bis ${zeitraum.bis}${ohne ? ` – ⚠ ${ohne} ohne regelkonforme Lösung` : ''} (berechnet in ${((performance.now() - t0) / 1000).toFixed(1)} s).`
+      : `Im Zeitraum ${zeitraum.von} bis ${zeitraum.bis} ist nichts (mehr) zu vertreten.${verworfen.size ? ` ${verworfen.size} verworfene Vorschläge ausgeblendet.` : ''}`;
+    renderVorschlaege();
+  }
+
+  function renderVorschlaege() {
+    const el = App.el;
+    const d = App.zustand.daten;
+    const ix = Kern.Index.erstelle(d);
+    const n = ix.name;
+    const tabelle = panel.querySelector('#vs-tabelle');
+    if (!vorschlaege.length) { tabelle.replaceChildren(); return; }
+    const kopf = el('thead', {}, el('tr', {}, ...['Datum', 'Zeit', 'Betroffen', 'Ausfall', 'Vorschlag', 'Kosten (K1 K1A K2 K3 K4)', 'Aktion'].map((t) => el('th', { scope: 'col', text: t }))));
+    const zeilen = vorschlaege.map((v, nr) => {
+      const zeit = v.art === 'aufsicht' ? n.pause(Kern.Hilfen.wochentag(v.datum), v.vorStunde).replace(/^\S+ /, '') : `${v.stunde}. Stunde`;
+      const betroffen = v.art === 'aufsicht' ? 'Pausenaufsicht' : `${n.klasse(v.klasse)} ${n.fach(Kern.Vertretung.tagesplan(d, v.datum).stunden.find((s) => s.klasse === v.klasse && s.stunde === v.stunde)?.fach)}`;
+      const ausfall = v.art === 'raum' ? `Raum ${n.raum(v.raum)}` : v.art === 'zweit' ? `${n.lehrkraft(v.lehrkraft)} (Zweitbesetzung)` : n.lehrkraft(v.lehrkraft);
+      const optionen = [v, ...v.alternativen];
+      const auswahl = el('select', { class: 'vs-auswahl', 'aria-label': `Lösung für ${betroffen} ${v.datum} ${zeit}` },
+        ...optionen.map((o, i) => el('option', { value: String(i), text: `${i === 0 ? '★ ' : ''}Stufe ${o.stufe}: ${o.stufeText} – ${o.text}` })));
+      const beschreibung = el('div', {}, el('strong', { text: `${v.stufe === 8 ? '⚠ ' : ''}Stufe ${v.stufe}: ${v.stufeText}` }), el('div', { class: 'vs-text', text: v.text }));
+      const kosten = el('td', { class: 'zahl', text: v.vektor ? v.vektor.slice(0, 5).join(' ') : '–' });
+      auswahl.addEventListener('change', () => {
+        const o = optionen[Number(auswahl.value)];
+        beschreibung.replaceChildren(el('strong', { text: `${o.stufe === 8 ? '⚠ ' : ''}Stufe ${o.stufe}: ${o.stufeText}` }), el('div', { class: 'vs-text', text: o.text }));
+        kosten.textContent = o.vektor ? o.vektor.slice(0, 5).join(' ') : '–';
+      });
+      return el('tr', { 'data-schluessel': v.schluessel, class: v.stufe === 8 ? 'vs-problem' : null },
+        el('td', { text: v.datum }), el('td', { text: zeit }), el('th', { scope: 'row', text: betroffen }), el('td', { text: ausfall }),
+        el('td', {}, beschreibung, optionen.length > 1 ? el('details', {}, el('summary', { text: `Andere Lösung wählen (${optionen.length - 1})` }), auswahl) : null),
+        kosten,
+        el('td', { class: 'knopfleiste' },
+          el('button', { type: 'button', class: 'knopf knopf-klein knopf-primaer', 'data-aktion': 'uebernehmen', text: 'Übernehmen', onclick: () => uebernehme(nr, optionen[Number(auswahl.value)]) }),
+          el('button', { type: 'button', class: 'knopf knopf-klein', 'data-aktion': 'verwerfen', text: 'Verwerfen', onclick: () => { verworfen.add(v.schluessel); berechne(false); } })));
+    });
+    tabelle.replaceChildren(el('caption', { text: 'Vorschläge (★ = günstigste Lösung)' }), kopf, el('tbody', {}, ...zeilen));
+  }
+
+  /** Übernimmt eine Lösung; die Änderung zeichnet neu (Vorschläge und Tagesplan). */
+  function uebernehme(nr, loesung) {
+    const v = vorschlaege[nr];
+    tagesDatum = v.datum;
+    panel.querySelector('#tag-datum').value = tagesDatum;
+    const r = App.aendere(`Vertretung übernommen: ${v.wo} – ${loesung.stufeText}`, (d) => Kern.Vertretung.uebernehmen(d, loesung));
+    if (!r.ok) panel.querySelector('#vs-status').textContent = '⚠ Nicht übernommen: ' + (r.fehler[0]?.meldung || '');
+  }
+
+  function alleUebernehmen() {
+    if (!vorschlaege.length) return;
+    const anzahl = vorschlaege.length;
+    const kopie = vorschlaege.slice();
+    App.aendere(`${anzahl} Vertretungsvorschläge übernommen`, (d) => { for (const v of kopie) Kern.Vertretung.uebernehmen(d, v); });
+    panel.querySelector('#vs-status').textContent = `${anzahl === 1 ? 'Ein Vorschlag' : anzahl + ' Vorschläge'} übernommen. ` + panel.querySelector('#vs-status').textContent;
+  }
+
+  /* -------------------------- Tagesvertretungsplan --------------------- */
+
+  function tagesInhalt(d, fuerDruck) {
+    const el = App.el;
+    const ix = Kern.Index.erstelle(d);
+    const n = ix.name;
+    const datum = tagesDatum;
+    if (!Kern.Hilfen.istIsoDatum(datum)) return [el('p', { class: 'leise', text: 'Bitte ein Datum wählen.' })];
+    const tag = Kern.Hilfen.wochentag(datum);
+    if (!ix.tage.includes(tag)) return [el('p', { class: 'leise', text: `${datum} ist ein ${tag} – kein Unterrichtstag.` })];
+    const tp = Kern.Vertretung.tagesplan(d, datum);
+    const regel = new Map(d.plan.regelplan.filter((s) => s.tag === tag).map((s) => [s.klasse + '|' + s.stunde, s]));
+    const eintraege = d.plan.vertretungen.map((v, i) => [v, i]).filter(([v]) => v.datum === datum)
+      .sort(([a], [b]) => a.stunde - b.stunde || n.klasse(a.klasse).localeCompare(n.klasse(b.klasse)));
+    const aufs = d.plan.aufsichtsVertretungen.map((v, i) => [v, i]).filter(([v]) => v.datum === datum);
+    const status = { regulaer: 'regulär', vertreten: 'vertreten', doppeltBetreut: '⇄ Doppelbetreuung', aufgeteilt: 'aufgeteilt', entfaellt: 'entfällt', aufsicht: 'Aufsicht' };
+    const wer = (liste) => (liste || []).map((l, r) => (r ? '+' : '') + n.lehrkraft(l)).join(' ') || '–';
+    const teile = [];
+    teile.push(el('table', { class: 'tabelle', id: fuerDruck ? null : 'tag-vertretungen' },
+      el('caption', { text: `Vertretungen am ${tag}, ${datum} (${eintraege.length})` }),
+      el('thead', {}, el('tr', {}, ...['Stunde', 'Klasse', 'Fach', 'Regulär', 'Status', 'Lehrkraft', 'Raum', 'Grund', ...(fuerDruck ? [] : [''])].map((t) => el('th', { scope: 'col', text: t })))),
+      el('tbody', {}, ...(eintraege.length ? eintraege.map(([v, i]) => {
+        const r = regel.get(v.klasse + '|' + v.stunde);
+        const zusatz = v.status === 'doppeltBetreut' && v.mitKlasse ? ` mit ${n.klasse(v.mitKlasse)}` : v.status === 'aufgeteilt' ? ': ' + (v.verteilung || []).map((g) => `${g.gruppe ? 'Gruppe ' + g.gruppe + ' ' : ''}→ ${n.klasse(g.zielKlasse)} (${g.anzahl})`).join(', ') : '';
+        return el('tr', {},
+          el('td', { text: `${v.stunde}.` }), el('th', { scope: 'row', text: n.klasse(v.klasse) }), el('td', { text: n.fach(v.fach ?? r?.fach) }),
+          el('td', { text: r ? `${n.fach(r.fach)} ${wer(r.lehrkraefte)}` : '–' }), el('td', { text: status[v.status] + zusatz }),
+          el('td', { text: wer(v.lehrkraefte) }), el('td', { text: v.raum ? n.raum(v.raum) : '–' }), el('td', { text: Kern.Vertretung.GRUENDE[v.grund] || v.grund || '' }),
+          ...(fuerDruck ? [] : [el('td', {}, el('button', { type: 'button', class: 'mini', 'aria-label': `Vertretung ${n.klasse(v.klasse)} ${v.stunde}. Stunde entfernen`, text: '×', onclick: () => App.aendere(`Vertretung ${n.klasse(v.klasse)} ${datum} ${v.stunde}. entfernt`, (x) => { x.plan.vertretungen.splice(i, 1); }) }))]));
+      }) : [el('tr', {}, el('td', { colspan: '9', class: 'leise', text: 'Keine Vertretungen an diesem Tag.' }))]))));
+    if (aufs.length) {
+      teile.push(el('table', { class: 'tabelle', id: fuerDruck ? null : 'tag-aufsichten' },
+        el('caption', { text: 'Aufsichtsvertretungen' }),
+        el('thead', {}, el('tr', {}, ...['Pause', 'für', 'Vertretung', ...(fuerDruck ? [] : [''])].map((t) => el('th', { scope: 'col', text: t })))),
+        el('tbody', {}, ...aufs.map(([a, i]) => el('tr', {},
+          el('td', { text: n.pause(tag, a.vorStunde).replace(/^\S+ /, '') }), el('td', { text: n.lehrkraft(a.fuer) }),
+          el('td', { class: a.status === 'unbesetzt' ? 'fehler-text' : null, text: a.status === 'unbesetzt' ? '⚠ unbesetzt' : n.lehrkraft(a.lehrkraft) }),
+          ...(fuerDruck ? [] : [el('td', {}, el('button', { type: 'button', class: 'mini', 'aria-label': 'Aufsichtsvertretung entfernen', text: '×', onclick: () => App.aendere(`Aufsichtsvertretung ${datum} entfernt`, (x) => { x.plan.aufsichtsVertretungen.splice(i, 1); }) }))]))))));
+    }
+    if (!fuerDruck) {
+      const verstoesse = Kern.Regeln.pruefeHart(d, tp, { datum });
+      const offen = Kern.Vertretung.betroffen(d, datum);
+      teile.push(el('div', { class: 'meldung ' + (verstoesse.length ? 'meldung-fehler' : 'meldung-ok'), id: 'tag-pruefung', role: 'status' },
+        el('p', { class: 'meldung-titel', text: verstoesse.length ? `⚠ ${verstoesse.length} Konflikt(e) im Tagesplan` : '✓ Tagesplan ohne Verstöße gegen harte Regeln' }),
+        offen.length ? el('p', { text: `${offen.length} betroffene Stunde(n)/Aufsicht(en) sind noch nicht vertreten.` }) : null,
+        verstoesse.length ? el('ul', { class: 'pfadliste' }, ...verstoesse.slice(0, 30).map((v) => el('li', {}, el('strong', { text: v.regel }), ' ' + v.text))) : null));
+    }
+    const bericht = Kern.Vertretung.ausfallbericht(d, datum, datum);
+    teile.push(el('h4', { text: `Ausfallbericht (${bericht.length})` }), bericht.length
+      ? el('ul', { id: fuerDruck ? null : 'tag-ausfall' }, ...bericht.map((b) => el('li', { text: `${b.stunde}. Stunde ${b.klasse} ${b.fach}: ${b.status === 'aufsicht' ? 'Aufsicht statt Unterricht' : 'entfällt'} – ${b.grund}` })))
+      : el('p', { class: 'leise', text: 'Kein Unterrichtsausfall.' }));
+    return teile;
+  }
+
+  function renderTag() {
+    panel.querySelector('#tag-inhalt').replaceChildren(...tagesInhalt(App.zustand.daten, false));
+  }
+
+  function drucke() {
+    const d = App.zustand.daten;
+    const el = App.el;
+    document.getElementById('druckbereich').replaceChildren(el('section', { class: 'druckseite' },
+      el('h2', { text: `Vertretungsplan ${Kern.Hilfen.istIsoDatum(tagesDatum) ? Kern.Hilfen.wochentag(tagesDatum) + ', ' : ''}${tagesDatum}` }),
+      el('p', { class: 'leise', text: `${d.schule?.name || ''} ${d.schule?.schuljahr || ''}`.trim() }),
+      ...tagesInhalt(d, true)));
+    window.print();
+  }
+
+  /* ------------------------------ Render ------------------------------- */
+
+  function render() {
+    const d = App.zustand.daten;
+    fuelleWer();
+    renderAbwesenheiten(d);
+    if (berechnet) {
+      // Vorschläge passen nicht mehr zum geänderten Stand → neu berechnen
+      berechne(false);
+    }
+    renderTag();
+  }
+
+  return { sichtbar: () => sichtbar(), baue, berechne, setzeZeitraum, vorschlaege: () => vorschlaege };
+})();
+
 /* ---- src/ui/90-app.js ---- */
 /* ==========================================================================
  * Modul App (Oberfläche)
@@ -5144,7 +5956,7 @@ const App = (() => {
     { id: 'zuordnung', titel: 'Zuordnung', hinweis: 'Stundentafeln sowie Haupt- und Zweitlehrkräfte je Klasse und Fach festlegen.', modul: () => ZuordnungReiter },
     { id: 'planung', titel: 'Planung', hinweis: 'Plan erstellen, Optionen einstellen, Kostenvektor verfolgen.', modul: () => PlanungReiter },
     { id: 'plan', titel: 'Plan', hinweis: 'Wochenraster je Klasse, Lehrkraft, Raum oder Aufsicht.', modul: () => PlanReiter },
-    { id: 'ausfall', titel: 'Ausfall', hinweis: 'Abwesenheiten erfassen und datumsgenaue Vertretungen prüfen.' },
+    { id: 'ausfall', titel: 'Ausfall', hinweis: 'Abwesenheiten erfassen und datumsgenaue Vertretungen prüfen.', modul: () => AusfallReiter },
     { id: 'bericht', titel: 'Bericht', hinweis: 'Ausfall, Vertretungsquote, Auslastung und Aufsichten auswerten.' },
     { id: 'daten', titel: 'Daten', hinweis: 'JSON exportieren, importieren oder zurücksetzen.', modul: () => DatenReiter },
   ];
@@ -5368,7 +6180,7 @@ const App = (() => {
 })();
 
 // Zugriff für Tests und Fehlersuche in der Konsole.
-window.Stundenplan = { Kern, App, Rechenkern, DatenReiter, PlanungReiter, StammdatenReiter, ZuordnungReiter, PlanReiter };
+window.Stundenplan = { Kern, App, Rechenkern, DatenReiter, PlanungReiter, StammdatenReiter, ZuordnungReiter, PlanReiter, AusfallReiter };
 document.addEventListener('DOMContentLoaded', App.start);
 </script>
 </body>
