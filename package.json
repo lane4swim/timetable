@@ -1,0 +1,17 @@
+{
+  "name": "stundenplanplanung",
+  "version": "0.1.0",
+  "description": "Stundenplan- und Vertretungsplanung als einzelne HTML-Datei, lokal im Browser",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "build:pruefen": "node tools/build.mjs --pruefen",
+    "testdaten": "node tests/daten/generator.mjs",
+    "testdaten:pruefen": "node tests/daten/generator.mjs --pruefen",
+    "test": "node --test \"tests/kern/*.test.mjs\" \"tests/*.test.mjs\"",
+    "test:e2e": "node --test --test-concurrency=1 \"tests/e2e/*.test.mjs\"",
+    "pruefen": "npm run build:pruefen && npm run testdaten:pruefen && npm test"
+  }
+}

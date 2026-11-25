@@ -323,7 +323,7 @@ Das Programm speichert nichts selbst. Der gesamte Zustand liegt in einer JSON-Da
 - [x] Brauchen Sie Wochen-A/B-Pläne oder nur einen festen Wochenplan? - fester Wochenplan
 - [x] Sollen Vertretungen datumsgenau für einzelne Wochen geplant werden (wie im Schema vorgesehen) oder nur als Alternativplan? - datumsgenau
 - [x] Wie werden Pausen festgelegt? - Pausen vor der 1. Stunde und danach vor jeder zweiten Stunde, je Pause eine konfigurierbare Anzahl an Aufsichten; das Aufsichtssoll je Lehrkraft wird individuell festgelegt.
-- [ ] Zählen Pausenaufsichten gegen das Stundenkontingent (z. B. als Bruchteil einer Stunde)? Annahme bis zur Klärung: nein.
-- [ ] Gibt es Aufsichtsbereiche (Hof, Flur, Bushaltestelle), denen Aufsichten fest zugeordnet werden?
+- [x] Zählen Pausenaufsichten gegen das Stundenkontingent (z. B. als Bruchteil einer Stunde)? - nein, eigenes Aufsichtssoll
+- [x] Gibt es Aufsichtsbereiche (Hof, Flur, Bushaltestelle), denen Aufsichten fest zugeordnet werden? - nein, je Pause zählt nur die Anzahl
 - [ ] Ist ein Export als PDF oder CSV für Aushang und Weitergabe nötig (zusätzlich zum JSON)?
 - [ ] Welche Klassen oder Fächer sollen bevorzugt eine Zweitbesetzung bekommen (z. B. Klassen 1–2, Inklusion, Sprachförderung)? Und reicht eine Vertretungsreserve von 10 % der Sollstunden?

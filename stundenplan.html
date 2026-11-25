@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Datenschutz (§9): keine Netzwerkzugriffe, nur eingebettete Skripte und Blob-Worker -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; worker-src blob:; child-src blob:; img-src data: blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Stundenplanplanung</title>
+<style>
+/* ==========================================================================
+ * Gestaltung
+ * Farben als Variablen; Kontrast nach WCAG AA; sichtbarer Fokus;
+ * Druckansicht über @media print (Spezifikation §7, §9).
+ * ========================================================================== */
+:root {
+  --hintergrund: #f6f7f9;
+  --flaeche: #ffffff;
+  --text: #1a1d23;
+  --text-leise: #4a5160;   /* 7,9:1 auf Weiß */
+  --linie: #c9ced8;
+  --akzent: #1f5fbf;       /* 6,0:1 auf Weiß */
+  --akzent-text: #ffffff;
+  --ok: #1d6b35;
+  --fehler: #b3261e;
+  --fokus: #f2a900;
+  --radius: 6px;
+  --abstand: 16px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--hintergrund); color: var(--text); min-width: 1280px; }
+
+.kopf {
+  display: flex; align-items: baseline; gap: var(--abstand);
+  padding: 12px var(--abstand); background: var(--flaeche); border-bottom: 1px solid var(--linie);
+}
+.kopf h1 { font-size: 1.25rem; margin: 0; }
+.kopf .leise { color: var(--text-leise); font-size: .9rem; }
+
+#app { padding: 0 var(--abstand) var(--abstand); }
+
+.reiterleiste { display: flex; gap: 4px; border-bottom: 1px solid var(--linie); margin-top: 12px; }
+.reiter {
+  font: inherit; padding: 8px 16px; border: 1px solid transparent; border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0; background: transparent; color: var(--text); cursor: pointer;
+}
+.reiter:hover { background: #e8ebf0; }
+.reiter[aria-selected="true"] {
+  background: var(--flaeche); border-color: var(--linie); margin-bottom: -1px; font-weight: 600;
+  box-shadow: inset 0 3px 0 var(--akzent);
+}
+
+.panel {
+  background: var(--flaeche); border: 1px solid var(--linie); border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius); padding: var(--abstand); min-height: 60vh;
+}
+.panel h2 { margin-top: 0; font-size: 1.15rem; }
+.hinweis { color: var(--text-leise); }
+.platzhalter { font-style: italic; color: var(--text-leise); }
+
+.fuss {
+  display: flex; justify-content: space-between; padding: 8px var(--abstand);
+  color: var(--text-leise); font-size: .9rem;
+}
+#status-rechenkern[data-art="ok"]::before { content: "✓ "; color: var(--ok); }
+#status-rechenkern[data-art="fehler"] { color: var(--fehler); }
+#status-rechenkern[data-art="fehler"]::before { content: "⚠ "; }
+
+/* Fokus immer sichtbar, unabhängig von Farbe des Elements */
+:focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; }
+
+@media print {
+  body { background: #fff; min-width: 0; }
+  .kopf, .reiterleiste, .fuss { display: none; }
+  .panel { border: none; padding: 0; min-height: 0; }
+  .panel[hidden] { display: none; }
+}
+</style>
+</head>
+<body>
+<header class="kopf">
+  <h1>Stundenplanplanung</h1>
+  <span class="leise">Läuft lokal im Browser – Daten verlassen den Rechner nur über den Export.</span>
+</header>
+<main id="app"></main>
+<footer class="fuss">
+  <span id="status-rechenkern" role="status" aria-live="polite"></span>
+  <span id="version"></span>
+</footer>
+<!-- Modul-Kern: Datenmodell, Validierung, Planer, Vertretung, Import/Export (läuft auch im Worker) -->
+<script id="kern">
+/* ---- src/kern/00-hilfen.js ---- */
+/* ==========================================================================
+ * Modul Hilfen
+ * Allgemeine, zustandslose Hilfsfunktionen für Kern, Worker und Oberfläche:
+ * deterministischer Zufall, ID-Vergabe, Kopieren, Datumsrechnung.
+ * Läuft ohne DOM (Hauptthread, Web Worker, Node).
+ * ========================================================================== */
+const Hilfen = (() => {
+  'use strict';
+
+  /**
+   * Deterministischer Zufallsgenerator (mulberry32).
+   * Gleicher Startwert ⇒ gleiche Folge, auf allen Plattformen.
+   * @param {number} startwert ganze Zahl
+   */
+  function erzeugeZufall(startwert) {
+    let a = (Number(startwert) >>> 0) || 0x9e3779b9;
+    /** Gleichverteilt in [0, 1). */
+    function naechste() {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+    /** Ganze Zahl in [von, bis] (beide eingeschlossen). */
+    function ganzzahl(von, bis) {
+      return von + Math.floor(naechste() * (bis - von + 1));
+    }
+    /** Zufälliges Element eines nicht leeren Arrays. */
+    function auswahl(liste) {
+      return liste[Math.floor(naechste() * liste.length)];
+    }
+    /** Mischt eine Kopie des Arrays (Fisher-Yates). */
+    function gemischt(liste) {
+      const k = liste.slice();
+      for (let i = k.length - 1; i > 0; i--) {
+        const j = Math.floor(naechste() * (i + 1));
+        [k[i], k[j]] = [k[j], k[i]];
+      }
+      return k;
+    }
+    /** Interner Zustand, um einen Lauf exakt fortsetzen zu können. */
+    function zustand() { return a; }
+    return { naechste, ganzzahl, auswahl, gemischt, zustand };
+  }
+
+  /**
+   * Vergibt eine neue, stabile ID mit Präfix (z. B. „l-“), die in `vorhandene`
+   * noch nicht vorkommt. Aus einem lesbaren Stamm (Kürzel) wird zuerst
+   * `präfix-stamm` versucht, sonst wird ein Zähler angehängt.
+   * @param {string} praefix z. B. "l", "k", "r", "f"
+   * @param {Set<string>|string[]} vorhandene bereits vergebene IDs
+   * @param {string} [stamm] lesbarer Teil, z. B. Kürzel
+   */
+  function neueId(praefix, vorhandene, stamm) {
+    const belegt = vorhandene instanceof Set ? vorhandene : new Set(vorhandene || []);
+    const basis = praefix + '-' + (normalisiereStamm(stamm) || 'x');
+    if (stamm && !belegt.has(basis)) return basis;
+    for (let n = 1; ; n++) {
+      const kandidat = basis + n;
+      if (!belegt.has(kandidat)) return kandidat;
+    }
+  }
+
+  /** Macht aus einem Kürzel einen ID-tauglichen Stamm (ohne Umlaute, klein). */
+  function normalisiereStamm(text) {
+    if (!text) return '';
+    return String(text)
+      .toLowerCase()
+      .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '')
+      .slice(0, 16);
+  }
+
+  /** Tiefe Kopie reiner JSON-Daten. */
+  function tiefeKopie(wert) {
+    return wert === undefined ? undefined : JSON.parse(JSON.stringify(wert));
+  }
+
+  /* ---------------------------- Datum ---------------------------------- */
+
+  /** Wochentagskürzel in der Reihenfolge von Date.getUTCDay() (0 = Sonntag). */
+  const WOCHENTAGE = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+  /** Prüft „JJJJ-MM-TT“ auf Form und Gültigkeit (kein 31.02.). */
+  function istIsoDatum(text) {
+    if (typeof text !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(text)) return false;
+    const d = new Date(text + 'T00:00:00Z');
+    return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === text;
+  }
+
+  /** Datum (ISO) → Wochentagskürzel („Mo“ … „So“). Rechnet in UTC, ohne Zeitzonenfehler. */
+  function wochentag(isoDatum) {
+    if (!istIsoDatum(isoDatum)) throw new Error('Ungültiges Datum: ' + isoDatum);
+    return WOCHENTAGE[new Date(isoDatum + 'T00:00:00Z').getUTCDay()];
+  }
+
+  /** ISO-Datum um n Tage verschieben. */
+  function plusTage(isoDatum, n) {
+    const d = new Date(isoDatum + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  }
+
+  /**
+   * Alle Daten im Zeitraum [von, bis], deren Wochentag in `tage` liegt
+   * (z. B. ["Mo","Di","Mi","Do","Fr"]). Grundlage der datumsgenauen Vertretung.
+   */
+  function unterrichtstage(von, bis, tage) {
+    if (!istIsoDatum(von) || !istIsoDatum(bis)) throw new Error('Ungültiger Zeitraum');
+    const erlaubt = new Set(tage);
+    const ergebnis = [];
+    for (let d = von; d <= bis; d = plusTage(d, 1)) {
+      if (erlaubt.has(wochentag(d))) ergebnis.push(d);
+    }
+    return ergebnis;
+  }
+
+  /** Montag der Kalenderwoche eines Datums (ISO). */
+  function wochenbeginn(isoDatum) {
+    const tag = new Date(isoDatum + 'T00:00:00Z').getUTCDay();
+    return plusTage(isoDatum, -((tag + 6) % 7));
+  }
+
+  /** Lokales Datum als „JJJJ-MM-TT“ (für Dateinamen). */
+  function heuteIso(jetzt = new Date()) {
+    const z = (n) => String(n).padStart(2, '0');
+    return jetzt.getFullYear() + '-' + z(jetzt.getMonth() + 1) + '-' + z(jetzt.getDate());
+  }
+
+  /** Dateiname für den Export: stundenplan-JJJJ-MM-TT.json (§8). */
+  function exportDateiname(jetzt = new Date(), zusatz = '') {
+    return 'stundenplan-' + (zusatz ? zusatz + '-' : '') + heuteIso(jetzt) + '.json';
+  }
+
+  return {
+    erzeugeZufall, neueId, normalisiereStamm, tiefeKopie,
+    WOCHENTAGE, istIsoDatum, wochentag, plusTage, unterrichtstage, wochenbeginn,
+    heuteIso, exportDateiname,
+  };
+})();
+
+/* ---- src/kern/10-modell.js ---- */
+/* ==========================================================================
+ * Modul Modell
+ * Konstanten, Standardwerte und Fabriken für den Anwendungszustand.
+ * Der Zustand entspricht dem JSON-Austauschformat (Spezifikation §8).
+ * ========================================================================== */
+const Modell = (() => {
+  'use strict';
+
+  /** Aktuelle Version des JSON-Schemas. */
+  const SCHEMA_VERSION = 1;
+
+  /** Statuswerte einer Unterrichtsstunde im JSON (ohne Umlaute, §8). */
+  const STATUS = Object.freeze({
+    REGULAER: 'regulaer',
+    VERTRETEN: 'vertreten',
+    DOPPELT_BETREUT: 'doppeltBetreut',
+    AUFGETEILT: 'aufgeteilt',
+    ENTFAELLT: 'entfaellt',
+    AUFSICHT: 'aufsicht',
+  });
+
+  /** Raumtypen (§2). */
+  const RAUMTYPEN = Object.freeze(['klassenraum', 'fachraum', 'turnhalle']);
+
+  /** Rollen einer Zuordnung (§2). */
+  const ROLLEN = Object.freeze(['haupt', 'zweit']);
+
+  /** Voreingestellte Gewichte der weichen Regeln W1–W12 (§4). */
+  const STANDARD_GEWICHTE = Object.freeze({
+    W1: 10, W2: 5, W3: 8, W4: 3, W5: 4, W6: 2, W7: 2, W8: 6, W9: 4, W10: 3, W11: 5, W12: 3,
+  });
+
+  /** Standardeinstellungen (§8 „einstellungen“ und Annahmen des Implementierungsplans). */
+  function standardEinstellungen() {
+    return {
+      gewichte: { ...STANDARD_GEWICHTE },
+      maxDoppelbetreuungProTag: 1,
+      maxDoppelbetreuungStundenAmStueck: 2,
+      gewichtAufteilung: 3,
+      zweitbesetzungErlaubt: true,
+      maxLehrkraefteProKlasseUndSlot: 2,
+      vertretungsreserveProzent: 10,
+      zeitbudgetSekunden: 30,
+      zufallsStartwert: 42,
+    };
+  }
+
+  /**
+   * Standardpausen: vor der 1. Stunde (Frühaufsicht) und danach vor jeder
+   * zweiten Stunde (3., 5., 7., …), je mit `aufsichten` erforderlichen Aufsichten.
+   * @param {number} stundenProTag 1–10
+   * @param {number|number[]} aufsichten Anzahl je Pause (Zahl oder Liste je Pause)
+   */
+  function standardPausen(stundenProTag, aufsichten = 2) {
+    const pausen = [];
+    let nr = 0;
+    for (let vor = 1; vor <= stundenProTag; vor += 2) {
+      const anzahl = Array.isArray(aufsichten) ? (aufsichten[nr] ?? aufsichten[aufsichten.length - 1]) : aufsichten;
+      pausen.push({
+        vorStunde: vor,
+        name: vor === 1 ? 'Frühaufsicht' : (nr + '. Pause'),
+        aufsichten: anzahl,
+      });
+      nr++;
+    }
+    return pausen;
+  }
+
+  /**
+   * Standard-Zeitraster: Mo–Fr, Stunden zu 45 Minuten ab 08:00.
+   * Nach jeder zweiten Stunde eine 20-minütige Pause, sonst 5 Minuten Wechsel.
+   */
+  function standardZeitraster(stundenProTag = 6) {
+    const stunden = [];
+    let minuten = 8 * 60;
+    const fmt = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+    for (let nr = 1; nr <= stundenProTag; nr++) {
+      if (nr > 1) minuten += (nr % 2 === 1) ? 20 : 5;
+      stunden.push({ nr, von: fmt(minuten), bis: fmt(minuten + 45) });
+      minuten += 45;
+    }
+    const doppelstundenStart = [];
+    for (let nr = 1; nr < stundenProTag; nr += 2) doppelstundenStart.push(nr);
+    return {
+      tage: ['Mo', 'Di', 'Mi', 'Do', 'Fr'],
+      stunden,
+      doppelstundenStart,
+      pausen: standardPausen(stundenProTag, 2),
+    };
+  }
+
+  /** Leerer, gültiger Anwendungszustand. */
+  function leererZustand() {
+    return {
+      schemaVersion: SCHEMA_VERSION,
+      schule: { name: '', schuljahr: '' },
+      zeitraster: standardZeitraster(6),
+      faecher: [],
+      lehrkraefte: [],
+      raeume: [],
+      klassen: [],
+      zuordnungen: [],
+      einstellungen: standardEinstellungen(),
+      plan: { regelplan: [], aufsichten: [], vertretungen: [], aufsichtsVertretungen: [] },
+    };
+  }
+
+  /** Vertretungsreserve einer Lehrkraft in Stunden (aufgerundet, Annahme 11). */
+  function vertretungsreserve(sollStunden, prozent) {
+    const stunden = Math.ceil((sollStunden * prozent) / 100 - 1e-9);
+    return stunden > 0 ? stunden : 0; // nie -0 oder negativ
+  }
+
+  return {
+    SCHEMA_VERSION, STATUS, RAUMTYPEN, ROLLEN, STANDARD_GEWICHTE,
+    standardEinstellungen, standardPausen, standardZeitraster, leererZustand, vertretungsreserve,
+  };
+})();
+
+/* ---- src/kern/99-kern.js ---- */
+/* ==========================================================================
+ * Kern-Sammelobjekt
+ * Bündelt alle Kernmodule unter einem Namen. Wird vom Worker, von der
+ * Oberfläche und von den Node-Tests verwendet. Neue Kernmodule hier eintragen.
+ * ========================================================================== */
+const Kern = Object.freeze({
+  version: '0.1.0',
+  Hilfen,
+  Modell,
+});
+</script>
+<!-- Worker-Anbindung: wird nicht hier ausgeführt, sondern mit dem Kern als Blob-Worker gestartet -->
+<script id="worker-quelle" type="text/plain">
+/* ---- src/worker/worker.js ---- */
+/* ==========================================================================
+ * Worker-Anbindung
+ * Wird nicht im Hauptthread ausgeführt: Der Build legt diesen Text in ein
+ * <script type="text/plain">; die Oberfläche erzeugt daraus zusammen mit dem
+ * Kern einen Blob-Worker (Spezifikation §6, nur eine HTML-Datei).
+ *
+ * Nachrichtenprotokoll (Hauptthread → Worker): { typ, id, ...daten }
+ * Antworten (Worker → Hauptthread):           { typ, id, ...daten }
+ *   ping          → pong { version }
+ *   (ab M4) planen, abbrechen → fortschritt / ergebnis
+ *   unbekannt     → fehler { meldung }
+ * ========================================================================== */
+(() => {
+  'use strict';
+  const behandler = {
+    ping(nachricht) {
+      return { typ: 'pong', id: nachricht.id, version: Kern.version };
+    },
+  };
+
+  self.onmessage = (ereignis) => {
+    const nachricht = ereignis.data || {};
+    const fn = behandler[nachricht.typ];
+    try {
+      if (!fn) throw new Error('Unbekannte Nachricht: ' + nachricht.typ);
+      const antwort = fn(nachricht);
+      if (antwort) self.postMessage(antwort);
+    } catch (fehler) {
+      self.postMessage({ typ: 'fehler', id: nachricht.id, meldung: String(fehler && fehler.message || fehler) });
+    }
+  };
+})();
+</script>
+<!-- Modul-Ansicht: Oberfläche -->
+<script id="ui">
+/* ---- src/ui/10-rechenkern.js ---- */
+/* ==========================================================================
+ * Modul Rechenkern (Oberfläche)
+ * Erzeugt den Web Worker aus Kern- und Worker-Quelltext der Seite (Blob)
+ * und bietet eine Promise-basierte Anfrage-Schnittstelle.
+ * ========================================================================== */
+const Rechenkern = (() => {
+  'use strict';
+  let worker = null;
+  let naechsteId = 1;
+  const offen = new Map();
+
+  /** Startet den Worker. Liefert false, wenn der Browser es nicht erlaubt. */
+  function starte() {
+    if (worker) return true;
+    const kern = document.getElementById('kern');
+    const glue = document.getElementById('worker-quelle');
+    if (!kern || !glue || typeof Worker === 'undefined') return false;
+    const blob = new Blob([kern.textContent, '\n', glue.textContent], { type: 'text/javascript' });
+    const url = URL.createObjectURL(blob);
+    try {
+      worker = new Worker(url);
+    } catch (e) {
+      console.error('Worker konnte nicht gestartet werden', e);
+      worker = null;
+      return false;
+    } finally {
+      // Der Worker hat das Skript beim Start geladen; die URL wird nicht mehr gebraucht.
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+    worker.onmessage = (e) => {
+      const antwort = e.data || {};
+      const eintrag = offen.get(antwort.id);
+      if (!eintrag) return;
+      if (antwort.typ === 'fortschritt') { eintrag.beiFortschritt?.(antwort); return; }
+      offen.delete(antwort.id);
+      if (antwort.typ === 'fehler') eintrag.ablehnen(new Error(antwort.meldung));
+      else eintrag.erfuellen(antwort);
+    };
+    worker.onerror = (e) => {
+      for (const eintrag of offen.values()) eintrag.ablehnen(new Error(e.message || 'Worker-Fehler'));
+      offen.clear();
+    };
+    return true;
+  }
+
+  /** Sendet eine Anfrage und wartet auf die Antwort mit derselben id. */
+  function anfrage(typ, daten = {}, beiFortschritt) {
+    if (!starte()) return Promise.reject(new Error('Rechenkern nicht verfügbar'));
+    const id = naechsteId++;
+    return new Promise((erfuellen, ablehnen) => {
+      offen.set(id, { erfuellen, ablehnen, beiFortschritt });
+      worker.postMessage({ ...daten, typ, id });
+    });
+  }
+
+  return { starte, anfrage };
+})();
+
+/* ---- src/ui/90-app.js ---- */
+/* ==========================================================================
+ * Modul App (Oberfläche)
+ * Seitengerüst mit Reitern (Spezifikation §7) und Statuszeile.
+ * Die Inhalte der Reiter folgen in den Meilensteinen M3–M7.
+ * ========================================================================== */
+const App = (() => {
+  'use strict';
+
+  /** Reiter in der Reihenfolge von §7. */
+  const REITER = [
+    { id: 'stammdaten', titel: 'Stammdaten', hinweis: 'Lehrkräfte, Fächer, Räume, Klassen und Zeitraster mit Pausen pflegen.' },
+    { id: 'zuordnung', titel: 'Zuordnung', hinweis: 'Haupt- und Zweitlehrkräfte je Klasse und Fach festlegen.' },
+    { id: 'planung', titel: 'Planung', hinweis: 'Plan erstellen, Optionen einstellen, Kostenvektor verfolgen.' },
+    { id: 'plan', titel: 'Plan', hinweis: 'Wochenraster je Klasse, Lehrkraft, Raum oder Aufsicht.' },
+    { id: 'ausfall', titel: 'Ausfall', hinweis: 'Abwesenheiten erfassen und datumsgenaue Vertretungen prüfen.' },
+    { id: 'bericht', titel: 'Bericht', hinweis: 'Ausfall, Vertretungsquote, Auslastung und Aufsichten auswerten.' },
+    { id: 'daten', titel: 'Daten', hinweis: 'JSON exportieren, importieren oder zurücksetzen.' },
+  ];
+
+  const zustand = { aktiv: REITER[0].id, daten: Kern.Modell.leererZustand() };
+
+  /** Kleiner Helfer zum Erzeugen von Elementen ohne innerHTML. */
+  function el(tag, attribute = {}, ...kinder) {
+    const knoten = document.createElement(tag);
+    for (const [k, v] of Object.entries(attribute)) {
+      if (v === false || v == null) continue;
+      if (k === 'text') knoten.textContent = v;
+      else if (k.startsWith('on')) knoten.addEventListener(k.slice(2), v);
+      else knoten.setAttribute(k, v === true ? '' : v);
+    }
+    for (const kind of kinder) if (kind != null) knoten.append(kind);
+    return knoten;
+  }
+
+  /** Baut Reiterleiste und Panels auf (ARIA-Tabs mit Pfeiltasten-Bedienung). */
+  function baueReiter(wurzel) {
+    const leiste = el('div', { role: 'tablist', 'aria-label': 'Bereiche', class: 'reiterleiste' });
+    const panels = el('div', { class: 'panels' });
+    for (const r of REITER) {
+      const knopf = el('button', {
+        type: 'button', role: 'tab', id: 'reiter-' + r.id, class: 'reiter',
+        'aria-controls': 'panel-' + r.id, 'data-reiter': r.id, text: r.titel,
+        onclick: () => aktiviere(r.id, true),
+      });
+      leiste.append(knopf);
+      panels.append(el('section', {
+        role: 'tabpanel', id: 'panel-' + r.id, class: 'panel', 'aria-labelledby': 'reiter-' + r.id, tabindex: '0',
+      },
+      el('h2', { text: r.titel }),
+      el('p', { class: 'hinweis', text: r.hinweis }),
+      el('p', { class: 'platzhalter', text: 'Dieser Bereich wird in einem späteren Meilenstein umgesetzt.' })));
+    }
+    leiste.addEventListener('keydown', (e) => {
+      const i = REITER.findIndex((r) => r.id === zustand.aktiv);
+      let ziel = null;
+      if (e.key === 'ArrowRight') ziel = (i + 1) % REITER.length;
+      else if (e.key === 'ArrowLeft') ziel = (i - 1 + REITER.length) % REITER.length;
+      else if (e.key === 'Home') ziel = 0;
+      else if (e.key === 'End') ziel = REITER.length - 1;
+      if (ziel === null) return;
+      e.preventDefault();
+      aktiviere(REITER[ziel].id, true);
+    });
+    wurzel.append(leiste, panels);
+  }
+
+  /** Schaltet auf einen Reiter um; optional mit Fokus auf den Reiterknopf. */
+  function aktiviere(id, fokus = false) {
+    zustand.aktiv = id;
+    for (const r of REITER) {
+      const knopf = document.getElementById('reiter-' + r.id);
+      const panel = document.getElementById('panel-' + r.id);
+      const an = r.id === id;
+      knopf.setAttribute('aria-selected', String(an));
+      knopf.tabIndex = an ? 0 : -1;
+      panel.hidden = !an;
+      if (an && fokus) knopf.focus();
+    }
+  }
+
+  /** Statuszeile: Rechenkern-Zustand, Version. */
+  function setzeStatus(text, art = 'info') {
+    const s = document.getElementById('status-rechenkern');
+    s.textContent = text;
+    s.dataset.art = art;
+  }
+
+  function start() {
+    const wurzel = document.getElementById('app');
+    baueReiter(wurzel);
+    aktiviere(zustand.aktiv);
+    document.getElementById('version').textContent = 'Version ' + Kern.version;
+    setzeStatus('Rechenkern wird gestartet …');
+    Rechenkern.anfrage('ping')
+      .then((a) => setzeStatus('Rechenkern bereit (' + a.version + ')', 'ok'))
+      .catch((e) => setzeStatus('Rechenkern nicht verfügbar: ' + e.message, 'fehler'));
+  }
+
+  return { REITER, start, aktiviere, zustand };
+})();
+
+// Zugriff für Tests und Fehlersuche in der Konsole.
+window.Stundenplan = { Kern, App, Rechenkern };
+document.addEventListener('DOMContentLoaded', App.start);
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Datenschutz (§9): keine Netzwerkzugriffe, nur eingebettete Skripte und Blob-Worker -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; worker-src blob:; child-src blob:; img-src data: blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Stundenplanplanung</title>
+<style>
+/*@@STIL@@*/
+</style>
+</head>
+<body>
+<header class="kopf">
+  <h1>Stundenplanplanung</h1>
+  <span class="leise">Läuft lokal im Browser – Daten verlassen den Rechner nur über den Export.</span>
+</header>
+<main id="app"></main>
+<footer class="fuss">
+  <span id="status-rechenkern" role="status" aria-live="polite"></span>
+  <span id="version"></span>
+</footer>
+<!-- Modul-Kern: Datenmodell, Validierung, Planer, Vertretung, Import/Export (läuft auch im Worker) -->
+<script id="kern">
+/*@@KERN@@*/
+</script>
+<!-- Worker-Anbindung: wird nicht hier ausgeführt, sondern mit dem Kern als Blob-Worker gestartet -->
+<script id="worker-quelle" type="text/plain">
+/*@@WORKER@@*/
+</script>
+<!-- Modul-Ansicht: Oberfläche -->
+<script id="ui">
+/*@@UI@@*/
+</script>
+</body>
+</html>

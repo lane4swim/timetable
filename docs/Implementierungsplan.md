@@ -229,14 +229,22 @@ Diese Punkte sollten vor bzw. während M1 bestätigt werden; bis dahin gelten di
 9. **Raum-`gesperrt` und `nahe`:** Format wie bei Lehrkräften (`{tag, stunden}`); `nahe` wird symmetrisch behandelt.
 10. **Höchstzahl zusammenhängender Doppelbetreuungsstunden** („2, einstellbar“) fehlt im Einstellungsschema. *Annahme:* `maxDoppelbetreuungStundenAmStueck: 2`.
 11. **Vertretungsreserve-Rundung:** *Annahme:* `ceil(sollStunden × prozent / 100)`.
-12. **Pausenaufsicht und Stundenkontingent:** *Annahme:* Aufsichten zählen nicht gegen Soll-/Höchststunden; sie haben ein eigenes Soll (`aufsichtenProWoche`), das im Regelplan Obergrenze ist (H14). Im Vertretungsfall sind Mehraufsichten erlaubt und werden ausgewiesen.
-13. **Rang der Aufsichten:** *Annahme:* Unbesetzte Aufsichten (K1A) stehen direkt hinter dem Unterrichtsausfall (K1) und vor allen übrigen Zielen.
-14. **Anwesenheit für Aufsicht:** *Annahme:* hart nur „Unterricht an diesem Tag“ (H13); dass die Aufsicht direkt an eigenen Unterricht grenzt, ist weich (W12).
-15. **Aufsichtsbereiche** (Hof, Flur …) sind nicht vorgesehen; je Pause zählt nur die Anzahl.
-16. **Offene fachliche Fragen** (Bundesland, Obergrenzen für Gäste, PDF/CSV-Export, Priorität der Zweitbesetzung): werden konfigurierbar gehalten bzw. sind nicht Teil der ersten Version; CSV-Export ließe sich in M7 ergänzen.
+12. **Pausenaufsicht und Stundenkontingent:** *Bestätigt:* Aufsichten zählen nicht gegen Soll-/Höchststunden; sie haben ein eigenes Soll (`aufsichtenProWoche`), das im Regelplan Obergrenze ist (H14). Im Vertretungsfall sind Mehraufsichten erlaubt und werden ausgewiesen.
+13. **Rang der Aufsichten:** *Bestätigt:* Unbesetzte Aufsichten (K1A) stehen direkt hinter dem Unterrichtsausfall (K1) und vor allen übrigen Zielen.
+14. **Anwesenheit für Aufsicht:** *Bestätigt:* hart nur „Unterricht an diesem Tag“ (H13); dass die Aufsicht direkt an eigenen Unterricht grenzt, ist weich (W12).
+15. **Aufsichtsbereiche** (Hof, Flur …): *Bestätigt:* nicht vorgesehen; je Pause zählt nur die Anzahl.
+16. **Zuordnung Fach ↔ Fachraum:** `raum.typ` bleibt bei den drei Werten aus §2. Fachräume erhalten zusätzlich `fachraumtyp` (z. B. `nawi`, `musik`, `kunst`, `informatik`); `fach.raumtyp` ist `null`, `turnhalle` oder ein Fachraumtyp. H5 prüft „passender Raumtyp“ über diese Felder (in M0 festgelegt, durch die Testdaten genutzt).
+17. **Offene fachliche Fragen** (Bundesland, Obergrenzen für Gäste, PDF/CSV-Export, Priorität der Zweitbesetzung): werden konfigurierbar gehalten bzw. sind nicht Teil der ersten Version; CSV-Export ließe sich in M7 ergänzen.
 
 Neue optionale Felder ändern `schemaVersion: 1` nicht, da unbekannte Felder ohnehin erhalten bleiben und alle neuen Felder Standardwerte haben.
 
-## 9. Nächster Schritt
+## 9. Stand der Umsetzung
 
-Start mit **M0** (Build, Testrahmen, Testdatensätze inkl. Pausen und Aufsichtssoll) und **M1** (Schema, Validierung, Import/Export). Offen und für M1 relevant sind die Annahmen 12 (Aufsicht zählt nicht gegen das Stundenkontingent) und 15 (keine Aufsichtsbereiche).
+| Meilenstein | Stand |
+| --- | --- |
+| M0 Grundgerüst | erledigt (25.11.2026): Build `tools/build.mjs`, Vorlage mit CSP, Kern-Module `Hilfen` (PRNG, IDs, Datum) und `Modell` (Standardwerte, Pausen), Blob-Worker mit Ping, Reiter-Gerüst mit Tastaturbedienung, Testdatengenerator mit vier Datensätzen, 31 Kern-/Build-Tests, 5 Browser-Tests, CI-Workflow |
+| M1 Daten & Persistenz | als Nächstes |
+
+## 10. Nächster Schritt
+
+Die Annahmen in Abschnitt 8 sind bestätigt (25.11.2026). Umsetzung beginnt mit **M0** (Build, Testrahmen, Testdatensätze inkl. Pausen und Aufsichtssoll), danach **M1** (Schema, Validierung, Import/Export).

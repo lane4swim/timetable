@@ -1,0 +1,898 @@
+{
+  "schemaVersion": 1,
+  "schule": {
+    "name": "Grundschule Sonnenhang (Testdaten Überhang)",
+    "schuljahr": "2026/27"
+  },
+  "zeitraster": {
+    "tage": [
+      "Mo",
+      "Di",
+      "Mi",
+      "Do",
+      "Fr"
+    ],
+    "stunden": [
+      {
+        "nr": 1,
+        "von": "08:00",
+        "bis": "08:45"
+      },
+      {
+        "nr": 2,
+        "von": "08:50",
+        "bis": "09:35"
+      },
+      {
+        "nr": 3,
+        "von": "09:55",
+        "bis": "10:40"
+      },
+      {
+        "nr": 4,
+        "von": "10:45",
+        "bis": "11:30"
+      },
+      {
+        "nr": 5,
+        "von": "11:50",
+        "bis": "12:35"
+      },
+      {
+        "nr": 6,
+        "von": "12:40",
+        "bis": "13:25"
+      }
+    ],
+    "doppelstundenStart": [
+      1,
+      3,
+      5
+    ],
+    "pausen": [
+      {
+        "vorStunde": 1,
+        "name": "Frühaufsicht",
+        "aufsichten": 2
+      },
+      {
+        "vorStunde": 3,
+        "name": "1. Pause",
+        "aufsichten": 3
+      },
+      {
+        "vorStunde": 5,
+        "name": "2. Pause",
+        "aufsichten": 2
+      }
+    ]
+  },
+  "faecher": [
+    {
+      "id": "f-de",
+      "name": "Deutsch",
+      "kuerzel": "DE",
+      "raumtyp": null,
+      "blockbar": true,
+      "hauptfach": true
+    },
+    {
+      "id": "f-ma",
+      "name": "Mathematik",
+      "kuerzel": "MA",
+      "raumtyp": null,
+      "blockbar": true,
+      "hauptfach": true
+    },
+    {
+      "id": "f-su",
+      "name": "Sachunterricht",
+      "kuerzel": "SU",
+      "raumtyp": null,
+      "blockbar": true
+    },
+    {
+      "id": "f-sp",
+      "name": "Sport",
+      "kuerzel": "SP",
+      "raumtyp": "turnhalle",
+      "blockbar": true
+    },
+    {
+      "id": "f-mu",
+      "name": "Musik",
+      "kuerzel": "MU",
+      "raumtyp": "musik",
+      "blockbar": false
+    },
+    {
+      "id": "f-ku",
+      "name": "Kunst",
+      "kuerzel": "KU",
+      "raumtyp": "kunst",
+      "blockbar": true
+    },
+    {
+      "id": "f-re",
+      "name": "Religion/Ethik",
+      "kuerzel": "RE",
+      "raumtyp": null,
+      "blockbar": false
+    }
+  ],
+  "lehrkraefte": [
+    {
+      "id": "l-eng",
+      "name": "Paul Engel",
+      "kuerzel": "ENG",
+      "qualifikationen": [
+        {
+          "fach": "f-de",
+          "stufenVon": 1,
+          "stufenBis": 4
+        },
+        {
+          "fach": "f-ma",
+          "stufenVon": 1,
+          "stufenBis": 4
+        },
+        {
+          "fach": "f-sp",
+          "stufenVon": 1,
+          "stufenBis": 4
+        }
+      ],
+      "sollStunden": 20,
+      "minStunden": 16,
+      "maxStunden": 22,
+      "aufsichtenProWoche": 4,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-dor",
+      "name": "Ben Dorn",
+      "kuerzel": "DOR",
+      "qualifikationen": [
+        {
+          "fach": "f-ma",
+          "stufenVon": 1,
+          "stufenBis": 4
+        },
+        {
+          "fach": "f-de",
+          "stufenVon": 1,
+          "stufenBis": 4
+        },
+        {
+          "fach": "f-su",
+          "stufenVon": 1,
+          "stufenBis": 4
+        }
+      ],
+      "sollStunden": 26,
+      "minStunden": 22,
+      "maxStunden": 28,
+      "aufsichtenProWoche": 5,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-thi",
+      "name": "Rosa Thiel",
+      "kuerzel": "THI",
+      "qualifikationen": [
+        {
+          "fach": "f-de",
+          "stufenVon": 1,
+          "stufenBis": 4
+        },
+        {
+          "fach": "f-sp",
+          "stufenVon": 1,
+          "stufenBis": 4
+        },
+        {
+          "fach": "f-ku",
+          "stufenVon": 1,
+          "stufenBis": 4
+        }
+      ],
+      "sollStunden": 14,
+      "minStunden": 10,
+      "maxStunden": 16,
+      "aufsichtenProWoche": 2,
+      "gesperrt": [
+        {
+          "tag": "Fr",
+          "stunden": [
+            5,
+            6
+          ]
+        }
+      ],
+      "abwesenheiten": [],
+      "teilzeitfaktor": 0.5
+    },
+    {
+      "id": "l-ott",
+      "name": "David Otten",
+      "kuerzel": "OTT",
+      "qualifikationen": [
+        {
+          "fach": "f-re",
+          "stufenVon": 1,
+          "stufenBis": 4
+        },
+        {
+          "fach": "f-su",
+          "stufenVon": 1,
+          "stufenBis": 4
+        }
+      ],
+      "sollStunden": 20,
+      "minStunden": 16,
+      "maxStunden": 22,
+      "aufsichtenProWoche": 4,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-bra",
+      "name": "Malte Brandt",
+      "kuerzel": "BRA",
+      "qualifikationen": [
+        {
+          "fach": "f-sp",
+          "stufenVon": 1,
+          "stufenBis": 4
+        },
+        {
+          "fach": "f-mu",
+          "stufenVon": 1,
+          "stufenBis": 4
+        }
+      ],
+      "sollStunden": 28,
+      "minStunden": 24,
+      "maxStunden": 30,
+      "aufsichtenProWoche": 5,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-zah",
+      "name": "Elif Zahn",
+      "kuerzel": "ZAH",
+      "qualifikationen": [
+        {
+          "fach": "f-ku",
+          "stufenVon": 1,
+          "stufenBis": 4
+        },
+        {
+          "fach": "f-ma",
+          "stufenVon": 1,
+          "stufenBis": 4
+        }
+      ],
+      "sollStunden": 20,
+      "minStunden": 16,
+      "maxStunden": 22,
+      "aufsichtenProWoche": 3,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-die",
+      "name": "Sami Dietz",
+      "kuerzel": "DIE",
+      "qualifikationen": [
+        {
+          "fach": "f-de",
+          "stufenVon": 1,
+          "stufenBis": 4
+        },
+        {
+          "fach": "f-su",
+          "stufenVon": 1,
+          "stufenBis": 4
+        }
+      ],
+      "sollStunden": 20,
+      "minStunden": 16,
+      "maxStunden": 22,
+      "aufsichtenProWoche": 4,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-cra",
+      "name": "Katrin Cramer",
+      "kuerzel": "CRA",
+      "qualifikationen": [
+        {
+          "fach": "f-re",
+          "stufenVon": 1,
+          "stufenBis": 4
+        },
+        {
+          "fach": "f-mu",
+          "stufenVon": 1,
+          "stufenBis": 4
+        },
+        {
+          "fach": "f-ma",
+          "stufenVon": 1,
+          "stufenBis": 4
+        }
+      ],
+      "sollStunden": 26,
+      "minStunden": 22,
+      "maxStunden": 28,
+      "aufsichtenProWoche": 5,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-raa",
+      "name": "Jonas Raabe",
+      "kuerzel": "RAA",
+      "qualifikationen": [
+        {
+          "fach": "f-ku",
+          "stufenVon": 1,
+          "stufenBis": 4
+        },
+        {
+          "fach": "f-su",
+          "stufenVon": 1,
+          "stufenBis": 4
+        },
+        {
+          "fach": "f-mu",
+          "stufenVon": 1,
+          "stufenBis": 4
+        }
+      ],
+      "sollStunden": 26,
+      "minStunden": 22,
+      "maxStunden": 28,
+      "aufsichtenProWoche": 5,
+      "gesperrt": [],
+      "abwesenheiten": []
+    },
+    {
+      "id": "l-chr",
+      "name": "Wim Christ",
+      "kuerzel": "CHR",
+      "qualifikationen": [
+        {
+          "fach": "f-sp",
+          "stufenVon": 1,
+          "stufenBis": 4
+        },
+        {
+          "fach": "f-ma",
+          "stufenVon": 1,
+          "stufenBis": 4
+        }
+      ],
+      "sollStunden": 14,
+      "minStunden": 10,
+      "maxStunden": 16,
+      "aufsichtenProWoche": 2,
+      "gesperrt": [
+        {
+          "tag": "Fr",
+          "stunden": [
+            5,
+            6
+          ]
+        }
+      ],
+      "abwesenheiten": [],
+      "teilzeitfaktor": 0.5
+    }
+  ],
+  "raeume": [
+    {
+      "id": "r-101",
+      "name": "101",
+      "typ": "klassenraum",
+      "kapazitaet": 31,
+      "nahe": [
+        "r-102"
+      ],
+      "gesperrt": []
+    },
+    {
+      "id": "r-102",
+      "name": "102",
+      "typ": "klassenraum",
+      "kapazitaet": 30,
+      "nahe": [
+        "r-101"
+      ],
+      "gesperrt": []
+    },
+    {
+      "id": "r-201",
+      "name": "201",
+      "typ": "klassenraum",
+      "kapazitaet": 31,
+      "nahe": [
+        "r-202"
+      ],
+      "gesperrt": []
+    },
+    {
+      "id": "r-202",
+      "name": "202",
+      "typ": "klassenraum",
+      "kapazitaet": 30,
+      "nahe": [
+        "r-201"
+      ],
+      "gesperrt": []
+    },
+    {
+      "id": "r-turnhalle1",
+      "name": "Turnhalle 1",
+      "typ": "turnhalle",
+      "kapazitaet": 60,
+      "nahe": [],
+      "gesperrt": [
+        {
+          "tag": "Di",
+          "stunden": [
+            6
+          ]
+        }
+      ]
+    },
+    {
+      "id": "r-musik1",
+      "name": "Musik 1",
+      "typ": "fachraum",
+      "fachraumtyp": "musik",
+      "kapazitaet": 32,
+      "nahe": [],
+      "gesperrt": []
+    },
+    {
+      "id": "r-kunst1",
+      "name": "Kunst 1",
+      "typ": "fachraum",
+      "fachraumtyp": "kunst",
+      "kapazitaet": 32,
+      "nahe": [],
+      "gesperrt": []
+    }
+  ],
+  "klassen": [
+    {
+      "id": "k-1a",
+      "name": "1a",
+      "stufe": 1,
+      "schueler": 20,
+      "klassenlehrkraft": "l-bra",
+      "heimatraum": "r-101",
+      "stundentafel": [
+        {
+          "fach": "f-de",
+          "stunden": 6,
+          "doppelt": false
+        },
+        {
+          "fach": "f-ma",
+          "stunden": 5,
+          "doppelt": false
+        },
+        {
+          "fach": "f-su",
+          "stunden": 3,
+          "doppelt": false
+        },
+        {
+          "fach": "f-sp",
+          "stunden": 3,
+          "doppelt": false
+        },
+        {
+          "fach": "f-mu",
+          "stunden": 1,
+          "doppelt": false
+        },
+        {
+          "fach": "f-ku",
+          "stunden": 2,
+          "doppelt": true
+        },
+        {
+          "fach": "f-re",
+          "stunden": 2,
+          "doppelt": false
+        }
+      ]
+    },
+    {
+      "id": "k-1b",
+      "name": "1b",
+      "stufe": 1,
+      "schueler": 20,
+      "klassenlehrkraft": "l-dor",
+      "heimatraum": "r-102",
+      "stundentafel": [
+        {
+          "fach": "f-de",
+          "stunden": 6,
+          "doppelt": false
+        },
+        {
+          "fach": "f-ma",
+          "stunden": 5,
+          "doppelt": false
+        },
+        {
+          "fach": "f-su",
+          "stunden": 3,
+          "doppelt": false
+        },
+        {
+          "fach": "f-sp",
+          "stunden": 3,
+          "doppelt": false
+        },
+        {
+          "fach": "f-mu",
+          "stunden": 1,
+          "doppelt": false
+        },
+        {
+          "fach": "f-ku",
+          "stunden": 2,
+          "doppelt": true
+        },
+        {
+          "fach": "f-re",
+          "stunden": 2,
+          "doppelt": false
+        }
+      ]
+    },
+    {
+      "id": "k-2a",
+      "name": "2a",
+      "stufe": 2,
+      "schueler": 24,
+      "klassenlehrkraft": "l-cra",
+      "heimatraum": "r-201",
+      "stundentafel": [
+        {
+          "fach": "f-de",
+          "stunden": 6,
+          "doppelt": false
+        },
+        {
+          "fach": "f-ma",
+          "stunden": 5,
+          "doppelt": false
+        },
+        {
+          "fach": "f-su",
+          "stunden": 3,
+          "doppelt": false
+        },
+        {
+          "fach": "f-sp",
+          "stunden": 3,
+          "doppelt": false
+        },
+        {
+          "fach": "f-mu",
+          "stunden": 2,
+          "doppelt": false
+        },
+        {
+          "fach": "f-ku",
+          "stunden": 2,
+          "doppelt": true
+        },
+        {
+          "fach": "f-re",
+          "stunden": 2,
+          "doppelt": false
+        }
+      ]
+    },
+    {
+      "id": "k-2b",
+      "name": "2b",
+      "stufe": 2,
+      "schueler": 21,
+      "klassenlehrkraft": "l-raa",
+      "heimatraum": "r-202",
+      "stundentafel": [
+        {
+          "fach": "f-de",
+          "stunden": 6,
+          "doppelt": false
+        },
+        {
+          "fach": "f-ma",
+          "stunden": 5,
+          "doppelt": false
+        },
+        {
+          "fach": "f-su",
+          "stunden": 3,
+          "doppelt": false
+        },
+        {
+          "fach": "f-sp",
+          "stunden": 3,
+          "doppelt": false
+        },
+        {
+          "fach": "f-mu",
+          "stunden": 2,
+          "doppelt": false
+        },
+        {
+          "fach": "f-ku",
+          "stunden": 2,
+          "doppelt": true
+        },
+        {
+          "fach": "f-re",
+          "stunden": 2,
+          "doppelt": false
+        }
+      ]
+    }
+  ],
+  "zuordnungen": [
+    {
+      "klasse": "k-1a",
+      "fach": "f-re",
+      "lehrkraft": "l-cra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-1b",
+      "fach": "f-re",
+      "lehrkraft": "l-cra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-2a",
+      "fach": "f-re",
+      "lehrkraft": "l-cra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-2b",
+      "fach": "f-re",
+      "lehrkraft": "l-ott",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-1a",
+      "fach": "f-ku",
+      "lehrkraft": "l-raa",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-1b",
+      "fach": "f-ku",
+      "lehrkraft": "l-raa",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-2a",
+      "fach": "f-mu",
+      "lehrkraft": "l-cra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-2a",
+      "fach": "f-ku",
+      "lehrkraft": "l-raa",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-2b",
+      "fach": "f-mu",
+      "lehrkraft": "l-raa",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-2b",
+      "fach": "f-ku",
+      "lehrkraft": "l-raa",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-1a",
+      "fach": "f-mu",
+      "lehrkraft": "l-bra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-1b",
+      "fach": "f-mu",
+      "lehrkraft": "l-cra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-1a",
+      "fach": "f-de",
+      "lehrkraft": "l-dor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-1b",
+      "fach": "f-de",
+      "lehrkraft": "l-dor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-2a",
+      "fach": "f-de",
+      "lehrkraft": "l-eng",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-2b",
+      "fach": "f-de",
+      "lehrkraft": "l-die",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-1a",
+      "fach": "f-su",
+      "lehrkraft": "l-raa",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-1a",
+      "fach": "f-sp",
+      "lehrkraft": "l-bra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-1b",
+      "fach": "f-su",
+      "lehrkraft": "l-dor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-1b",
+      "fach": "f-sp",
+      "lehrkraft": "l-bra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-2a",
+      "fach": "f-su",
+      "lehrkraft": "l-raa",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-2a",
+      "fach": "f-sp",
+      "lehrkraft": "l-eng",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-2b",
+      "fach": "f-su",
+      "lehrkraft": "l-raa",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-2b",
+      "fach": "f-sp",
+      "lehrkraft": "l-bra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-1a",
+      "fach": "f-ma",
+      "lehrkraft": "l-cra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-1b",
+      "fach": "f-ma",
+      "lehrkraft": "l-dor",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-2a",
+      "fach": "f-ma",
+      "lehrkraft": "l-cra",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-2b",
+      "fach": "f-ma",
+      "lehrkraft": "l-zah",
+      "rolle": "haupt"
+    },
+    {
+      "klasse": "k-1a",
+      "fach": "f-de",
+      "lehrkraft": "l-ott",
+      "rolle": "zweit",
+      "zweck": "Förderung"
+    },
+    {
+      "klasse": "k-1b",
+      "fach": "f-de",
+      "lehrkraft": "l-bra",
+      "rolle": "zweit",
+      "zweck": "Inklusion"
+    },
+    {
+      "klasse": "k-1a",
+      "fach": "f-ma",
+      "lehrkraft": "l-zah",
+      "rolle": "zweit",
+      "zweck": "Team-Teaching"
+    },
+    {
+      "klasse": "k-1b",
+      "fach": "f-ma",
+      "lehrkraft": "l-thi",
+      "rolle": "zweit",
+      "zweck": "Sprachförderung"
+    },
+    {
+      "klasse": "k-2a",
+      "fach": "f-de",
+      "lehrkraft": "l-die",
+      "rolle": "zweit",
+      "zweck": "Förderung"
+    },
+    {
+      "klasse": "k-2a",
+      "fach": "f-ma",
+      "lehrkraft": "l-chr",
+      "rolle": "zweit",
+      "zweck": "Inklusion"
+    }
+  ],
+  "einstellungen": {
+    "gewichte": {
+      "W1": 10,
+      "W2": 5,
+      "W3": 8,
+      "W4": 3,
+      "W5": 4,
+      "W6": 2,
+      "W7": 2,
+      "W8": 6,
+      "W9": 4,
+      "W10": 3,
+      "W11": 5,
+      "W12": 3
+    },
+    "maxDoppelbetreuungProTag": 1,
+    "maxDoppelbetreuungStundenAmStueck": 2,
+    "gewichtAufteilung": 3,
+    "zweitbesetzungErlaubt": true,
+    "maxLehrkraefteProKlasseUndSlot": 2,
+    "vertretungsreserveProzent": 10,
+    "zeitbudgetSekunden": 30,
+    "zufallsStartwert": 3
+  },
+  "plan": {
+    "regelplan": [],
+    "aufsichten": [],
+    "vertretungen": [],
+    "aufsichtsVertretungen": []
+  },
+  "exportedAt": "2026-11-25T00:00:00+01:00"
+}

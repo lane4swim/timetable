@@ -1,0 +1,29 @@
+name: Prüfen
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  kern:
+    name: Build und Kern-Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run pruefen
+
+  browser:
+    name: Browser-Tests (Chromium)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Playwright nur in CI installieren; das Projekt selbst hat keine Abhängigkeiten.
+      - run: npm install --no-save playwright@1.63.0
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
