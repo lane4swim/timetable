@@ -30,7 +30,7 @@ timetable/
 │   │   ├── 00-hilfen.js        # PRNG, IDs, tiefe Kopie, Datum ↔ Wochentag
 │   │   ├── 10-modell.js        # Leerer Zustand, Fabriken, Indizes (Slot-Belegung)
 │   │   ├── 20-schema.js        # Schemabeschreibung, Validierung mit Pfaden, Migrationen
-│   │   ├── 30-regeln.js        # Harte Regeln H1–H12 (Prüfung + Erklärung)
+│   │   ├── 30-regeln.js        # Harte Regeln H1–H14 (Prüfung + Erklärung)
 │   │   ├── 40-kosten.js        # Kostenvektor K1–K6, weiche Regeln W1–W10, lexikografischer Vergleich
 │   │   ├── 50-bedarf.js        # Bedarfsermittlung, Vorprüfung, Min-Cost-Flow
 │   │   ├── 60-planer.js        # Konstruktion, Zweitbesetzung, Nachoptimierung (SA)
@@ -175,7 +175,7 @@ Jeder Meilenstein endet mit grünen Tests und einem lauffähigen `stundenplan.ht
 | --- | --- | --- |
 | **M0** Grundgerüst | Build-Skript, Template, Testrahmen (`node --test`, Playwright), PRNG, Testdatengenerator mit vier Datensätzen: *klein* (4 Klassen), *unterdeckung*, *ueberhang*, *gross* (30 Klassen/60 LK) | `stundenplan.html` öffnet leer, CI-fähige Skripte |
 | **M1** Daten & Persistenz | Modell, Schema-Validator mit Pfaden, Migrationen, Import/Export voll + teilweise, Erhalt unbekannter Felder | Abnahme 1, 7 |
-| **M2** Regeln & Kosten | H1–H12, W1–W10, Kostenvektor, Erklärungen | Grundlage für alle weiteren |
+| **M2** Regeln & Kosten | H1–H14, W1–W12, Kostenvektor, Erklärungen | Grundlage für alle weiteren |
 | **M3** Stammdaten-UI | Reiter Stammdaten, Zuordnung, Daten; Undo/Redo; Tastaturbedienung | Daten vollständig pflegbar |
 | **M4** Planer | Bedarf, Vorprüfung, Min-Cost-Flow, Konstruktion mit Tagesprofilen, Zweitbesetzung, Pausenaufsichten, SA, Worker mit Fortschritt/Abbruch | Abnahme 2, 3, 4, 8, 12; Leistung 30 s |
 | **M5** Plan-Ansicht | Raster mit Pausenzeilen, Umschalter (inkl. Aufsicht), Drag-and-drop mit Live-Prüfung, Zweitbesetzung und Aufsicht per Drag, Druckansicht | < 100 ms Reaktion |
@@ -218,7 +218,7 @@ Zusätzlich: Leistungstest *gross* (≤ 30 s, Ziel ≤ 15 s in Node), Reproduzie
 
 Diese Punkte sollten vor bzw. während M1 bestätigt werden; bis dahin gelten die Annahmen.
 
-1. **Abnahme 2 nennt H1–H9**, es gibt aber H1–H12. *Annahme:* Geprüft werden H1–H12.
+1. **Abnahme 2 nennt H1–H9**, es gibt aber H1–H14. *Annahme:* Geprüft werden H1–H14.
 2. **Datum vs. fester Wochenplan:** *Geklärt:* Vertretungen sind datumsgenau (Abschnitt 4.9), der Regelplan bleibt unverändert.
 3. **Pausen im Zeitraster:** *Geklärt:* `zeitraster.pausen` mit `vorStunde`, `name`, `aufsichten`; Voreinstellung vor der 1. und dann vor jeder zweiten Stunde. Die Pausen dienen auch W4 („Sport nicht nach der Pause“).
 4. **Teilzeitfaktor** steht im Datenmodell, nicht im JSON. *Annahme:* nur informativ (`teilzeitfaktor`, optional); maßgeblich sind `sollStunden`/`maxStunden`.
