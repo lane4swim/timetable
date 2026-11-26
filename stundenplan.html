@@ -191,12 +191,11 @@ body.ablage-aktiv::after {
 .zelle.ziel, .zelle.aufgenommen-ziel { background: #e5eefc; box-shadow: inset 0 0 0 2px var(--akzent); }
 .pausenzeile th, .pausenzeile td { background: #f0f2f5; font-size: .8rem; padding: 2px 4px; }
 .pausenzeile .zelle { height: auto; min-height: 22px; }
-.karte { background: #eaf1fb; border: 1px solid #b8cbe8; border-radius: 4px; padding: 2px 4px; font-size: .85rem; line-height: 1.3; cursor: grab; margin-bottom: 2px; }
+.karte { background: #eaf1fb; border: 1px solid rgba(26, 29, 35, .18); border-radius: 4px; padding: 2px 5px; font-size: .85rem; line-height: 1.3; cursor: grab; margin-bottom: 2px; }
 .karte.aufgenommen, .chip.aufgenommen { outline: 3px dashed var(--akzent); }
-.karte.konflikt { border: 2px solid var(--fehler); background: #fdecea; }
+.karte.konflikt { outline: 2px solid var(--fehler); outline-offset: 0; }
 .karte.status-aufgeteilt { background: #e6e6e6; border-color: #9a9a9a; color: #333; }
 .karte.status-entfaellt { background: #fff; border-style: dashed; color: var(--text-leise); }
-.karte.status-vertreten, .karte.status-doppeltBetreut, .karte.status-aufsicht { background: #fff4e0; border-color: #d9a650; }
 .karte-lehrer, .karte-raum { font-size: .8rem; color: var(--text-leise); }
 .karte-lehrer .zweit { color: var(--text); }
 .konflikt-marke { color: var(--fehler); font-weight: 700; font-size: .78rem; }
@@ -204,7 +203,10 @@ body.ablage-aktiv::after {
 .gaeste { display: inline-block; font-size: .78rem; background: #eee; border-radius: 3px; padding: 0 4px; }
 .mini { font: inherit; font-size: .8rem; line-height: 1; padding: 0 3px; border: 1px solid var(--linie-kraeftig); border-radius: 3px; background: #fff; cursor: pointer; }
 .chip { display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: .82rem; padding: 1px 6px; margin: 1px 3px 1px 0; border-radius: 10px; border: 1px solid #b8cbe8; background: #eaf1fb; color: var(--text); cursor: grab; }
-.chip.konflikt { border: 2px solid var(--fehler); background: #fdecea; }
+.chip.konflikt { outline: 2px solid var(--fehler); background: #fdecea; }
+.farbmuster { display: inline-block; font-size: .8rem; padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(26, 29, 35, .18); background: var(--flaeche); }
+.farbe-zelle { white-space: nowrap; }
+.farbe-zelle input[type=color] { width: 2.4em; height: 1.8em; padding: 0 2px; border: 1px solid var(--linie-kraeftig); border-radius: 4px; vertical-align: middle; }
 .chip.quelle { cursor: grab; }
 .bedarf { font-size: .78rem; color: var(--text-leise); margin-left: 4px; }
 .bedarf.fehlt { color: var(--fehler); font-weight: 700; }
@@ -247,7 +249,7 @@ body.ablage-aktiv::after {
   .druckseite h2 { font-size: 14pt; margin: 0 0 2pt; }
   .raster { width: 100%; font-size: 9pt; }
   .raster th, .raster td { border: 1px solid #555; }
-  .karte { border: 1px solid #777; background: #fff !important; }
+  .karte, .chip, .farbmuster { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .zelle { height: auto; }
   .kopf, .reiterleiste, .fuss, .dialog { display: none; }
   .panel { border: none; padding: 0; min-height: 0; }
@@ -557,6 +559,109 @@ const Modell = (() => {
   };
 })();
 
+/* ---- src/kern/15-farben.js ---- */
+/* ==========================================================================
+ * Modul Farben
+ * Farben für die Plan-Ansicht: jedes Fach färbt den Hintergrund seiner Karten,
+ * jede Lehrkraft einen seitlichen Balken. Ohne eigene Angabe (Feld `farbe` an
+ * Fach bzw. Lehrkraft) werden Farben über den Goldenen Winkel verteilt, damit
+ * benachbarte Einträge möglichst verschieden aussehen.
+ * Kontraste (WCAG): Text (#1a1d23) und Nebentext (#4a5160) auf Fachfarben
+ * mindestens 4,5 : 1; Lehrkraftbalken gegen jede Fachfarbe und Weiß
+ * mindestens 3 : 1. Eigene Farben werden bei Bedarf aufgehellt bzw. abgedunkelt.
+ * Farbe ist nie alleiniger Informationsträger: Kürzel stehen immer als Text.
+ * ========================================================================== */
+const Farben = (() => {
+  'use strict';
+
+  const TEXT = '#1a1d23';
+  const NEBENTEXT = '#4a5160';
+  const GOLDEN = 137.508;
+
+  function hslZuHex(h, s, l) {
+    const a = s * Math.min(l, 1 - l);
+    const f = (n) => {
+      const k = (n + h / 30) % 12;
+      const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+      return Math.round(c * 255).toString(16).padStart(2, '0');
+    };
+    return '#' + f(0) + f(8) + f(4);
+  }
+
+  function leuchtdichte(hex) {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  function kontrast(a, b) {
+    const [x, y] = [leuchtdichte(a), leuchtdichte(b)].sort((p, q) => q - p);
+    return (x + 0.05) / (y + 0.05);
+  }
+
+  /** Mischt eine Farbe mit Weiß (anteil > 0) oder Schwarz (anteil < 0). */
+  function mische(hex, anteil) {
+    const ziel = anteil > 0 ? 255 : 0;
+    const t = Math.abs(anteil);
+    return '#' + [1, 3, 5].map((i) => {
+      const c = parseInt(hex.slice(i, i + 2), 16);
+      return Math.round(c + (ziel - c) * t).toString(16).padStart(2, '0');
+    }).join('');
+  }
+
+  const istHex = (x) => typeof x === 'string' && /^#[0-9a-fA-F]{6}$/.test(x);
+
+  /** Hellt auf, bis Text und Nebentext mindestens 4,5 : 1 erreichen. */
+  function lesbarerHintergrund(hex) {
+    let f = hex.toLowerCase();
+    for (let t = 0.05; kontrast(f, NEBENTEXT) < 4.5 && t <= 1; t += 0.05) f = mische(hex.toLowerCase(), t);
+    return f;
+  }
+
+  /**
+   * Dunkelt ab, bis der Balken gegen jede zulässige Fachfarbe ≥ 3 : 1 hat.
+   * Fachfarben haben wegen ≥ 4,5 : 1 zum Nebentext eine Leuchtdichte ≥ 0,535;
+   * ein Balken mit ≥ 5,5 : 1 gegen Weiß erfüllt damit (0,535 + 0,05) / (L + 0,05) ≥ 3.
+   */
+  function sichtbarerBalken(hex) {
+    let f = hex.toLowerCase();
+    for (let t = 0.05; kontrast(f, '#ffffff') < 5.5 && t <= 1; t += 0.05) f = mische(hex.toLowerCase(), -t);
+    return f;
+  }
+
+  /** Farbtöne der ersten zwölf Fächer: möglichst weit auseinander (danach Goldener Winkel). */
+  const FACH_TOENE = [205, 35, 125, 285, 0, 170, 55, 325, 90, 245, 18, 150];
+
+  /** Standardfarbe eines Fachs (Hintergrund) nach Position in der Fachliste. */
+  function fachStandard(index) {
+    const ton = index < FACH_TOENE.length ? FACH_TOENE[index] : (index * GOLDEN + 200) % 360;
+    return lesbarerHintergrund(hslZuHex(ton, 0.75, 0.88));
+  }
+
+  /** Standardfarbe einer Lehrkraft (Balken) nach Position in der Lehrkräfteliste. */
+  function lehrkraftStandard(index) {
+    return sichtbarerBalken(hslZuHex((index * GOLDEN + 20) % 360, 0.7, 0.38));
+  }
+
+  /** Effektive Farbe eines Fachs (eigene Angabe, sonst Standard). */
+  function fach(z, fachId) {
+    const i = z.faecher.findIndex((f) => f.id === fachId);
+    if (i < 0) return '#eeeeee';
+    const eigen = z.faecher[i].farbe;
+    return istHex(eigen) ? lesbarerHintergrund(eigen) : fachStandard(i);
+  }
+
+  /** Effektive Farbe einer Lehrkraft (eigene Angabe, sonst Standard). */
+  function lehrkraft(z, lehrkraftId) {
+    const i = z.lehrkraefte.findIndex((l) => l.id === lehrkraftId);
+    if (i < 0) return '#6b7280';
+    const eigen = z.lehrkraefte[i].farbe;
+    return istHex(eigen) ? sichtbarerBalken(eigen) : lehrkraftStandard(i);
+  }
+
+  return { TEXT, NEBENTEXT, hslZuHex, kontrast, mische, istHex, lesbarerHintergrund, sichtbarerBalken, fachStandard, lehrkraftStandard, fach, lehrkraft };
+})();
+
 /* ---- src/kern/20-schema.js ---- */
 /* ==========================================================================
  * Modul Schema
@@ -591,6 +696,7 @@ const Schema = (() => {
     tag: (o = {}) => ({ art: 'tag', ...o }),
     stunde: (o = {}) => ({ art: 'stunde', ...o }),
     pause: (o = {}) => ({ art: 'pause', ...o }),
+    farbe: (o = {}) => ({ art: 'farbe', ...o }),
   };
   const P = { pflicht: true };
 
@@ -616,6 +722,7 @@ const Schema = (() => {
     raumtyp: T.text({ nullbar: true, nichtLeer: true, standard: null }),
     blockbar: T.bool({ standard: true }),
     hauptfach: T.bool({ standard: false }),
+    farbe: T.farbe(),
   });
 
   const LEHRKRAFT = T.objekt({
@@ -634,6 +741,7 @@ const Schema = (() => {
     aufsichtenProWoche: T.ganz({ min: 0, max: 50, standard: 0 }),
     gesperrt: T.liste(SPERRE, { standard: () => [] }),
     abwesenheiten: T.liste(ABWESENHEIT, { standard: () => [] }),
+    farbe: T.farbe(),
   });
 
   const RAUM = T.objekt({
@@ -887,6 +995,9 @@ const Schema = (() => {
         return;
       case 'stunde':
         if (!Number.isInteger(wert) || !kx.stunden.has(wert)) fehler(kx, pfad, `Stunde ${zeige(wert)} gibt es im Zeitraster nicht`);
+        return;
+      case 'farbe':
+        if (typeof wert !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(wert)) fehler(kx, pfad, `muss eine Farbe im Format #rrggbb sein, ist ${zeige(wert)}`);
         return;
       case 'pause':
         if (!Number.isInteger(wert) || !kx.pausen.has(wert)) fehler(kx, pfad, `vor Stunde ${zeige(wert)} ist keine Pause festgelegt`);
@@ -3845,6 +3956,7 @@ const Kern = Object.freeze({
   version: '0.1.0',
   Hilfen,
   Modell,
+  Farben,
   Schema,
   Verweise,
   Index,
@@ -4121,6 +4233,8 @@ const Tabelle = (() => {
     }
     wurzel.append(meldung);
     let fokusNach = null; // { zeile, spalte }
+    let aufbau = null; // Signatur der zuletzt aufgebauten Struktur (Zeilen, Auswahllisten)
+    let felder = new Map(); // „Zeile\u0001Spalte“ → Element
 
     function zeige(art, titel, eintraege = []) {
       meldung.replaceChildren(el('div', { class: 'meldung meldung-' + art, role: art === 'fehler' ? 'alert' : 'status' },
@@ -4128,21 +4242,63 @@ const Tabelle = (() => {
         eintraege.length ? el('ul', { class: 'pfadliste' }, ...eintraege.map((f) => el('li', {}, f.pfad ? el('code', { text: f.pfad }) : null, f.pfad ? ': ' : '', f.meldung || f.text))) : null));
     }
 
-    function render() {
+    /**
+     * Zeichnet die Tabelle. Bleiben Zeilen und Auswahllisten gleich, werden nur
+     * die Werte der vorhandenen Felder aktualisiert – so bleibt der Fokus beim
+     * Tabulator-Wechsel erhalten (das Feld, in das der Browser springt, bleibt bestehen).
+     */
+    function render(neuAufbauen = false) {
       const d = App.zustand.daten;
+      const zeilen = o.liste(d);
+      const signatur = zeilen.map((z, i) => schluessel(z, i)).join('\u0001') + '\u0002'
+        + o.spalten.filter((s) => s.art === 'wahl').map((s) => JSON.stringify(s.optionen(d))).join('\u0003');
+      if (!neuAufbauen && signatur === aufbau) {
+        aktualisiere(zeilen, d);
+        setzeFokus();
+        return;
+      }
+      aufbau = signatur;
+      felder = new Map();
       const aktiv = document.activeElement;
       if (!fokusNach && aktiv && tabelle.contains(aktiv) && aktiv.dataset.zeile) fokusNach = { zeile: aktiv.dataset.zeile, spalte: aktiv.dataset.spalte };
-      const zeilen = o.liste(d);
       const kopf = el('tr', {}, ...o.spalten.map((s) => el('th', { scope: 'col', class: s.art === 'zahl' ? 'zahl' : null, style: s.breite ? `min-width:${s.breite}` : null, text: s.titel })));
       if (o.verweise || o.entferne) kopf.append(el('th', { scope: 'col' }, el('span', { class: 'versteckt', text: 'Aktionen' })));
       const koerper = el('tbody', {}, ...zeilen.map((z, i) => zeile(z, i, d)));
       tabelle.replaceChildren(el('caption', { text: `${o.beschriftung} (${zeilen.length})` }), el('thead', {}, kopf), koerper);
       if (!zeilen.length) koerper.append(el('tr', {}, el('td', { colspan: String(o.spalten.length + 1), class: 'leise', text: 'Noch keine Einträge.' })));
+      setzeFokus();
+    }
+
+    function setzeFokus() {
       if (fokusNach) {
         const ziel = tabelle.querySelector(`[data-zeile="${CSS.escape(fokusNach.zeile)}"][data-spalte="${CSS.escape(fokusNach.spalte)}"]`);
         fokusNach = null;
         if (ziel) { ziel.focus(); ziel.select?.(); }
       }
+    }
+
+    /** Aktualisiert Werte und Beschriftungen vorhandener Felder (außer dem fokussierten und ungültigen). */
+    function aktualisiere(zeilen, d) {
+      tabelle.caption.textContent = `${o.beschriftung} (${zeilen.length})`;
+      zeilen.forEach((z, i) => {
+        const key = schluessel(z, i);
+        for (const s of o.spalten) {
+          const feld = felder.get(key + '\u0001' + s.feld);
+          if (!feld) continue;
+          if (feld.hasAttribute('aria-label')) feld.setAttribute('aria-label', `${s.titel} – ${name(z)}`);
+          if (feld === document.activeElement || feld.getAttribute('aria-invalid') === 'true') continue;
+          schreibeWert(feld, s, z, d);
+        }
+        const knopf = tabelle.querySelector(`tr[data-schluessel="${CSS.escape(key)}"] [data-aktion="loeschen"]`);
+        if (knopf) { knopf.setAttribute('aria-label', `${o.einzahl} ${name(z)} löschen`); knopf.title = `${o.einzahl} ${name(z)} löschen`; }
+      });
+    }
+
+    function schreibeWert(feld, s, z, d) {
+      const wert = s.anzeigen ? s.anzeigen(z, d) : z[s.feld];
+      if (s.art === 'bool') feld.checked = !!wert;
+      else if (s.art === 'anzeige') feld.textContent = String(wert ?? '');
+      else feld.value = String(wert ?? '');
     }
 
     function zeile(z, i, d) {
@@ -4155,6 +4311,15 @@ const Tabelle = (() => {
         let feld;
         if (s.art === 'anzeige') {
           feld = el('span', { text: String(wert ?? '') });
+        } else if (s.art === 'farbe') {
+          feld = el('input', { type: 'color', ...gemeinsam, value: String(wert), onchange: (e) => uebernehme(key, s, e.target.value, e.target) });
+          const zuruecksetzen = el('button', {
+            type: 'button', class: 'mini', 'aria-label': `${s.titel} – ${name(z)}: Standardfarbe`, title: 'Standardfarbe', text: '↺',
+            onclick: () => uebernehme(key, s, null, feld),
+          });
+          felder.set(key + '\u0001' + s.feld, feld);
+          tr.append(el('td', { class: 'farbe-zelle' }, feld, zuruecksetzen));
+          continue;
         } else if (s.art === 'bool') {
           feld = el('input', { type: 'checkbox', ...gemeinsam, checked: !!wert, onchange: (e) => uebernehme(key, s, e.target.checked, e.target) });
         } else if (s.art === 'wahl') {
@@ -4170,6 +4335,7 @@ const Tabelle = (() => {
           });
           feld.addEventListener('keydown', (e) => tasten(e, key, s, i, d));
         }
+        felder.set(key + '\u0001' + s.feld, feld);
         tr.append(el('td', { class: s.art === 'zahl' ? 'zahl' : null }, feld));
       }
       if (o.verweise || o.entferne) {
@@ -4189,9 +4355,12 @@ const Tabelle = (() => {
         return { zeile: schluessel(zeilen[j], j), spalte: s.feld };
       };
       if (e.key === 'Escape') {
+        // Eingabe verwerfen: gespeicherten Wert wiederherstellen, Fokus bleibt
         e.preventDefault();
-        render();
-        tabelle.querySelector(`[data-zeile="${CSS.escape(key)}"][data-spalte="${CSS.escape(s.feld)}"]`)?.focus();
+        const z = finde(App.zustand.daten, key);
+        if (z) schreibeWert(e.target, s, z, App.zustand.daten);
+        e.target.removeAttribute('aria-invalid');
+        e.target.select?.();
         meldung.replaceChildren();
         return;
       }
@@ -4227,6 +4396,7 @@ const Tabelle = (() => {
         return false;
       }
       meldung.replaceChildren();
+      eingabe.removeAttribute('aria-invalid');
       if (danach) fokusNach = danach;
       render();
       return true;
@@ -4244,7 +4414,7 @@ const Tabelle = (() => {
       const liste = o.liste(App.zustand.daten);
       fokusNach = { zeile: schluessel(neueZeile, liste.length - 1), spalte: o.spalten.find((s) => s.art !== 'anzeige' && s.art !== 'bool').feld };
       zeige('ok', `${o.einzahl} „${name(neueZeile)}“ hinzugefügt – bitte Angaben ergänzen.`);
-      render();
+      render(true);
     }
 
     function loesche(key) {
@@ -4264,7 +4434,7 @@ const Tabelle = (() => {
       });
       if (!r.ok) { zeige('fehler', `${o.einzahl} „${name(z)}“ nicht gelöscht`, r.fehler.slice(0, 8)); return; }
       zeige('ok', `${o.einzahl} „${name(z)}“ gelöscht (rückgängig mit Strg+Z).`);
-      render();
+      render(true);
     }
 
     return { element: wurzel, render, zeige };
@@ -4273,6 +4443,7 @@ const Tabelle = (() => {
   /** Standard-Übernahme nach Spaltenart. */
   function setzeStandard(z, s, roh) {
     if (s.art === 'bool') { z[s.feld] = !!roh; return; }
+    if (s.art === 'farbe') { if (roh === null) delete z[s.feld]; else z[s.feld] = String(roh).toLowerCase(); return; }
     if (s.art === 'wahl') { z[s.feld] = roh === '' ? null : roh; return; }
     if (s.art === 'zahl') {
       const t = String(roh).trim().replace(',', '.');
@@ -4383,6 +4554,7 @@ const StammdatenReiter = (() => {
         { feld: 'maxStunden', titel: 'Max', art: 'zahl', min: 0, max: 40 },
         { feld: 'aufsichtenProWoche', titel: 'Aufsichten/Woche', art: 'zahl', min: 0, max: 50, ganz: true },
         { feld: 'gesperrt', titel: 'Gesperrt (Tag Stunden)', art: 'text', breite: '10em', platzhalter: 'z. B. Fr 5–6', anzeigen: sperrText, setzen: setzeMit(sperrLesen, 'gesperrt') },
+        { feld: 'farbe', titel: 'Balkenfarbe', art: 'farbe', anzeigen: (z, d) => Kern.Farben.lehrkraft(d, z.id) },
         { feld: 'abwesenheiten', titel: 'Abwesenheiten', art: 'anzeige', anzeigen: (z) => (z.abwesenheiten.length ? `${z.abwesenheiten.length} (Reiter Ausfall)` : '–') },
       ],
       neu: (d) => {
@@ -4403,6 +4575,7 @@ const StammdatenReiter = (() => {
           setzen: (z, roh) => { const t = String(roh).trim(); z.raumtyp = t ? t : null; } },
         { feld: 'blockbar', titel: 'Doppelstunden erlaubt', art: 'bool' },
         { feld: 'hauptfach', titel: 'Hauptfach', art: 'bool' },
+        { feld: 'farbe', titel: 'Kartenfarbe', art: 'farbe', anzeigen: (z, d) => Kern.Farben.fach(d, z.id) },
       ],
       neu: (d) => {
         const kuerzel = eindeutigesKuerzel(d.faecher, 'F');
@@ -4655,23 +4828,41 @@ const ZuordnungReiter = (() => {
 
   const kuerzel = (d, id) => d.lehrkraefte.find((l) => l.id === id)?.kuerzel || '';
 
+  let aufbau = null; // Signatur von Klassen und Fächern der aufgebauten Matrix
+  let zellen = new Map(); // Klasse|Fach → td
+  let summen = new Map(); // Klasse → td
+
+  /**
+   * Zeichnet die Matrix. Bleiben Klassen und Fächer gleich, werden nur Werte
+   * aktualisiert, damit der Tabulator-Fokus erhalten bleibt.
+   */
   function render() {
     const d = App.zustand.daten;
     const el = App.el;
-    const aktiv = document.activeElement;
-    if (!fokusNach && aktiv && panel.contains(aktiv) && aktiv.dataset.zeile) fokusNach = { zeile: aktiv.dataset.zeile, spalte: aktiv.dataset.spalte };
     panel.querySelector('#liste-lehrkraefte').replaceChildren(...d.lehrkraefte.map((l) => el('option', { value: l.kuerzel, label: l.name })));
     const ix = Kern.Index.erstelle(d);
-    const matrix = panel.querySelector('#zuordnung-matrix');
-    const kopf = el('tr', {}, el('th', { scope: 'col', text: 'Klasse' }), ...d.faecher.map((f) => el('th', { scope: 'col', text: f.kuerzel, title: f.name })), el('th', { scope: 'col', class: 'zahl', text: 'Summe' }));
-    const zeilen = d.klassen.map((k) => {
+    const signatur = JSON.stringify([d.klassen.map((k) => [k.id, k.name]), d.faecher.map((f) => [f.id, f.kuerzel, f.name])]);
+    if (signatur !== aufbau) {
+      aufbau = signatur;
+      const aktiv = document.activeElement;
+      if (!fokusNach && aktiv && panel.contains(aktiv) && aktiv.dataset.zeile) fokusNach = { zeile: aktiv.dataset.zeile, spalte: aktiv.dataset.spalte };
+      zellen = new Map();
+      summen = new Map();
+      const matrix = panel.querySelector('#zuordnung-matrix');
+      const kopf = el('tr', {}, el('th', { scope: 'col', text: 'Klasse' }), ...d.faecher.map((f) => el('th', { scope: 'col', text: f.kuerzel, title: f.name })), el('th', { scope: 'col', class: 'zahl', text: 'Summe' }));
+      const zeilen = d.klassen.map((k) => {
+        const summe = el('td', { class: 'zahl' });
+        summen.set(k.id, summe);
+        return el('tr', {}, el('th', { scope: 'row', text: k.name }), ...d.faecher.map((f) => zelle(k, f)), summe);
+      });
+      matrix.replaceChildren(el('caption', { text: 'Stundentafel und Lehrkräfte je Klasse und Fach' }), el('thead', {}, kopf),
+        el('tbody', {}, ...(zeilen.length ? zeilen : [el('tr', {}, el('td', { colspan: String(d.faecher.length + 2), class: 'leise', text: 'Noch keine Klassen – bitte im Reiter „Stammdaten“ anlegen.' }))])));
+    }
+    for (const k of d.klassen) {
       const tafel = new Map(k.stundentafel.map((e) => [e.fach, e]));
-      return el('tr', {}, el('th', { scope: 'row', text: k.name }),
-        ...d.faecher.map((f) => zelle(d, ix, k, f, tafel.get(f.id))),
-        el('td', { class: 'zahl', text: String(k.stundentafel.reduce((s, e) => s + e.stunden, 0)) }));
-    });
-    matrix.replaceChildren(el('caption', { text: 'Stundentafel und Lehrkräfte je Klasse und Fach' }), el('thead', {}, kopf),
-      el('tbody', {}, ...(zeilen.length ? zeilen : [el('tr', {}, el('td', { colspan: String(d.faecher.length + 2), class: 'leise', text: 'Noch keine Klassen – bitte im Reiter „Stammdaten“ anlegen.' }))])));
+      for (const f of d.faecher) fuelle(zellen.get(k.id + '|' + f.id), d, ix, k, f, tafel.get(f.id));
+      summen.get(k.id).textContent = String(k.stundentafel.reduce((x, e) => x + e.stunden, 0));
+    }
     renderSollIst(d, ix);
     if (fokusNach) {
       const z = panel.querySelector(`[data-zeile="${CSS.escape(fokusNach.zeile)}"][data-spalte="${CSS.escape(fokusNach.spalte)}"]`);
@@ -4680,36 +4871,55 @@ const ZuordnungReiter = (() => {
     }
   }
 
-  function zelle(d, ix, k, f, eintrag) {
+  /** Baut eine leere Zelle (Felder ohne Werte); die Werte setzt fuelle(). */
+  function zelle(k, f) {
     const el = App.el;
-    const zu = ix.zuordnungVon(k.id, f.id);
     const wo = `${f.kuerzel} ${k.name}`;
-    const feld = (art, wert, beschr, extra = {}) => el('input', {
-      type: 'text', class: 'eingabe-' + art, value: wert, 'data-zeile': k.id, 'data-spalte': f.id + '|' + art,
+    const feld = (art, beschr, extra = {}) => el('input', {
+      type: 'text', class: 'eingabe-' + art, 'data-zeile': k.id, 'data-spalte': f.id + '|' + art, 'data-art': art,
       'aria-label': `${beschr} ${wo}`, spellcheck: 'false', autocomplete: 'off', ...extra,
       onchange: (e) => uebernehme(k.id, f.id, art, e.target.value, e.target),
       onkeydown: (e) => tasten(e, k.id, f.id, art),
     });
-    const td = el('td', { class: 'matrix-zelle' + (eintrag ? '' : ' leer') },
-      el('label', {}, el('span', { text: 'Std' }), feld('std', eintrag ? String(eintrag.stunden) : '', 'Wochenstunden', { inputmode: 'numeric' })),
-      el('label', {}, el('span', { text: 'H' }), feld('haupt', kuerzel(d, zu.haupt), 'Hauptlehrkraft', { list: 'liste-lehrkraefte' })),
-      el('label', {}, el('span', { text: 'Z' }), feld('zweit', kuerzel(d, zu.zweit[0]), 'Zweitlehrkraft', { list: 'liste-lehrkraefte' })),
+    const td = el('td', { class: 'matrix-zelle' },
+      el('label', {}, el('span', { text: 'Std' }), feld('std', 'Wochenstunden', { inputmode: 'numeric' })),
+      el('label', {}, el('span', { text: 'H' }), feld('haupt', 'Hauptlehrkraft', { list: 'liste-lehrkraefte' })),
+      el('label', {}, el('span', { text: 'Z' }), feld('zweit', 'Zweitlehrkraft', { list: 'liste-lehrkraefte' })),
       el('label', { class: 'matrix-doppel' }, el('input', {
-        type: 'checkbox', checked: !!eintrag?.doppelt, disabled: !eintrag, 'aria-label': `Doppelstunde gewünscht ${wo}`,
+        type: 'checkbox', 'aria-label': `Doppelstunde gewünscht ${wo}`, 'data-art': 'doppelt',
         'data-zeile': k.id, 'data-spalte': f.id + '|doppelt', onchange: (e) => uebernehme(k.id, f.id, 'doppelt', e.target.checked, e.target),
       }), el('span', { text: 'D' })));
-    if (zu.haupt && eintrag && !ix.istQualifiziert(zu.haupt, f.id, k.stufe)) {
-      td.classList.add('warnung');
-      td.append(el('span', { class: 'marke', title: `${kuerzel(d, zu.haupt)} ist für ${f.kuerzel} in Stufe ${k.stufe} nicht qualifiziert (H8) – der Planer weist die Stunden neu zu`, text: '⚠ H8' }));
-    }
+    zellen.set(k.id + '|' + f.id, td);
     return td;
+  }
+
+  /** Setzt die Werte einer Zelle (fokussierte oder ungültige Eingaben bleiben unberührt). */
+  function fuelle(td, d, ix, k, f, eintrag) {
+    const zu = ix.zuordnungVon(k.id, f.id);
+    const werte = { std: eintrag ? String(eintrag.stunden) : '', haupt: kuerzel(d, zu.haupt), zweit: kuerzel(d, zu.zweit[0]) };
+    for (const input of td.querySelectorAll('input[type=text]')) {
+      const w = werte[input.dataset.art];
+      const unberuehrt = input === document.activeElement || input.getAttribute('aria-invalid') === 'true';
+      input.defaultValue = w; // Vergleichswert für „geändert?“ (Enter/↑/↓)
+      if (!unberuehrt) input.value = w;
+    }
+    const doppel = td.querySelector('input[type=checkbox]');
+    doppel.checked = !!eintrag?.doppelt;
+    doppel.disabled = !eintrag;
+    td.classList.toggle('leer', !eintrag);
+    td.querySelector('.marke')?.remove();
+    const warnung = zu.haupt && eintrag && !ix.istQualifiziert(zu.haupt, f.id, k.stufe);
+    td.classList.toggle('warnung', !!warnung);
+    if (warnung) {
+      td.append(App.el('span', { class: 'marke', title: `${kuerzel(d, zu.haupt)} ist für ${f.kuerzel} in Stufe ${k.stufe} nicht qualifiziert (H8) – der Planer weist die Stunden neu zu`, text: '⚠ H8' }));
+    }
   }
 
   function tasten(e, klasse, fach, art) {
     const d = App.zustand.daten;
     const i = d.klassen.findIndex((k) => k.id === klasse);
     const r = e.key === 'Enter' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
-    if (e.key === 'Escape') { e.preventDefault(); render(); return; }
+    if (e.key === 'Escape') { e.preventDefault(); e.target.value = e.target.defaultValue; e.target.removeAttribute('aria-invalid'); panel.querySelector('#zuordnung-meldung').replaceChildren(); return; }
     if (!r) return;
     e.preventDefault();
     const ziel = d.klassen[i + r];
@@ -4770,6 +4980,7 @@ const ZuordnungReiter = (() => {
       return false;
     }
     meldung.replaceChildren();
+    eingabe.removeAttribute('aria-invalid');
     if (danach) fokusNach = danach;
     render();
     return true;
@@ -5483,6 +5694,7 @@ const PlanReiter = (() => {
     const k = el('div', {
       class: 'karte' + (regeln ? ' konflikt' : '') + ' status-' + s.status, 'data-index': String(i),
       draggable: fuerDruck ? null : 'true', title: regeln ? info.texte.get('s' + i).join('\n') : null,
+      style: kartenStil(d, s),
     });
     const fach = s.fach ? n.fach(s.fach) : '–';
     const statusText = { vertreten: 'vertreten', doppeltBetreut: '⇄', aufgeteilt: 'aufgeteilt', entfaellt: 'entfällt', aufsicht: 'Aufsicht' }[s.status];
@@ -5513,6 +5725,18 @@ const PlanReiter = (() => {
     return k;
   }
 
+  /**
+   * Farben einer Karte: Hintergrund nach Fach, Balken links nach Hauptlehrkraft,
+   * schmaler Balken rechts nach Zweitbesetzung. Entfall und Aufteilung bleiben neutral.
+   */
+  function kartenStil(d, s) {
+    const teile = [];
+    if (s.fach && s.status !== 'entfaellt' && s.status !== 'aufgeteilt') teile.push(`background-color:${Kern.Farben.fach(d, s.fach)}`);
+    if (s.lehrkraefte[0]) teile.push(`border-left:6px solid ${Kern.Farben.lehrkraft(d, s.lehrkraefte[0])}`);
+    if (s.lehrkraefte[1]) teile.push(`border-right:4px solid ${Kern.Farben.lehrkraft(d, s.lehrkraefte[1])}`);
+    return teile.join(';') || null;
+  }
+
   function aufsichtChip(d, info, i, fuerDruck) {
     const el = App.el;
     const a = d.plan.aufsichten[i];
@@ -5520,6 +5744,7 @@ const PlanReiter = (() => {
     const chip = el('span', {
       class: 'chip' + (regeln ? ' konflikt' : ''), 'data-aufsicht': String(i), draggable: fuerDruck ? null : 'true',
       title: regeln ? info.texte.get('a' + i).join('\n') : null,
+      style: `border-left:5px solid ${Kern.Farben.lehrkraft(d, a.lehrkraft)}`,
     }, ansicht.art === 'lehrkraft' && !fuerDruck ? 'Aufsicht' : (d.lehrkraefte.find((l) => l.id === a.lehrkraft)?.kuerzel || a.lehrkraft));
     if (regeln) chip.append(el('span', { class: 'konflikt-marke', text: ' ⚠ ' + [...regeln].join(' ') }));
     if (!fuerDruck) {
@@ -5575,14 +5800,33 @@ const PlanReiter = (() => {
     const aufsicht = el('section', { class: 'seiten-block', id: 'plan-aufsicht-offen' },
       el('h3', { text: 'Aufsichtssoll offen' }),
       offen.length ? el('div', { class: 'chips' }, ...offen.map((f) => quelle(d, f.lehrkraft, `noch ${f.offen}`, 'aufsichtNeu'))) : el('p', { class: 'leise', text: 'Keine.' }));
+    const farben = farblegende(d, ix);
     const legende = el('section', { class: 'seiten-block' }, el('h3', { text: 'Zeichen' }),
       el('ul', { class: 'legende' }, ...[['⚠ H1', 'Verstoß gegen harte Regel (Nummer)'], ['+KÜR', 'Zweitbesetzung'], ['(2.)', 'Lehrkraft ist hier Zweitbesetzung'], ['⇄', 'Doppelbetreuung'], ['aufgeteilt / + n Gäste', 'Aufteilung einer Klasse']]
         .map(([z, t]) => el('li', {}, el('strong', { text: z }), ' – ' + t))));
     const teile = [konflikte];
     if (ansicht.art !== 'aufsicht') teile.push(kontingente);
     if (ansicht.art === 'aufsicht' || ansicht.art === 'lehrkraft') teile.push(aufsicht);
+    if (farben) teile.push(farben);
     teile.push(legende);
     seite.replaceChildren(...teile);
+  }
+
+  /** Farblegende der aktuellen Ansicht: Fächer (Kartenfarbe) und Lehrkräfte (Balken). */
+  function farblegende(d, ix) {
+    const el = App.el;
+    const sichtbar = d.plan.regelplan.filter((s) => (ansicht.art === 'klasse' ? s.klasse === ansicht.id
+      : ansicht.art === 'lehrkraft' ? s.lehrkraefte.includes(ansicht.id) : ansicht.art === 'raum' ? s.raum === ansicht.id : false));
+    const faecher = [...new Set(sichtbar.map((s) => s.fach).filter(Boolean))].sort((a, b) => ix.name.fach(a).localeCompare(ix.name.fach(b)));
+    const lehrer = [...new Set(ansicht.art === 'aufsicht' ? d.plan.aufsichten.map((a) => a.lehrkraft) : sichtbar.flatMap((s) => s.lehrkraefte))]
+      .sort((a, b) => ix.name.lehrkraft(a).localeCompare(ix.name.lehrkraft(b)));
+    if (!faecher.length && !lehrer.length) return null;
+    return el('section', { class: 'seiten-block', id: 'plan-farben' }, el('h3', { text: 'Farben' }),
+      faecher.length ? el('p', { class: 'leise', text: 'Kartenfarbe = Fach' }) : null,
+      faecher.length ? el('div', { class: 'chips' }, ...faecher.map((f) => el('span', { class: 'farbmuster', 'data-fach': f, style: `background-color:${Kern.Farben.fach(d, f)}`, text: ix.name.fach(f), title: ix.faecher.get(f)?.name }))) : null,
+      lehrer.length ? el('p', { class: 'leise', text: 'Balken links = Lehrkraft (rechts: Zweitbesetzung)' }) : null,
+      lehrer.length ? el('div', { class: 'chips' }, ...lehrer.map((l) => el('span', { class: 'farbmuster', 'data-lehrkraft': l, style: `border-left:6px solid ${Kern.Farben.lehrkraft(d, l)}`, text: ix.name.lehrkraft(l), title: ix.lehrkraefte.get(l)?.name }))) : null,
+      el('p', { class: 'leise', text: 'Farben lassen sich im Reiter „Stammdaten“ ändern.' }));
   }
 
   function quelle(d, lehrkraft, zusatz, art) {

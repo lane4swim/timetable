@@ -7,6 +7,7 @@ const Kern = Object.freeze({
   version: '0.1.0',
   Hilfen,
   Modell,
+  Farben,
   Schema,
   Verweise,
   Index,

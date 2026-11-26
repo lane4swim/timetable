@@ -224,3 +224,47 @@ test('Zuordnung: Stunden, Haupt- und Zweitlehrkraft, Soll/Ist, Warnungen', async
   assert.match(await seite.textContent(`#zuordnung-soll-ist tr[data-lehrkraft="${l.id}"]`), /⚠ \d+ über der Höchstgrenze \(H7\)/);
   assert.deepEqual(fehler, []);
 });
+
+test('Tab nach dem Hinzufügen einer Zeile springt Feld für Feld weiter und speichert', async () => {
+  await seite.click('#stamm-bereich-lehrkraefte [data-aktion="neu"]');
+  const neu = (await daten()).lehrkraefte[5];
+  const fokus = () => seite.evaluate(() => [document.activeElement.dataset.zeile, document.activeElement.dataset.spalte]);
+  assert.deepEqual(await fokus(), [neu.id, 'name']);
+  await seite.keyboard.type('Max Muster');
+  await seite.keyboard.press('Tab');
+  assert.deepEqual(await fokus(), [neu.id, 'kuerzel']);
+  await seite.keyboard.press('Control+a');
+  await seite.keyboard.type('MUS');
+  await seite.keyboard.press('Tab');
+  assert.deepEqual(await fokus(), [neu.id, 'qualifikationen']);
+  await seite.keyboard.type('DE 1-4');
+  await seite.keyboard.press('Tab');
+  assert.deepEqual(await fokus(), [neu.id, 'sollStunden']);
+  await seite.keyboard.press('Shift+Tab');
+  assert.deepEqual(await fokus(), [neu.id, 'qualifikationen'], 'auch rückwärts');
+  const l = (await daten()).lehrkraefte[5];
+  assert.deepEqual([l.name, l.kuerzel, l.qualifikationen.length], ['Max Muster', 'MUS', 1]);
+  // Beschriftungen folgen dem neuen Namen
+  assert.equal(await seite.getAttribute(`#tabelle-lehrkraefte [data-zeile="${neu.id}"][data-spalte="kuerzel"]`, 'aria-label'), 'Kürzel – Max Muster');
+});
+
+test('Tab in der Zuordnungsmatrix behält den Fokus nach dem Speichern', async () => {
+  await seite.click('#reiter-zuordnung');
+  const d = await daten();
+  const k = d.klassen[0];
+  const fach = k.stundentafel[0].fach;
+  await seite.locator(`#zuordnung-matrix [data-zeile="${k.id}"][data-spalte="${fach}|std"]`).fill('4');
+  await seite.keyboard.press('Tab');
+  assert.deepEqual(await seite.evaluate(() => [document.activeElement.dataset.zeile, document.activeElement.dataset.spalte]), [k.id, `${fach}|haupt`]);
+  assert.equal((await daten()).klassen[0].stundentafel[0].stunden, 4);
+});
+
+test('Farben in Stammdaten wählen und zurücksetzen', async () => {
+  await seite.click('#stamm-faecher');
+  const f = (await daten()).faecher[0];
+  const feld = seite.locator(`#tabelle-faecher [data-zeile="${f.id}"][data-spalte="farbe"]`);
+  await feld.evaluate((e) => { e.value = '#ffd27f'; e.dispatchEvent(new Event('change', { bubbles: true })); });
+  assert.equal((await daten()).faecher[0].farbe, '#ffd27f');
+  await seite.click(`#tabelle-faecher tr[data-schluessel="${f.id}"] .farbe-zelle button`);
+  assert.equal((await daten()).faecher[0].farbe, undefined);
+});

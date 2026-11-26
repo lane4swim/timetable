@@ -215,3 +215,26 @@ test('Reaktionszeit: Verschieben im großen Plan (30 Klassen) unter 100 ms', asy
   });
   assert.ok(zeiten[2] < 100, `Median ${zeiten[2].toFixed(1)} ms`);
 });
+
+test('Farben: Karte nach Fach, Balken nach Lehrkraft, Legende; eigene Farbe wirkt sofort', async () => {
+  await oeffne('ueberhang');
+  const d = await daten();
+  const k = d.klassen[0];
+  const s = d.plan.regelplan.find((x) => x.klasse === k.id && x.tag === 'Mo' && x.stunde === 1);
+  const karte = zelle('Mo', 1).locator('.karte').first();
+  const farbe = (hex) => { const n = (i) => parseInt(hex.slice(i, i + 2), 16); return `rgb(${n(1)}, ${n(3)}, ${n(5)})`; };
+  const stil = await karte.evaluate((e) => ({ bg: getComputedStyle(e).backgroundColor, links: getComputedStyle(e).borderLeftColor, breite: getComputedStyle(e).borderLeftWidth }));
+  assert.equal(stil.bg, farbe(K.Farben.fach(d, s.fach)));
+  assert.equal(stil.links, farbe(K.Farben.lehrkraft(d, s.lehrkraefte[0])));
+  assert.equal(stil.breite, '6px');
+  // Legende listet die Fächer und Lehrkräfte der Ansicht
+  const faecher = new Set(d.plan.regelplan.filter((x) => x.klasse === k.id).map((x) => x.fach));
+  assert.equal(await seite.locator('#plan-farben [data-fach]').count(), faecher.size);
+  // unterschiedliche Fächer → unterschiedliche Kartenfarben
+  const farben = new Set(await seite.locator('#plan-farben [data-fach]').evaluateAll((l) => l.map((e) => getComputedStyle(e).backgroundColor)));
+  assert.equal(farben.size, faecher.size);
+  // eigene Fachfarbe
+  await seite.evaluate((id) => window.Stundenplan.App.aendere('Farbe', (x) => { x.faecher.find((f) => f.id === id).farbe = '#ffd27f'; }), s.fach);
+  assert.equal(await zelle('Mo', 1).locator('.karte').first().evaluate((e) => getComputedStyle(e).backgroundColor), 'rgb(255, 210, 127)');
+  assert.deepEqual(fehler, []);
+});

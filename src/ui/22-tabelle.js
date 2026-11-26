@@ -67,6 +67,8 @@ const Tabelle = (() => {
     }
     wurzel.append(meldung);
     let fokusNach = null; // { zeile, spalte }
+    let aufbau = null; // Signatur der zuletzt aufgebauten Struktur (Zeilen, Auswahllisten)
+    let felder = new Map(); // „Zeile\u0001Spalte“ → Element
 
     function zeige(art, titel, eintraege = []) {
       meldung.replaceChildren(el('div', { class: 'meldung meldung-' + art, role: art === 'fehler' ? 'alert' : 'status' },
@@ -74,21 +76,63 @@ const Tabelle = (() => {
         eintraege.length ? el('ul', { class: 'pfadliste' }, ...eintraege.map((f) => el('li', {}, f.pfad ? el('code', { text: f.pfad }) : null, f.pfad ? ': ' : '', f.meldung || f.text))) : null));
     }
 
-    function render() {
+    /**
+     * Zeichnet die Tabelle. Bleiben Zeilen und Auswahllisten gleich, werden nur
+     * die Werte der vorhandenen Felder aktualisiert – so bleibt der Fokus beim
+     * Tabulator-Wechsel erhalten (das Feld, in das der Browser springt, bleibt bestehen).
+     */
+    function render(neuAufbauen = false) {
       const d = App.zustand.daten;
+      const zeilen = o.liste(d);
+      const signatur = zeilen.map((z, i) => schluessel(z, i)).join('\u0001') + '\u0002'
+        + o.spalten.filter((s) => s.art === 'wahl').map((s) => JSON.stringify(s.optionen(d))).join('\u0003');
+      if (!neuAufbauen && signatur === aufbau) {
+        aktualisiere(zeilen, d);
+        setzeFokus();
+        return;
+      }
+      aufbau = signatur;
+      felder = new Map();
       const aktiv = document.activeElement;
       if (!fokusNach && aktiv && tabelle.contains(aktiv) && aktiv.dataset.zeile) fokusNach = { zeile: aktiv.dataset.zeile, spalte: aktiv.dataset.spalte };
-      const zeilen = o.liste(d);
       const kopf = el('tr', {}, ...o.spalten.map((s) => el('th', { scope: 'col', class: s.art === 'zahl' ? 'zahl' : null, style: s.breite ? `min-width:${s.breite}` : null, text: s.titel })));
       if (o.verweise || o.entferne) kopf.append(el('th', { scope: 'col' }, el('span', { class: 'versteckt', text: 'Aktionen' })));
       const koerper = el('tbody', {}, ...zeilen.map((z, i) => zeile(z, i, d)));
       tabelle.replaceChildren(el('caption', { text: `${o.beschriftung} (${zeilen.length})` }), el('thead', {}, kopf), koerper);
       if (!zeilen.length) koerper.append(el('tr', {}, el('td', { colspan: String(o.spalten.length + 1), class: 'leise', text: 'Noch keine Einträge.' })));
+      setzeFokus();
+    }
+
+    function setzeFokus() {
       if (fokusNach) {
         const ziel = tabelle.querySelector(`[data-zeile="${CSS.escape(fokusNach.zeile)}"][data-spalte="${CSS.escape(fokusNach.spalte)}"]`);
         fokusNach = null;
         if (ziel) { ziel.focus(); ziel.select?.(); }
       }
+    }
+
+    /** Aktualisiert Werte und Beschriftungen vorhandener Felder (außer dem fokussierten und ungültigen). */
+    function aktualisiere(zeilen, d) {
+      tabelle.caption.textContent = `${o.beschriftung} (${zeilen.length})`;
+      zeilen.forEach((z, i) => {
+        const key = schluessel(z, i);
+        for (const s of o.spalten) {
+          const feld = felder.get(key + '\u0001' + s.feld);
+          if (!feld) continue;
+          if (feld.hasAttribute('aria-label')) feld.setAttribute('aria-label', `${s.titel} – ${name(z)}`);
+          if (feld === document.activeElement || feld.getAttribute('aria-invalid') === 'true') continue;
+          schreibeWert(feld, s, z, d);
+        }
+        const knopf = tabelle.querySelector(`tr[data-schluessel="${CSS.escape(key)}"] [data-aktion="loeschen"]`);
+        if (knopf) { knopf.setAttribute('aria-label', `${o.einzahl} ${name(z)} löschen`); knopf.title = `${o.einzahl} ${name(z)} löschen`; }
+      });
+    }
+
+    function schreibeWert(feld, s, z, d) {
+      const wert = s.anzeigen ? s.anzeigen(z, d) : z[s.feld];
+      if (s.art === 'bool') feld.checked = !!wert;
+      else if (s.art === 'anzeige') feld.textContent = String(wert ?? '');
+      else feld.value = String(wert ?? '');
     }
 
     function zeile(z, i, d) {
@@ -101,6 +145,15 @@ const Tabelle = (() => {
         let feld;
         if (s.art === 'anzeige') {
           feld = el('span', { text: String(wert ?? '') });
+        } else if (s.art === 'farbe') {
+          feld = el('input', { type: 'color', ...gemeinsam, value: String(wert), onchange: (e) => uebernehme(key, s, e.target.value, e.target) });
+          const zuruecksetzen = el('button', {
+            type: 'button', class: 'mini', 'aria-label': `${s.titel} – ${name(z)}: Standardfarbe`, title: 'Standardfarbe', text: '↺',
+            onclick: () => uebernehme(key, s, null, feld),
+          });
+          felder.set(key + '\u0001' + s.feld, feld);
+          tr.append(el('td', { class: 'farbe-zelle' }, feld, zuruecksetzen));
+          continue;
         } else if (s.art === 'bool') {
           feld = el('input', { type: 'checkbox', ...gemeinsam, checked: !!wert, onchange: (e) => uebernehme(key, s, e.target.checked, e.target) });
         } else if (s.art === 'wahl') {
@@ -116,6 +169,7 @@ const Tabelle = (() => {
           });
           feld.addEventListener('keydown', (e) => tasten(e, key, s, i, d));
         }
+        felder.set(key + '\u0001' + s.feld, feld);
         tr.append(el('td', { class: s.art === 'zahl' ? 'zahl' : null }, feld));
       }
       if (o.verweise || o.entferne) {
@@ -135,9 +189,12 @@ const Tabelle = (() => {
         return { zeile: schluessel(zeilen[j], j), spalte: s.feld };
       };
       if (e.key === 'Escape') {
+        // Eingabe verwerfen: gespeicherten Wert wiederherstellen, Fokus bleibt
         e.preventDefault();
-        render();
-        tabelle.querySelector(`[data-zeile="${CSS.escape(key)}"][data-spalte="${CSS.escape(s.feld)}"]`)?.focus();
+        const z = finde(App.zustand.daten, key);
+        if (z) schreibeWert(e.target, s, z, App.zustand.daten);
+        e.target.removeAttribute('aria-invalid');
+        e.target.select?.();
         meldung.replaceChildren();
         return;
       }
@@ -173,6 +230,7 @@ const Tabelle = (() => {
         return false;
       }
       meldung.replaceChildren();
+      eingabe.removeAttribute('aria-invalid');
       if (danach) fokusNach = danach;
       render();
       return true;
@@ -190,7 +248,7 @@ const Tabelle = (() => {
       const liste = o.liste(App.zustand.daten);
       fokusNach = { zeile: schluessel(neueZeile, liste.length - 1), spalte: o.spalten.find((s) => s.art !== 'anzeige' && s.art !== 'bool').feld };
       zeige('ok', `${o.einzahl} „${name(neueZeile)}“ hinzugefügt – bitte Angaben ergänzen.`);
-      render();
+      render(true);
     }
 
     function loesche(key) {
@@ -210,7 +268,7 @@ const Tabelle = (() => {
       });
       if (!r.ok) { zeige('fehler', `${o.einzahl} „${name(z)}“ nicht gelöscht`, r.fehler.slice(0, 8)); return; }
       zeige('ok', `${o.einzahl} „${name(z)}“ gelöscht (rückgängig mit Strg+Z).`);
-      render();
+      render(true);
     }
 
     return { element: wurzel, render, zeige };
@@ -219,6 +277,7 @@ const Tabelle = (() => {
   /** Standard-Übernahme nach Spaltenart. */
   function setzeStandard(z, s, roh) {
     if (s.art === 'bool') { z[s.feld] = !!roh; return; }
+    if (s.art === 'farbe') { if (roh === null) delete z[s.feld]; else z[s.feld] = String(roh).toLowerCase(); return; }
     if (s.art === 'wahl') { z[s.feld] = roh === '' ? null : roh; return; }
     if (s.art === 'zahl') {
       const t = String(roh).trim().replace(',', '.');

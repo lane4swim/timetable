@@ -276,7 +276,10 @@ Diese Punkte sollten vor bzw. während M1 bestätigt werden; bis dahin gelten di
     - *Aufteilung:* möglichst wenige Zielklassen (gleiche Stufe zuerst), gleichmäßig nach freien Plätzen; war die Klasse in der Nachbarstunde aufgeteilt, wird Stufe 7 vorgezogen.
     - *Raumausfall:* Ersatzraum gleicher Art mit genug Plätzen (Nachbarraum bevorzugt), sonst Aufteilung, sonst Entfall/Nachrücken.
     - *Vorschläge* werden der Reihe nach berechnet (Datum, Pause/Stunde) und bauen aufeinander auf; nach jeder Übernahme wird neu gerechnet. Verworfene Vorschläge bleiben bis „Vorschläge berechnen“ ausgeblendet.
-22. **Offene fachliche Fragen** (Bundesland, Obergrenzen für Gäste, PDF/CSV-Export, Priorität der Zweitbesetzung): werden konfigurierbar gehalten bzw. sind nicht Teil der ersten Version; CSV-Export ließe sich in M7 ergänzen.
+22. **Rückmeldungen nach M7 (26.11.2026):**
+    - *Tabulator in Tabellen:* Bearbeitbare Tabellen und die Zuordnungsmatrix aktualisieren nach einer Eingabe nur noch die Werte der vorhandenen Felder; neu aufgebaut wird nur, wenn Zeilen oder Spalten hinzukommen oder wegfallen. Dadurch bleibt der Fokus beim Wechsel mit Tab/Umschalt+Tab erhalten, auch direkt nach „hinzufügen“.
+    - *Farben im Plan:* Kartenhintergrund nach Fach, Balken links nach Hauptlehrkraft, schmaler Balken rechts nach Zweitbesetzung, Aufsichts-Chips mit Lehrkraftbalken; Farblegende in der Seitenleiste. Standardfarben: zwölf weit auseinanderliegende Farbtöne für Fächer, danach Goldener Winkel; Lehrkräfte nach Goldenem Winkel. Optionales Feld `farbe` (#rrggbb) an Fach und Lehrkraft, im Reiter „Stammdaten“ wählbar und zurücksetzbar. Kontraste werden erzwungen (Text auf Fachfarbe ≥ 4,5 : 1, Balken zu jeder Fachfarbe ≥ 3 : 1); eigene Farben werden dafür bei Bedarf aufgehellt bzw. abgedunkelt. Kürzel stehen weiterhin als Text, Konflikte als roter Rahmen mit ⚠.
+23. **Offene fachliche Fragen** (Bundesland, Obergrenzen für Gäste, PDF/CSV-Export, Priorität der Zweitbesetzung): werden konfigurierbar gehalten bzw. sind nicht Teil der ersten Version; CSV-Export ließe sich in M7 ergänzen.
 
 Neue optionale Felder ändern `schemaVersion: 1` nicht, da unbekannte Felder ohnehin erhalten bleiben und alle neuen Felder Standardwerte haben.
 

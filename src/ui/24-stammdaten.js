@@ -88,6 +88,7 @@ const StammdatenReiter = (() => {
         { feld: 'maxStunden', titel: 'Max', art: 'zahl', min: 0, max: 40 },
         { feld: 'aufsichtenProWoche', titel: 'Aufsichten/Woche', art: 'zahl', min: 0, max: 50, ganz: true },
         { feld: 'gesperrt', titel: 'Gesperrt (Tag Stunden)', art: 'text', breite: '10em', platzhalter: 'z. B. Fr 5–6', anzeigen: sperrText, setzen: setzeMit(sperrLesen, 'gesperrt') },
+        { feld: 'farbe', titel: 'Balkenfarbe', art: 'farbe', anzeigen: (z, d) => Kern.Farben.lehrkraft(d, z.id) },
         { feld: 'abwesenheiten', titel: 'Abwesenheiten', art: 'anzeige', anzeigen: (z) => (z.abwesenheiten.length ? `${z.abwesenheiten.length} (Reiter Ausfall)` : '–') },
       ],
       neu: (d) => {
@@ -108,6 +109,7 @@ const StammdatenReiter = (() => {
           setzen: (z, roh) => { const t = String(roh).trim(); z.raumtyp = t ? t : null; } },
         { feld: 'blockbar', titel: 'Doppelstunden erlaubt', art: 'bool' },
         { feld: 'hauptfach', titel: 'Hauptfach', art: 'bool' },
+        { feld: 'farbe', titel: 'Kartenfarbe', art: 'farbe', anzeigen: (z, d) => Kern.Farben.fach(d, z.id) },
       ],
       neu: (d) => {
         const kuerzel = eindeutigesKuerzel(d.faecher, 'F');
