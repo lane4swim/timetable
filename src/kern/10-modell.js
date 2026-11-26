@@ -118,6 +118,22 @@ const Modell = (() => {
       && ['regelplan', 'aufsichten', 'vertretungen', 'aufsichtsVertretungen'].every((k) => !(p[k] || []).length);
   }
 
+  /**
+   * Vergleichsschlüssel eines Raumtyps: ohne Groß-/Kleinschreibung und ohne
+   * Leerzeichen am Rand („Turnhalle“ = „turnhalle“); leer → null.
+   */
+  function raumtypSchluessel(text) {
+    if (typeof text !== 'string') return null;
+    const t = text.trim().toLowerCase();
+    return t || null;
+  }
+
+  /** Raumtyp, den ein Raum für Fächer bereitstellt (null: Klassenraum). */
+  function raumtypDesRaums(raum) {
+    if (!raum) return null;
+    return raum.typ === 'fachraum' ? raumtypSchluessel(raum.fachraumtyp) : raum.typ === 'klassenraum' ? null : raum.typ;
+  }
+
   /** Vertretungsreserve einer Lehrkraft in Stunden (aufgerundet, Annahme 11). */
   function vertretungsreserve(sollStunden, prozent) {
     const stunden = Math.ceil((sollStunden * prozent) / 100 - 1e-9);
@@ -127,5 +143,6 @@ const Modell = (() => {
   return {
     SCHEMA_VERSION, STATUS, RAUMTYPEN, SONDERRAUMTYPEN, TAGE, ROLLEN, STANDARD_GEWICHTE,
     standardEinstellungen, standardPausen, standardZeitraster, leererZustand, istLeer, vertretungsreserve,
+    raumtypSchluessel, raumtypDesRaums,
   };
 })();

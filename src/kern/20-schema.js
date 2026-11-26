@@ -403,13 +403,14 @@ const Schema = (() => {
     }
 
     // Fächer: benötigter Raumtyp
-    const fachraumtypen = new Set(eintraege(d.raeume).filter(([r]) => r.typ === 'fachraum' && typeof r.fachraumtyp === 'string').map(([r]) => r.fachraumtyp));
-    const sonderraeume = new Set(eintraege(d.raeume).map(([r]) => r.typ).filter((t) => Modell.SONDERRAUMTYPEN.includes(t)));
+    // Raumtypen werden ohne Groß-/Kleinschreibung verglichen („Turnhalle“ = „turnhalle“)
+    const vorhandeneTypen = new Set(eintraege(d.raeume).map(([r]) => Modell.raumtypDesRaums(r)).filter(Boolean));
     for (const [f, i] of eintraege(d.faecher)) {
       if (typeof f.raumtyp !== 'string') continue;
-      if (f.raumtyp === 'klassenraum' || f.raumtyp === 'fachraum') {
+      const typ = Modell.raumtypSchluessel(f.raumtyp);
+      if (typ === 'klassenraum' || typ === 'fachraum') {
         fehler(kx, `faecher[${i}].raumtyp`, `${zeige(f.raumtyp)} ist kein benötigter Raumtyp; erlaubt sind turnhalle, schwimmhalle oder ein Fachraumtyp (z. B. „nawi“)`);
-      } else if (!fachraumtypen.has(f.raumtyp) && !sonderraeume.has(f.raumtyp)) {
+      } else if (!vorhandeneTypen.has(typ)) {
         warnung(kx, `faecher[${i}].raumtyp`, `kein Raum vom Typ ${zeige(f.raumtyp)} vorhanden – das Fach kann nicht geplant werden`);
       }
     }

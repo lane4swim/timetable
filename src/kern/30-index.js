@@ -84,8 +84,7 @@ const Index = (() => {
       const r = raeume.get(raumId);
       const f = faecher.get(fachId);
       if (!r || !f) return true;
-      const typDesRaums = r.typ === 'fachraum' ? r.fachraumtyp : r.typ === 'klassenraum' ? null : r.typ;
-      return (f.raumtyp || null) === typDesRaums;
+      return Modell.raumtypSchluessel(f.raumtyp) === Modell.raumtypDesRaums(r);
     }
 
     /** Ist die Stunde „Vormittag“ (Beginn vor 12:00)? Für W4. */

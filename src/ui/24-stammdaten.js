@@ -71,6 +71,25 @@ const StammdatenReiter = (() => {
   const neueId = (liste, praefix, stamm) => Kern.Hilfen.neueId(praefix, new Set(liste.map((x) => x.id)), stamm);
   const verweiseAuf = (sammlung) => (d, z) => Kern.Verweise.finde(d, sammlung, z.id);
 
+  /**
+   * Auswahl für „Benötigter Raumtyp“ eines Fachs: Klassenraum, Turn- und
+   * Schwimmhalle sowie alle Fachraumtypen der Räume. Typen ohne passenden Raum
+   * sind gekennzeichnet (Stunden dieses Fachs können sonst nicht geplant werden).
+   */
+  function raumtypOptionen(d) {
+    const S = Kern.Modell.raumtypSchluessel;
+    const vorhanden = new Set(d.raeume.map(Kern.Modell.raumtypDesRaums).filter(Boolean));
+    const hinweis = (t) => (vorhanden.has(t) ? '' : ' – ⚠ kein solcher Raum');
+    const fachraeume = [...new Set(d.raeume.filter((r) => r.typ === 'fachraum').map((r) => S(r.fachraumtyp)).filter(Boolean))].sort();
+    const optionen = [['', 'Klassenraum (kein besonderer Raum)'], ['turnhalle', 'Turnhalle' + hinweis('turnhalle')], ['schwimmhalle', 'Schwimmhalle' + hinweis('schwimmhalle')],
+      ...fachraeume.map((t) => [t, `Fachraum: ${t}`])];
+    for (const f of d.faecher) {
+      const t = S(f.raumtyp);
+      if (t && !optionen.some(([w]) => w === t)) optionen.push([t, `Fachraum: ${t} – ⚠ kein solcher Raum`]);
+    }
+    return optionen;
+  }
+
   /* ----------------------------- Tabellen ----------------------------- */
 
   function baueTabellen() {
@@ -105,8 +124,9 @@ const StammdatenReiter = (() => {
       spalten: [
         { feld: 'name', titel: 'Name', art: 'text', pflicht: true, breite: '12em' },
         { feld: 'kuerzel', titel: 'Kürzel', art: 'text', pflicht: true, max: 12, breite: '5em' },
-        { feld: 'raumtyp', titel: 'Benötigter Raumtyp', art: 'text', liste: 'liste-raumtypen', platzhalter: 'Klassenraum', breite: '10em',
-          setzen: (z, roh) => { const t = String(roh).trim(); z.raumtyp = t ? t : null; } },
+        { feld: 'raumtyp', titel: 'Benötigter Raumtyp', art: 'wahl', optionen: raumtypOptionen,
+          anzeigen: (z) => Kern.Modell.raumtypSchluessel(z.raumtyp) ?? '',
+          setzen: (z, roh) => { z.raumtyp = Kern.Modell.raumtypSchluessel(roh); } },
         { feld: 'blockbar', titel: 'Doppelstunden erlaubt', art: 'bool' },
         { feld: 'hauptfach', titel: 'Hauptfach', art: 'bool' },
         { feld: 'farbe', titel: 'Kartenfarbe', art: 'farbe', anzeigen: (z, d) => Kern.Farben.fach(d, z.id) },
@@ -135,7 +155,7 @@ const StammdatenReiter = (() => {
             const t = String(roh).trim();
             if (z.typ !== 'fachraum') return t ? 'Ein Fachraumtyp gilt nur für Fachräume. Bitte zuerst den Typ „Fachraum“ wählen.' : undefined;
             if (!t) return 'Fachräume brauchen einen Fachraumtyp (z. B. nawi, musik).';
-            z.fachraumtyp = t;
+            z.fachraumtyp = Kern.Modell.raumtypSchluessel(t); // ohne Groß-/Kleinschreibung, wie beim Vergleich
           } },
         { feld: 'kapazitaet', titel: 'Plätze', art: 'zahl', min: 1, max: 500, ganz: true },
         { feld: 'nahe', titel: 'Nachbarräume (Namen)', art: 'text', breite: '10em', platzhalter: 'z. B. 102, 103',
@@ -283,7 +303,7 @@ const StammdatenReiter = (() => {
     const listen = el('datalist', { id: 'liste-raumtypen' });
     const bereiche = {
       lehrkraefte: el('div', {}, el('p', { class: 'hinweis', text: 'Qualifikationen als „Fachkürzel Stufen“, mehrere durch Semikolon: MA 1–4; DE 1–4. Sperrzeiten als „Tag Stunden“: Fr 5–6; Mo 1.' }), tabellen.lehrkraefte.element),
-      faecher: el('div', {}, el('p', { class: 'hinweis', text: 'Raumtyp leer lassen für Unterricht im Klassenraum; sonst turnhalle, schwimmhalle oder ein Fachraumtyp wie nawi.' }), tabellen.faecher.element),
+      faecher: el('div', {}, el('p', { class: 'hinweis', text: 'Benötigter Raumtyp: „Klassenraum“ für Unterricht im Heimatraum, sonst Turnhalle, Schwimmhalle oder ein Fachraumtyp. Fachraumtypen entstehen im Bereich „Räume“ (Typ „Fachraum“). Für ein Fach ohne passenden Raum können keine Stunden geplant werden.' }), tabellen.faecher.element),
       raeume: el('div', {}, tabellen.raeume.element),
       klassen: el('div', {}, el('p', { class: 'hinweis', text: 'Stundentafeln und Lehrkräfte je Fach werden im Reiter „Zuordnung“ gepflegt.' }), tabellen.klassen.element),
       zeitraster: el('div', {}, tage, meldungTage, el('p', { class: 'hinweis', text: 'Neue Stunden werden am Tagesende angehängt; entfernt werden kann nur die letzte Stunde.' }), tabellen.zeitraster.element),

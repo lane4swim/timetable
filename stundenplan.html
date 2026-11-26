@@ -193,6 +193,9 @@ body.ablage-aktiv::after {
 .pausenzeile .zelle { height: auto; min-height: 22px; }
 .karte { background: #eaf1fb; border: 1px solid rgba(26, 29, 35, .18); border-radius: 4px; padding: 2px 5px; font-size: .85rem; line-height: 1.3; cursor: grab; margin-bottom: 2px; }
 .karte.aufgenommen, .chip.aufgenommen { outline: 3px dashed var(--akzent); }
+/* Touchscreen: keine Textauswahl, keine Lupe/Kontextmenü beim Halten; Doppeltipp-Zoom aus */
+.raster .karte, .raster .chip, .chip.quelle { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+.geist { position: fixed; z-index: 100; pointer-events: none; opacity: .9; transform: translate(-50%, -60%) scale(1.05); box-shadow: 0 6px 18px rgba(0, 0, 0, .3); margin: 0; }
 .karte.konflikt { outline: 2px solid var(--fehler); outline-offset: 0; }
 .karte.status-aufgeteilt { background: #e6e6e6; border-color: #9a9a9a; color: #333; }
 .karte.status-entfaellt { background: #fff; border-style: dashed; color: var(--text-leise); }
@@ -547,6 +550,22 @@ const Modell = (() => {
       && ['regelplan', 'aufsichten', 'vertretungen', 'aufsichtsVertretungen'].every((k) => !(p[k] || []).length);
   }
 
+  /**
+   * Vergleichsschlüssel eines Raumtyps: ohne Groß-/Kleinschreibung und ohne
+   * Leerzeichen am Rand („Turnhalle“ = „turnhalle“); leer → null.
+   */
+  function raumtypSchluessel(text) {
+    if (typeof text !== 'string') return null;
+    const t = text.trim().toLowerCase();
+    return t || null;
+  }
+
+  /** Raumtyp, den ein Raum für Fächer bereitstellt (null: Klassenraum). */
+  function raumtypDesRaums(raum) {
+    if (!raum) return null;
+    return raum.typ === 'fachraum' ? raumtypSchluessel(raum.fachraumtyp) : raum.typ === 'klassenraum' ? null : raum.typ;
+  }
+
   /** Vertretungsreserve einer Lehrkraft in Stunden (aufgerundet, Annahme 11). */
   function vertretungsreserve(sollStunden, prozent) {
     const stunden = Math.ceil((sollStunden * prozent) / 100 - 1e-9);
@@ -556,6 +575,7 @@ const Modell = (() => {
   return {
     SCHEMA_VERSION, STATUS, RAUMTYPEN, SONDERRAUMTYPEN, TAGE, ROLLEN, STANDARD_GEWICHTE,
     standardEinstellungen, standardPausen, standardZeitraster, leererZustand, istLeer, vertretungsreserve,
+    raumtypSchluessel, raumtypDesRaums,
   };
 })();
 
@@ -1068,13 +1088,14 @@ const Schema = (() => {
     }
 
     // Fächer: benötigter Raumtyp
-    const fachraumtypen = new Set(eintraege(d.raeume).filter(([r]) => r.typ === 'fachraum' && typeof r.fachraumtyp === 'string').map(([r]) => r.fachraumtyp));
-    const sonderraeume = new Set(eintraege(d.raeume).map(([r]) => r.typ).filter((t) => Modell.SONDERRAUMTYPEN.includes(t)));
+    // Raumtypen werden ohne Groß-/Kleinschreibung verglichen („Turnhalle“ = „turnhalle“)
+    const vorhandeneTypen = new Set(eintraege(d.raeume).map(([r]) => Modell.raumtypDesRaums(r)).filter(Boolean));
     for (const [f, i] of eintraege(d.faecher)) {
       if (typeof f.raumtyp !== 'string') continue;
-      if (f.raumtyp === 'klassenraum' || f.raumtyp === 'fachraum') {
+      const typ = Modell.raumtypSchluessel(f.raumtyp);
+      if (typ === 'klassenraum' || typ === 'fachraum') {
         fehler(kx, `faecher[${i}].raumtyp`, `${zeige(f.raumtyp)} ist kein benötigter Raumtyp; erlaubt sind turnhalle, schwimmhalle oder ein Fachraumtyp (z. B. „nawi“)`);
-      } else if (!fachraumtypen.has(f.raumtyp) && !sonderraeume.has(f.raumtyp)) {
+      } else if (!vorhandeneTypen.has(typ)) {
         warnung(kx, `faecher[${i}].raumtyp`, `kein Raum vom Typ ${zeige(f.raumtyp)} vorhanden – das Fach kann nicht geplant werden`);
       }
     }
@@ -1432,8 +1453,7 @@ const Index = (() => {
       const r = raeume.get(raumId);
       const f = faecher.get(fachId);
       if (!r || !f) return true;
-      const typDesRaums = r.typ === 'fachraum' ? r.fachraumtyp : r.typ === 'klassenraum' ? null : r.typ;
-      return (f.raumtyp || null) === typDesRaums;
+      return Modell.raumtypSchluessel(f.raumtyp) === Modell.raumtypDesRaums(r);
     }
 
     /** Ist die Stunde „Vormittag“ (Beginn vor 12:00)? Für W4. */
@@ -2010,7 +2030,7 @@ const Kosten = (() => {
       if (!s.fach || !Index.STATUS.abgedeckt(s)) continue;
       const f = ix.faecher.get(s.fach);
       if (f?.hauptfach && !ix.istVormittag(s.stunde)) w('W4', 1, `${n.klasse(s.klasse)} ${n.slot(s.tag, s.stunde)} Stunde: Hauptfach ${n.fach(s.fach)} am Nachmittag`);
-      if ((f?.raumtyp === 'turnhalle' || f?.raumtyp === 'schwimmhalle') && s.stunde !== erste && ix.pauseVor.has(s.stunde)) {
+      if (Modell.SONDERRAUMTYPEN.includes(Modell.raumtypSchluessel(f?.raumtyp)) && s.stunde !== erste && ix.pauseVor.has(s.stunde)) {
         w('W4', 1, `${n.klasse(s.klasse)} ${n.slot(s.tag, s.stunde)} Stunde: ${n.fach(s.fach)} direkt nach der Pause`);
       }
     }
@@ -2024,7 +2044,7 @@ const Kosten = (() => {
       for (let i = 1; i < folge.length; i++) if (folge[i].raum !== folge[i - 1].raum) wechsel++;
       w('W6', wechsel, `${n.klasse(klasse)} wechselt am ${tag} ${wechsel}-mal den Raum`);
       for (const s of folge) {
-        if (heimat && s.raum !== heimat && s.fach && !ix.faecher.get(s.fach)?.raumtyp) {
+        if (heimat && s.raum !== heimat && s.fach && !Modell.raumtypSchluessel(ix.faecher.get(s.fach)?.raumtyp)) {
           w('W6', 1, `${n.klasse(klasse)} ${n.slot(tag, s.stunde)} Stunde ${n.fach(s.fach)} in ${n.raum(s.raum)} statt im Heimatraum`);
         }
       }
@@ -2309,11 +2329,11 @@ const Planer = (() => {
     const freieSlots = L.map((_, t) => NS - gesperrt.subarray(t * NS, (t + 1) * NS).reduce((a, b) => a + b, 0));
 
     // Raumtypen der Fächer und verfügbare Räume je Typ und Slot
-    const typen = [...new Set(F.map((f) => f.raumtyp).filter(Boolean))];
+    // Raumtypen ohne Groß-/Kleinschreibung (Modell.raumtypSchluessel)
+    const typen = [...new Set(F.map((f) => Modell.raumtypSchluessel(f.raumtyp)).filter(Boolean))];
     const typIdx = new Map(typen.map((t, i) => [t, i]));
-    const fachTyp = F.map((f) => (f.raumtyp ? typIdx.get(f.raumtyp) : -1));
-    const typDesRaums = (r) => (r.typ === 'fachraum' ? r.fachraumtyp : r.typ === 'klassenraum' ? null : r.typ);
-    const raeumeJeTyp = typen.map((ty) => z.raeume.filter((r) => typDesRaums(r) === ty).sort((a, b) => a.kapazitaet - b.kapazitaet || a.id.localeCompare(b.id)));
+    const fachTyp = F.map((f) => (Modell.raumtypSchluessel(f.raumtyp) ? typIdx.get(Modell.raumtypSchluessel(f.raumtyp)) : -1));
+    const raeumeJeTyp = typen.map((ty) => z.raeume.filter((r) => Modell.raumtypDesRaums(r) === ty).sort((a, b) => a.kapazitaet - b.kapazitaet || a.id.localeCompare(b.id)));
     const kapTyp = new Int16Array(Math.max(1, typen.length) * NS);
     typen.forEach((_, ty) => {
       for (let d = 0; d < T; d++) {
@@ -2332,7 +2352,7 @@ const Planer = (() => {
     // Gewichte und weitere Konstanten für die weichen Regeln
     const g = e.gewichte;
     const hauptfach = F.map((f) => !!f.hauptfach);
-    const sport = F.map((f) => f.raumtyp === 'turnhalle' || f.raumtyp === 'schwimmhalle');
+    const sport = F.map((f) => Modell.SONDERRAUMTYPEN.includes(Modell.raumtypSchluessel(f.raumtyp)));
     const blockMax = F.map((f) => (f.blockbar ? 2 : 1));
     const nachmittag = ix.stunden.map((nr) => !ix.istVormittag(nr));
     const nachPause = ix.stunden.map((nr, h) => h > 0 && ix.pauseVor.has(nr));
@@ -2340,7 +2360,7 @@ const Planer = (() => {
 
     return {
       z, ix, e, T, H, NS, L, K, F, lIdx, fIdx, gesperrt, freieSlots, typen, fachTyp, raeumeJeTyp, kapTyp, heimatGesperrt,
-      g, hauptfach, sport, blockMax, nachmittag, nachPause, doppelStart,
+      g, hauptfach, sport, blockMax, nachmittag, nachPause, doppelStart, typen,
       // werden in den folgenden Schritten gefüllt:
       items: [], ausfall: [], warnungen: [], vorpruefung: null, untereSchrankeK1: 0,
       itemsJeKlasse: K.map(() => []), laenge: new Int16Array(K.length * T), pos: null, grid: null,
@@ -2359,11 +2379,27 @@ const Planer = (() => {
     const belegt = new Float64Array(L.length);
     const auftraege = []; // { c, f, stunden, zuteilung: [{t, n}] }
 
+    // 0. Fächer, für die es keinen passenden Raum gibt, können nicht stattfinden – vorab herausnehmen,
+    //    damit sie die übrigen Stunden nicht verdrängen
+    const ohneRaum = [];
     // 1. Festzuordnungen (nur qualifizierte Hauptlehrkräfte, bis zur Höchstgrenze)
     K.forEach((k, c) => {
       for (const eintrag of k.stundentafel) {
         const a = { c, f: fIdx.get(eintrag.fach), stunden: eintrag.stunden, rest: eintrag.stunden, zuteilung: [] };
         auftraege.push(a);
+        const ty = p.fachTyp[a.f];
+        if (ty >= 0) {
+          const raumtyp = p.typen[ty];
+          const grund = !p.raeumeJeTyp[ty].length ? `kein Raum vom Typ „${raumtyp}“ vorhanden`
+            : !p.raeumeJeTyp[ty].some((r) => r.kapazitaet >= k.schueler) ? `kein Raum vom Typ „${raumtyp}“ mit ${k.schueler} Plätzen` : null;
+          if (grund) {
+            p.ausfall.push({ klasse: k.id, fach: eintrag.fach, stunden: eintrag.stunden, grund });
+            ohneRaum.push(`${k.name} ${ix.name.fach(eintrag.fach)}: ${grund} – ${eintrag.stunden} Stunde(n) können nicht geplant werden`);
+            a.rest = 0;
+            a.ohneRaum = true;
+            continue;
+          }
+        }
         const id = ix.zuordnungVon(k.id, eintrag.fach).haupt;
         if (!id) continue;
         const t = lIdx.get(id);
@@ -2409,6 +2445,7 @@ const Planer = (() => {
       }
     }
 
+    p.warnungen.unshift(...ohneRaum);
     // 3. Ausfall aus der Zuweisung, Stunden erzeugen
     for (const a of auftraege) {
       const k = K[a.c];
@@ -2428,7 +2465,8 @@ const Planer = (() => {
       const stufen = new Set(auftraege.filter((a) => a.f === fi).map((a) => K[a.c].stufe));
       const kapazitaet = L.reduce((s, l, t) => s + ([...stufen].some((st) => ix.istQualifiziert(l.id, f.id, st)) ? Math.max(0, nutzbar[t]) : 0), 0);
       const erwarteterAusfall = p.ausfall.filter((x) => x.fach === f.id).reduce((s, x) => s + x.stunden, 0);
-      return { fach: f.id, bedarf, kapazitaet, erwarteterAusfall };
+      const ausfallPersonal = p.ausfall.filter((x) => x.fach === f.id && x.grund.startsWith('keine qualifizierte')).reduce((s, x) => s + x.stunden, 0);
+      return { fach: f.id, bedarf, kapazitaet, erwarteterAusfall, ausfallPersonal };
     }).filter(Boolean);
     const aufsichtBedarf = p.T * p.ix.pausen.reduce((s, pa) => s + pa.aufsichten, 0);
     p.vorpruefung = {
@@ -2441,7 +2479,7 @@ const Planer = (() => {
       p.warnungen.push(`Aufsichtssoll (${p.vorpruefung.aufsichten.soll}) reicht nicht für den Wochenbedarf (${aufsichtBedarf}) – Aufsichten bleiben unbesetzt`);
     }
     for (const x of jeFach) {
-      if (x.erwarteterAusfall) p.warnungen.push(`${ix.name.fach(x.fach)}: Bedarf ${x.bedarf}, Kapazität qualifizierter Lehrkräfte ${x.kapazitaet} – mindestens ${x.erwarteterAusfall} Stunde(n) Ausfall`);
+      if (x.ausfallPersonal) p.warnungen.push(`${ix.name.fach(x.fach)}: Bedarf ${x.bedarf}, Kapazität qualifizierter Lehrkräfte ${x.kapazitaet} – mindestens ${x.ausfallPersonal} Stunde(n) Ausfall`);
     }
   }
 
@@ -4537,6 +4575,25 @@ const StammdatenReiter = (() => {
   const neueId = (liste, praefix, stamm) => Kern.Hilfen.neueId(praefix, new Set(liste.map((x) => x.id)), stamm);
   const verweiseAuf = (sammlung) => (d, z) => Kern.Verweise.finde(d, sammlung, z.id);
 
+  /**
+   * Auswahl für „Benötigter Raumtyp“ eines Fachs: Klassenraum, Turn- und
+   * Schwimmhalle sowie alle Fachraumtypen der Räume. Typen ohne passenden Raum
+   * sind gekennzeichnet (Stunden dieses Fachs können sonst nicht geplant werden).
+   */
+  function raumtypOptionen(d) {
+    const S = Kern.Modell.raumtypSchluessel;
+    const vorhanden = new Set(d.raeume.map(Kern.Modell.raumtypDesRaums).filter(Boolean));
+    const hinweis = (t) => (vorhanden.has(t) ? '' : ' – ⚠ kein solcher Raum');
+    const fachraeume = [...new Set(d.raeume.filter((r) => r.typ === 'fachraum').map((r) => S(r.fachraumtyp)).filter(Boolean))].sort();
+    const optionen = [['', 'Klassenraum (kein besonderer Raum)'], ['turnhalle', 'Turnhalle' + hinweis('turnhalle')], ['schwimmhalle', 'Schwimmhalle' + hinweis('schwimmhalle')],
+      ...fachraeume.map((t) => [t, `Fachraum: ${t}`])];
+    for (const f of d.faecher) {
+      const t = S(f.raumtyp);
+      if (t && !optionen.some(([w]) => w === t)) optionen.push([t, `Fachraum: ${t} – ⚠ kein solcher Raum`]);
+    }
+    return optionen;
+  }
+
   /* ----------------------------- Tabellen ----------------------------- */
 
   function baueTabellen() {
@@ -4571,8 +4628,9 @@ const StammdatenReiter = (() => {
       spalten: [
         { feld: 'name', titel: 'Name', art: 'text', pflicht: true, breite: '12em' },
         { feld: 'kuerzel', titel: 'Kürzel', art: 'text', pflicht: true, max: 12, breite: '5em' },
-        { feld: 'raumtyp', titel: 'Benötigter Raumtyp', art: 'text', liste: 'liste-raumtypen', platzhalter: 'Klassenraum', breite: '10em',
-          setzen: (z, roh) => { const t = String(roh).trim(); z.raumtyp = t ? t : null; } },
+        { feld: 'raumtyp', titel: 'Benötigter Raumtyp', art: 'wahl', optionen: raumtypOptionen,
+          anzeigen: (z) => Kern.Modell.raumtypSchluessel(z.raumtyp) ?? '',
+          setzen: (z, roh) => { z.raumtyp = Kern.Modell.raumtypSchluessel(roh); } },
         { feld: 'blockbar', titel: 'Doppelstunden erlaubt', art: 'bool' },
         { feld: 'hauptfach', titel: 'Hauptfach', art: 'bool' },
         { feld: 'farbe', titel: 'Kartenfarbe', art: 'farbe', anzeigen: (z, d) => Kern.Farben.fach(d, z.id) },
@@ -4601,7 +4659,7 @@ const StammdatenReiter = (() => {
             const t = String(roh).trim();
             if (z.typ !== 'fachraum') return t ? 'Ein Fachraumtyp gilt nur für Fachräume. Bitte zuerst den Typ „Fachraum“ wählen.' : undefined;
             if (!t) return 'Fachräume brauchen einen Fachraumtyp (z. B. nawi, musik).';
-            z.fachraumtyp = t;
+            z.fachraumtyp = Kern.Modell.raumtypSchluessel(t); // ohne Groß-/Kleinschreibung, wie beim Vergleich
           } },
         { feld: 'kapazitaet', titel: 'Plätze', art: 'zahl', min: 1, max: 500, ganz: true },
         { feld: 'nahe', titel: 'Nachbarräume (Namen)', art: 'text', breite: '10em', platzhalter: 'z. B. 102, 103',
@@ -4749,7 +4807,7 @@ const StammdatenReiter = (() => {
     const listen = el('datalist', { id: 'liste-raumtypen' });
     const bereiche = {
       lehrkraefte: el('div', {}, el('p', { class: 'hinweis', text: 'Qualifikationen als „Fachkürzel Stufen“, mehrere durch Semikolon: MA 1–4; DE 1–4. Sperrzeiten als „Tag Stunden“: Fr 5–6; Mo 1.' }), tabellen.lehrkraefte.element),
-      faecher: el('div', {}, el('p', { class: 'hinweis', text: 'Raumtyp leer lassen für Unterricht im Klassenraum; sonst turnhalle, schwimmhalle oder ein Fachraumtyp wie nawi.' }), tabellen.faecher.element),
+      faecher: el('div', {}, el('p', { class: 'hinweis', text: 'Benötigter Raumtyp: „Klassenraum“ für Unterricht im Heimatraum, sonst Turnhalle, Schwimmhalle oder ein Fachraumtyp. Fachraumtypen entstehen im Bereich „Räume“ (Typ „Fachraum“). Für ein Fach ohne passenden Raum können keine Stunden geplant werden.' }), tabellen.faecher.element),
       raeume: el('div', {}, tabellen.raeume.element),
       klassen: el('div', {}, el('p', { class: 'hinweis', text: 'Stundentafeln und Lehrkräfte je Fach werden im Reiter „Zuordnung“ gepflegt.' }), tabellen.klassen.element),
       zeitraster: el('div', {}, tage, meldungTage, el('p', { class: 'hinweis', text: 'Neue Stunden werden am Tagesende angehängt; entfernt werden kann nur die letzte Stunde.' }), tabellen.zeitraster.element),
@@ -5557,7 +5615,7 @@ const PlanReiter = (() => {
           el('select', { id: 'plan-auswahl', 'aria-labelledby': 'plan-auswahl-titel', onchange: (e) => { ansicht.id = e.target.value; render(); } })),
         el('button', { type: 'button', class: 'knopf', id: 'plan-drucken', text: 'Drucken', onclick: () => drucke(false) }),
         el('button', { type: 'button', class: 'knopf', id: 'plan-drucken-alle', text: 'Alle drucken', onclick: () => drucke(true) })),
-      el('p', { class: 'hinweis', text: 'Ziehen Sie Stunden auf andere Zeitslots (in der Klasse wird getauscht). Tastatur: Pfeiltasten, Enter zum Aufnehmen und Ablegen, Esc zum Abbrechen, Entf entfernt Zweitbesetzung oder Aufsicht.' }),
+      el('p', { class: 'hinweis', text: 'Ziehen Sie Stunden auf andere Zeitslots (in der Klasse wird getauscht). Touchscreen: Karte antippen und dann das Ziel antippen – oder Karte kurz gedrückt halten und ziehen. Tastatur: Pfeiltasten, Enter zum Aufnehmen und Ablegen, Esc zum Abbrechen, Entf entfernt Zweitbesetzung oder Aufsicht.' }),
       el('p', { id: 'plan-ansage', class: 'ansage', 'aria-live': 'polite' }),
       el('div', { class: 'plan-layout' },
         el('div', { class: 'plan-raster-rahmen', id: 'plan-raster-rahmen' }),
@@ -5565,6 +5623,7 @@ const PlanReiter = (() => {
     );
     if (!document.getElementById('druckbereich')) document.body.append(el('div', { id: 'druckbereich' }));
     window.addEventListener('afterprint', () => document.getElementById('druckbereich').replaceChildren());
+    richteBeruehrungEin();
     sichtbar = App.beobachteSichtbar(panel, render);
     render();
   }
@@ -5720,7 +5779,7 @@ const PlanReiter = (() => {
     if (art !== 'raum' && s.raum) k.append(el('div', { class: 'karte-raum', text: n.raum(s.raum) }));
     if (regeln) k.append(el('div', { class: 'konflikt-marke', text: '⚠ ' + [...regeln].join(' ') }));
     if (!fuerDruck) {
-      k.addEventListener('dragstart', (e) => { e.dataTransfer.setData(MIME, JSON.stringify({ art: 'stunde', index: i })); e.dataTransfer.effectAllowed = 'move'; });
+      k.addEventListener('dragstart', (e) => { if (!nativesZiehen(e)) return; e.dataTransfer.setData(MIME, JSON.stringify({ art: 'stunde', index: i })); e.dataTransfer.effectAllowed = 'move'; });
     }
     return k;
   }
@@ -5749,7 +5808,7 @@ const PlanReiter = (() => {
     if (regeln) chip.append(el('span', { class: 'konflikt-marke', text: ' ⚠ ' + [...regeln].join(' ') }));
     if (!fuerDruck) {
       chip.append(el('button', { type: 'button', class: 'mini', tabindex: '-1', 'aria-label': 'Aufsicht entfernen', title: 'Aufsicht entfernen', text: '×', onclick: (e) => { e.stopPropagation(); fuehreAus({ art: 'aufsichtWeg', index: i }); } }));
-      chip.addEventListener('dragstart', (e) => { e.dataTransfer.setData(MIME, JSON.stringify({ art: 'aufsicht', index: i })); e.dataTransfer.effectAllowed = 'move'; });
+      chip.addEventListener('dragstart', (e) => { if (!nativesZiehen(e)) return; e.dataTransfer.setData(MIME, JSON.stringify({ art: 'aufsicht', index: i })); e.dataTransfer.effectAllowed = 'move'; });
     }
     return chip;
   }
@@ -5774,7 +5833,7 @@ const PlanReiter = (() => {
       const karte = e.target.closest?.('.karte');
       lege(nutzlast, td, karte ? Number(karte.dataset.index) : null);
     });
-    td.addEventListener('click', () => { const r = koordinaten(td); if (r) { aktiv = r; setzeAktiv(true); } });
+    td.addEventListener('click', (e) => tippe(td, e));
     td.addEventListener('focus', () => { const r = koordinaten(td); if (r && (r.zeile !== aktiv.zeile || r.spalte !== aktiv.spalte)) { aktiv = r; setzeAktiv(false); } });
     td.addEventListener('keydown', tasten);
   }
@@ -5834,9 +5893,14 @@ const PlanReiter = (() => {
     const chip = App.el('button', {
       type: 'button', class: 'chip quelle', draggable: 'true', 'data-quelle': art, 'data-lehrkraft': lehrkraft,
       'aria-label': `${l.kuerzel} (${l.name}) ${zusatz} – aufnehmen`, text: `${l.kuerzel} · ${zusatz}`,
-      onclick: () => { aufgenommen = { art, lehrkraft }; ansage(`${l.kuerzel} aufgenommen – Zielzelle mit den Pfeiltasten wählen und Enter drücken (Esc bricht ab).`); setzeAktiv(true); },
+      onclick: () => {
+        if (Date.now() < klickSperreBis) return;
+        aufgenommen = { art, lehrkraft };
+        ansage(`${l.kuerzel} aufgenommen – Zielzelle antippen bzw. anklicken oder mit den Pfeiltasten wählen und Enter drücken (Esc bricht ab).`);
+        setzeAktiv(zeigerArt === 'mouse');
+      },
     });
-    chip.addEventListener('dragstart', (e) => { e.dataTransfer.setData(MIME, JSON.stringify({ art, lehrkraft })); e.dataTransfer.effectAllowed = 'copy'; });
+    chip.addEventListener('dragstart', (e) => { if (!nativesZiehen(e)) return; e.dataTransfer.setData(MIME, JSON.stringify({ art, lehrkraft })); e.dataTransfer.effectAllowed = 'copy'; });
     return chip;
   }
 
@@ -5979,6 +6043,147 @@ const PlanReiter = (() => {
       aktiv = merke;
       setzeAktiv(true);
     }
+  }
+
+  /* ----------------------------- Touchscreen ---------------------------- */
+  // HTML-Drag-and-drop funktioniert auf Touchscreens (insbesondere Safari unter
+  // iOS/iPadOS) nicht zuverlässig. Daher zwei eigene Wege:
+  //   1. Antippen und Ziel antippen (wie Aufnehmen/Ablegen per Tastatur)
+  //   2. Gedrückt halten (≈ 350 ms) und ziehen; kurzes Wischen scrollt weiter
+  const HALTEN_MS = 350;
+  const TOLERANZ_PX = 10;
+  let zeigerArt = 'mouse';
+  let beruehrung = null; // { nutzlast, quelle, x, y, timer, aktiv, geist, ziel }
+  let klickSperreBis = 0;
+
+  /** Was eine Karte bzw. ein Chip transportiert. */
+  function nutzlastVon(element) {
+    const k = element?.closest?.('.raster .karte[data-index]');
+    if (k) return { art: 'stunde', index: Number(k.dataset.index) };
+    const c = element?.closest?.('.raster .chip[data-aufsicht]');
+    if (c) return { art: 'aufsicht', index: Number(c.dataset.aufsicht) };
+    const q = element?.closest?.('.chip.quelle');
+    if (q) return { art: q.dataset.quelle, lehrkraft: q.dataset.lehrkraft };
+    return null;
+  }
+
+  /** Natives Ziehen nur mit Maus; bei Berührung übernimmt die eigene Steuerung. */
+  function nativesZiehen(e) {
+    if (zeigerArt !== 'mouse' || beruehrung) { e.preventDefault(); return false; }
+    return true;
+  }
+
+  function richteBeruehrungEin() {
+    panel.addEventListener('pointerdown', (e) => { zeigerArt = e.pointerType || 'mouse'; }, true);
+    panel.addEventListener('touchstart', (e) => { zeigerArt = 'touch'; beruehrungStart(e); }, { passive: true });
+    // Kein Kontextmenü/Lupe beim langen Drücken auf Karten
+    panel.addEventListener('contextmenu', (e) => { if (zeigerArt !== 'mouse' && nutzlastVon(e.target)) e.preventDefault(); });
+  }
+
+  /** Tippen oder Klicken auf eine Zelle: ablegen, aufnehmen oder Zelle wählen. */
+  function tippe(td, e) {
+    if (Date.now() < klickSperreBis || e.target.closest('button')) return;
+    const r = koordinaten(td);
+    if (r) aktiv = r;
+    if (aufgenommen) {
+      const eigene = nutzlastVon(e.target);
+      if (eigene && eigene.art === aufgenommen.art && eigene.index === aufgenommen.index && eigene.index !== undefined) {
+        aufgenommen = null;
+        ansage('Abgebrochen.');
+      } else {
+        const karte = e.target.closest('.karte');
+        const nutzlast = aufgenommen;
+        aufgenommen = null;
+        lege(nutzlast, td, karte ? Number(karte.dataset.index) : null);
+      }
+      setzeAktiv(zeigerArt === 'mouse');
+      return;
+    }
+    if (zeigerArt !== 'mouse') {
+      const n = nutzlastVon(e.target);
+      if (n) {
+        aufgenommen = n;
+        ansage(`${n.art === 'stunde' ? 'Stunde' : 'Aufsicht'} aufgenommen – jetzt das Ziel antippen (nochmals antippen bricht ab).`);
+        setzeAktiv(false);
+        return;
+      }
+    }
+    setzeAktiv(true);
+  }
+
+  function beruehrungStart(e) {
+    abbrechenBeruehrung();
+    if (e.touches.length !== 1 || e.target.closest('button.mini')) return;
+    const quelleElement = e.target.closest('.karte, .chip');
+    const nutzlast = nutzlastVon(e.target);
+    if (!quelleElement || !nutzlast) return;
+    const t = e.touches[0];
+    beruehrung = { nutzlast, quelle: quelleElement, x: t.clientX, y: t.clientY, aktiv: false, ziel: null, geist: null };
+    beruehrung.timer = setTimeout(starteZiehen, HALTEN_MS);
+    document.addEventListener('touchmove', beruehrungBewegung, { passive: false });
+    document.addEventListener('touchend', beruehrungEnde, { passive: false });
+    document.addEventListener('touchcancel', abbrechenBeruehrung);
+  }
+
+  function starteZiehen() {
+    if (!beruehrung) return;
+    beruehrung.aktiv = true;
+    const geist = beruehrung.quelle.cloneNode(true);
+    const rechteck = beruehrung.quelle.getBoundingClientRect();
+    geist.classList.add('geist');
+    geist.removeAttribute('id');
+    geist.style.width = rechteck.width + 'px';
+    geist.style.left = beruehrung.x + 'px';
+    geist.style.top = beruehrung.y + 'px';
+    document.body.append(geist);
+    beruehrung.geist = geist;
+    beruehrung.quelle.classList.add('aufgenommen');
+    navigator.vibrate?.(15);
+    ansage('Zum Ziel ziehen und loslassen.');
+  }
+
+  function beruehrungBewegung(e) {
+    if (!beruehrung) return;
+    const t = e.touches[0];
+    if (!beruehrung.aktiv) {
+      // vor Ablauf der Haltezeit bewegt: der Finger scrollt – kein Ziehen
+      if (Math.hypot(t.clientX - beruehrung.x, t.clientY - beruehrung.y) > TOLERANZ_PX) abbrechenBeruehrung();
+      return;
+    }
+    e.preventDefault(); // nicht scrollen, solange gezogen wird
+    beruehrung.geist.style.left = t.clientX + 'px';
+    beruehrung.geist.style.top = t.clientY + 'px';
+    const td = document.elementFromPoint(t.clientX, t.clientY)?.closest('.raster td[data-tag]');
+    if (td !== beruehrung.ziel) {
+      beruehrung.ziel?.classList.remove('ziel');
+      td?.classList.add('ziel');
+      beruehrung.ziel = td || null;
+    }
+    beruehrung.punkt = { x: t.clientX, y: t.clientY };
+  }
+
+  function beruehrungEnde(e) {
+    if (!beruehrung) return;
+    if (!beruehrung.aktiv) { abbrechenBeruehrung(); return; } // kurzer Tipp → Klick-Behandlung
+    e.preventDefault();
+    const { nutzlast, ziel, punkt } = beruehrung;
+    const karte = punkt ? document.elementFromPoint(punkt.x, punkt.y)?.closest('.karte') : null;
+    abbrechenBeruehrung();
+    klickSperreBis = Date.now() + 500; // nachfolgenden Klick ignorieren
+    if (ziel) lege(nutzlast, ziel, karte && ziel.contains(karte) ? Number(karte.dataset.index) : null);
+    else ansage('Nicht abgelegt – bitte über einer Zelle loslassen.');
+  }
+
+  function abbrechenBeruehrung() {
+    if (!beruehrung) return;
+    clearTimeout(beruehrung.timer);
+    beruehrung.geist?.remove();
+    beruehrung.ziel?.classList.remove('ziel');
+    beruehrung.quelle?.classList.remove('aufgenommen');
+    beruehrung = null;
+    document.removeEventListener('touchmove', beruehrungBewegung);
+    document.removeEventListener('touchend', beruehrungEnde);
+    document.removeEventListener('touchcancel', abbrechenBeruehrung);
   }
 
   /* ------------------------------- Druck ------------------------------- */

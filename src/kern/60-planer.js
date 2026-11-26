@@ -129,11 +129,11 @@ const Planer = (() => {
     const freieSlots = L.map((_, t) => NS - gesperrt.subarray(t * NS, (t + 1) * NS).reduce((a, b) => a + b, 0));
 
     // Raumtypen der Fächer und verfügbare Räume je Typ und Slot
-    const typen = [...new Set(F.map((f) => f.raumtyp).filter(Boolean))];
+    // Raumtypen ohne Groß-/Kleinschreibung (Modell.raumtypSchluessel)
+    const typen = [...new Set(F.map((f) => Modell.raumtypSchluessel(f.raumtyp)).filter(Boolean))];
     const typIdx = new Map(typen.map((t, i) => [t, i]));
-    const fachTyp = F.map((f) => (f.raumtyp ? typIdx.get(f.raumtyp) : -1));
-    const typDesRaums = (r) => (r.typ === 'fachraum' ? r.fachraumtyp : r.typ === 'klassenraum' ? null : r.typ);
-    const raeumeJeTyp = typen.map((ty) => z.raeume.filter((r) => typDesRaums(r) === ty).sort((a, b) => a.kapazitaet - b.kapazitaet || a.id.localeCompare(b.id)));
+    const fachTyp = F.map((f) => (Modell.raumtypSchluessel(f.raumtyp) ? typIdx.get(Modell.raumtypSchluessel(f.raumtyp)) : -1));
+    const raeumeJeTyp = typen.map((ty) => z.raeume.filter((r) => Modell.raumtypDesRaums(r) === ty).sort((a, b) => a.kapazitaet - b.kapazitaet || a.id.localeCompare(b.id)));
     const kapTyp = new Int16Array(Math.max(1, typen.length) * NS);
     typen.forEach((_, ty) => {
       for (let d = 0; d < T; d++) {
@@ -152,7 +152,7 @@ const Planer = (() => {
     // Gewichte und weitere Konstanten für die weichen Regeln
     const g = e.gewichte;
     const hauptfach = F.map((f) => !!f.hauptfach);
-    const sport = F.map((f) => f.raumtyp === 'turnhalle' || f.raumtyp === 'schwimmhalle');
+    const sport = F.map((f) => Modell.SONDERRAUMTYPEN.includes(Modell.raumtypSchluessel(f.raumtyp)));
     const blockMax = F.map((f) => (f.blockbar ? 2 : 1));
     const nachmittag = ix.stunden.map((nr) => !ix.istVormittag(nr));
     const nachPause = ix.stunden.map((nr, h) => h > 0 && ix.pauseVor.has(nr));
@@ -160,7 +160,7 @@ const Planer = (() => {
 
     return {
       z, ix, e, T, H, NS, L, K, F, lIdx, fIdx, gesperrt, freieSlots, typen, fachTyp, raeumeJeTyp, kapTyp, heimatGesperrt,
-      g, hauptfach, sport, blockMax, nachmittag, nachPause, doppelStart,
+      g, hauptfach, sport, blockMax, nachmittag, nachPause, doppelStart, typen,
       // werden in den folgenden Schritten gefüllt:
       items: [], ausfall: [], warnungen: [], vorpruefung: null, untereSchrankeK1: 0,
       itemsJeKlasse: K.map(() => []), laenge: new Int16Array(K.length * T), pos: null, grid: null,
@@ -179,11 +179,27 @@ const Planer = (() => {
     const belegt = new Float64Array(L.length);
     const auftraege = []; // { c, f, stunden, zuteilung: [{t, n}] }
 
+    // 0. Fächer, für die es keinen passenden Raum gibt, können nicht stattfinden – vorab herausnehmen,
+    //    damit sie die übrigen Stunden nicht verdrängen
+    const ohneRaum = [];
     // 1. Festzuordnungen (nur qualifizierte Hauptlehrkräfte, bis zur Höchstgrenze)
     K.forEach((k, c) => {
       for (const eintrag of k.stundentafel) {
         const a = { c, f: fIdx.get(eintrag.fach), stunden: eintrag.stunden, rest: eintrag.stunden, zuteilung: [] };
         auftraege.push(a);
+        const ty = p.fachTyp[a.f];
+        if (ty >= 0) {
+          const raumtyp = p.typen[ty];
+          const grund = !p.raeumeJeTyp[ty].length ? `kein Raum vom Typ „${raumtyp}“ vorhanden`
+            : !p.raeumeJeTyp[ty].some((r) => r.kapazitaet >= k.schueler) ? `kein Raum vom Typ „${raumtyp}“ mit ${k.schueler} Plätzen` : null;
+          if (grund) {
+            p.ausfall.push({ klasse: k.id, fach: eintrag.fach, stunden: eintrag.stunden, grund });
+            ohneRaum.push(`${k.name} ${ix.name.fach(eintrag.fach)}: ${grund} – ${eintrag.stunden} Stunde(n) können nicht geplant werden`);
+            a.rest = 0;
+            a.ohneRaum = true;
+            continue;
+          }
+        }
         const id = ix.zuordnungVon(k.id, eintrag.fach).haupt;
         if (!id) continue;
         const t = lIdx.get(id);
@@ -229,6 +245,7 @@ const Planer = (() => {
       }
     }
 
+    p.warnungen.unshift(...ohneRaum);
     // 3. Ausfall aus der Zuweisung, Stunden erzeugen
     for (const a of auftraege) {
       const k = K[a.c];
@@ -248,7 +265,8 @@ const Planer = (() => {
       const stufen = new Set(auftraege.filter((a) => a.f === fi).map((a) => K[a.c].stufe));
       const kapazitaet = L.reduce((s, l, t) => s + ([...stufen].some((st) => ix.istQualifiziert(l.id, f.id, st)) ? Math.max(0, nutzbar[t]) : 0), 0);
       const erwarteterAusfall = p.ausfall.filter((x) => x.fach === f.id).reduce((s, x) => s + x.stunden, 0);
-      return { fach: f.id, bedarf, kapazitaet, erwarteterAusfall };
+      const ausfallPersonal = p.ausfall.filter((x) => x.fach === f.id && x.grund.startsWith('keine qualifizierte')).reduce((s, x) => s + x.stunden, 0);
+      return { fach: f.id, bedarf, kapazitaet, erwarteterAusfall, ausfallPersonal };
     }).filter(Boolean);
     const aufsichtBedarf = p.T * p.ix.pausen.reduce((s, pa) => s + pa.aufsichten, 0);
     p.vorpruefung = {
@@ -261,7 +279,7 @@ const Planer = (() => {
       p.warnungen.push(`Aufsichtssoll (${p.vorpruefung.aufsichten.soll}) reicht nicht für den Wochenbedarf (${aufsichtBedarf}) – Aufsichten bleiben unbesetzt`);
     }
     for (const x of jeFach) {
-      if (x.erwarteterAusfall) p.warnungen.push(`${ix.name.fach(x.fach)}: Bedarf ${x.bedarf}, Kapazität qualifizierter Lehrkräfte ${x.kapazitaet} – mindestens ${x.erwarteterAusfall} Stunde(n) Ausfall`);
+      if (x.ausfallPersonal) p.warnungen.push(`${ix.name.fach(x.fach)}: Bedarf ${x.bedarf}, Kapazität qualifizierter Lehrkräfte ${x.kapazitaet} – mindestens ${x.ausfallPersonal} Stunde(n) Ausfall`);
     }
   }
 
