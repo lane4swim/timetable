@@ -217,7 +217,7 @@ test('Zuordnung: Stunden, Haupt- und Zweitlehrkraft, Soll/Ist, Warnungen', async
   // Stunden wieder eintragen, Doppelstunde
   await eingeben(feld(ku, 'std'), '2');
   await seite.locator(`#zuordnung-matrix [data-zeile="${k.id}"][data-spalte="${ku.id}|doppelt"]`).check();
-  assert.deepEqual((await daten()).klassen[0].stundentafel.find((e) => e.fach === ku.id), { fach: ku.id, stunden: 2, doppelt: true });
+  assert.deepEqual((await daten()).klassen[0].stundentafel.find((e) => e.fach === ku.id), { fach: ku.id, stunden: 2, doppelt: true, tagesende: false });
   // Überschreitung der Höchstgrenze wird gewarnt
   const l = d.lehrkraefte[0];
   await seite.evaluate((id) => window.Stundenplan.App.aendere('Test', (x) => { const lk = x.lehrkraefte.find((y) => y.id === id); lk.sollStunden = 1; lk.minStunden = 0; lk.maxStunden = 1; }), l.id);
@@ -290,4 +290,21 @@ test('Benötigter Raumtyp ist eine Auswahl mit Turnhalle, Schwimmhalle und Fachr
   await seite.evaluate((id) => window.Stundenplan.App.aendere('Test', (x) => { x.faecher.find((f) => f.id === id).raumtyp = 'Turnhalle'; }), sp.id);
   assert.equal(await auswahl.inputValue(), 'turnhalle');
   assert.deepEqual(fehler, []);
+});
+
+test('Zuordnung: Option „Tagesende“ (E) neben „Doppelstunde“ (D)', async () => {
+  await seite.click('#reiter-zuordnung');
+  const d = await daten();
+  const k = d.klassen[0];
+  const fach = k.stundentafel[0].fach;
+  const kasten = seite.locator(`#zuordnung-matrix [data-zeile="${k.id}"][data-spalte="${fach}|tagesende"]`);
+  assert.equal(await kasten.isChecked(), false);
+  await kasten.check();
+  assert.equal((await daten()).klassen[0].stundentafel[0].tagesende, true);
+  assert.match(await seite.getAttribute('#knopf-rueckgaengig', 'title'), /Tagesende geändert/);
+  await kasten.uncheck();
+  assert.equal((await daten()).klassen[0].stundentafel[0].tagesende, false);
+  // ohne Wochenstunden nicht wählbar
+  const frei = d.faecher.find((f) => !k.stundentafel.some((e) => e.fach === f.id));
+  if (frei) assert.equal(await seite.locator(`#zuordnung-matrix [data-zeile="${k.id}"][data-spalte="${frei.id}|tagesende"]`).isDisabled(), true);
 });

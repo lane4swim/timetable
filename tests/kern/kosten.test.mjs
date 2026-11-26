@@ -35,6 +35,7 @@ describe('gültiger Miniplan – von Hand nachgerechnet', () => {
       W10: 0,
       W11: 2, // D 0 von 2 Aufsichten
       W12: 0,
+      W13: 0,
     });
     assert.equal(b.weich.W1.beitrag, 40);
     assert.equal(b.weich.W8.gewicht, 6);
@@ -154,6 +155,17 @@ describe('weiche Regeln im Einzelnen', () => {
     z.plan.aufsichten.push({ tag: 'Mo', vorStunde: 1, lehrkraft: 'l-c' }); // C hat Mo erst die 2. Stunde
     z.plan.aufsichten.push({ tag: 'Mo', vorStunde: 3, lehrkraft: 'l-a' }); // A zweimal am Mo
     assert.equal(bewerte(z).weich.W12.anzahl, 2);
+  });
+  test('W13: Fach am Tagesende – je Stunde die Zahl anderer Stunden danach', () => {
+    const z = miniSchule();
+    z.klassen[0].stundentafel.find((e) => e.fach === 'f-sp').tagesende = true; // SP 1a Mo 3 = letzte Stunde
+    assert.equal(bewerte(z).weich.W13.anzahl, 0);
+    z.klassen[0].stundentafel.find((e) => e.fach === 'f-ma').tagesende = true; // MA Mo 1–2, danach SP
+    const b = bewerte(z);
+    assert.equal(b.weich.W13.anzahl, 2, 'MA Mo 1: SP danach (1), MA Mo 2: SP danach (1)');
+    assert.match(b.weich.W13.posten[0].text, /1a Mo 1\. Stunde MA: 1 Stunde\(n\) danach/);
+    z.einstellungen.gewichte.W13 = 4;
+    assert.equal(bewerte(z).weich.W13.beitrag, 8);
   });
   test('Gewichte aus den Einstellungen', () => {
     const z = miniSchule();

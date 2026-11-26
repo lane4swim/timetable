@@ -348,37 +348,44 @@
         {
           "fach": "f-de",
           "stunden": 6,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-ma",
           "stunden": 5,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-su",
           "stunden": 3,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-sp",
           "stunden": 3,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-mu",
           "stunden": 1,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-ku",
           "stunden": 2,
-          "doppelt": true
+          "doppelt": true,
+          "tagesende": false
         },
         {
           "fach": "f-re",
           "stunden": 2,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         }
       ]
     },
@@ -393,37 +400,44 @@
         {
           "fach": "f-de",
           "stunden": 6,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-ma",
           "stunden": 5,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-su",
           "stunden": 3,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-sp",
           "stunden": 3,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-mu",
           "stunden": 1,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-ku",
           "stunden": 2,
-          "doppelt": true
+          "doppelt": true,
+          "tagesende": false
         },
         {
           "fach": "f-re",
           "stunden": 2,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         }
       ]
     },
@@ -438,37 +452,44 @@
         {
           "fach": "f-de",
           "stunden": 6,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-ma",
           "stunden": 5,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-su",
           "stunden": 3,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-sp",
           "stunden": 3,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-mu",
           "stunden": 2,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-ku",
           "stunden": 2,
-          "doppelt": true
+          "doppelt": true,
+          "tagesende": false
         },
         {
           "fach": "f-re",
           "stunden": 2,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         }
       ]
     },
@@ -483,37 +504,44 @@
         {
           "fach": "f-de",
           "stunden": 6,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-ma",
           "stunden": 5,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-su",
           "stunden": 3,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-sp",
           "stunden": 3,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-mu",
           "stunden": 2,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         },
         {
           "fach": "f-ku",
           "stunden": 2,
-          "doppelt": true
+          "doppelt": true,
+          "tagesende": false
         },
         {
           "fach": "f-re",
           "stunden": 2,
-          "doppelt": false
+          "doppelt": false,
+          "tagesende": false
         }
       ]
     }
@@ -701,7 +729,8 @@
       "W9": 4,
       "W10": 3,
       "W11": 5,
-      "W12": 3
+      "W12": 3,
+      "W13": 4
     },
     "maxDoppelbetreuungProTag": 1,
     "maxDoppelbetreuungStundenAmStueck": 2,

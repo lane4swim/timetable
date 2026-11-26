@@ -598,12 +598,16 @@ const Planer = (() => {
       const f = p.fIdx.get(e.fach);
       if (e.doppelt && F[f].blockbar) gewuenscht[c * nF + f] = Math.floor(e.stunden / 2);
     }));
+    // Fach am Tagesende gewünscht (W13)
+    const amEnde = new Uint8Array(K.length * nF);
+    K.forEach((k, c) => k.stundentafel.forEach((e) => { if (e.tagesende) amEnde[c * nF + p.fIdx.get(e.fach)] = 1; }));
+    const gewichtEnde = g.W13 ?? 0;
     const paare = new Int16Array(K.length * nF * T);
     const cd = new Float64Array(K.length * T);
     const w3 = new Float64Array(K.length);
     const td = new Float64Array(L.length * T);
 
-    /** Kosten eines Klassentags (W1, W4, W5, W6) und Doppelstunden-Paare des Tages. */
+    /** Kosten eines Klassentags (W1, W4, W5, W6, W13) und Doppelstunden-Paare des Tages. */
     function klassentag(c, d) {
       const len = p.laenge[c * T + d];
       const basis = c * p.NS + d * H;
@@ -611,12 +615,16 @@ const Planer = (() => {
       let w4 = 0;
       let w5 = 0;
       let w6 = 0;
+      let w13 = 0;
       let letzterRaum = -2;
       for (let f = 0; f < nF; f++) paare[(c * nF + f) * T + d] = 0;
       for (let h = 0; h < len; h++) {
         const it = items[p.grid[basis + h]];
         if (p.hauptfach[it.f] && p.nachmittag[h]) w4++;
         if (p.sport[it.f] && p.nachPause[h]) w4++;
+        if (gewichtEnde && amEnde[c * nF + it.f]) {
+          for (let x = h + 1; x < len; x++) if (items[p.grid[basis + x]].f !== it.f) w13++;
+        }
         const raum = it.typ;
         if (h > 0 && raum !== letzterRaum) w6++;
         letzterRaum = raum;
@@ -639,7 +647,7 @@ const Planer = (() => {
         if (h === 0 || items[p.grid[basis + h - 1]].f !== f) bloecke.set(f, (bloecke.get(f) || 0) + 1);
       }
       for (const b of bloecke.values()) w5 += b - 1;
-      return k + g.W4 * w4 + g.W5 * w5 + g.W6 * w6;
+      return k + g.W4 * w4 + g.W5 * w5 + g.W6 * w6 + gewichtEnde * w13;
     }
     function w3Klasse(c) {
       let fehlt = 0;

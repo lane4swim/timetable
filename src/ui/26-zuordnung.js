@@ -15,7 +15,7 @@ const ZuordnungReiter = (() => {
     panel = ziel;
     const el = App.el;
     panel.append(
-      el('p', { class: 'hinweis', text: 'Je Zelle: Wochenstunden (Std), Hauptlehrkraft (H) und Zweitlehrkraft (Z) als Kürzel, D = Doppelstunde gewünscht. Leere Stunden entfernen das Fach aus der Stundentafel.' }),
+      el('p', { class: 'hinweis', text: 'Je Zelle: Wochenstunden (Std), Hauptlehrkraft (H) und Zweitlehrkraft (Z) als Kürzel, D = Doppelstunde gewünscht, E = am Tagesende gewünscht. Leere Stunden entfernen das Fach aus der Stundentafel.' }),
       el('datalist', { id: 'liste-lehrkraefte' }),
       el('div', { class: 'meldungen', id: 'zuordnung-meldung', 'aria-live': 'polite' }),
       el('div', { class: 'tabellen-rahmen' }, el('table', { class: 'tabelle matrix', id: 'zuordnung-matrix' })),
@@ -85,10 +85,15 @@ const ZuordnungReiter = (() => {
       el('label', {}, el('span', { text: 'Std' }), feld('std', 'Wochenstunden', { inputmode: 'numeric' })),
       el('label', {}, el('span', { text: 'H' }), feld('haupt', 'Hauptlehrkraft', { list: 'liste-lehrkraefte' })),
       el('label', {}, el('span', { text: 'Z' }), feld('zweit', 'Zweitlehrkraft', { list: 'liste-lehrkraefte' })),
-      el('label', { class: 'matrix-doppel' }, el('input', {
-        type: 'checkbox', 'aria-label': `Doppelstunde gewünscht ${wo}`, 'data-art': 'doppelt',
-        'data-zeile': k.id, 'data-spalte': f.id + '|doppelt', onchange: (e) => uebernehme(k.id, f.id, 'doppelt', e.target.checked, e.target),
-      }), el('span', { text: 'D' })));
+      el('div', { class: 'matrix-optionen' },
+        el('label', { class: 'matrix-doppel', title: 'Doppelstunde gewünscht' }, el('input', {
+          type: 'checkbox', 'aria-label': `Doppelstunde gewünscht ${wo}`, 'data-art': 'doppelt',
+          'data-zeile': k.id, 'data-spalte': f.id + '|doppelt', onchange: (e) => uebernehme(k.id, f.id, 'doppelt', e.target.checked, e.target),
+        }), el('span', { text: 'D' })),
+        el('label', { class: 'matrix-doppel', title: 'am Tagesende gewünscht' }, el('input', {
+          type: 'checkbox', 'aria-label': `Tagesende gewünscht ${wo}`, 'data-art': 'tagesende',
+          'data-zeile': k.id, 'data-spalte': f.id + '|tagesende', onchange: (e) => uebernehme(k.id, f.id, 'tagesende', e.target.checked, e.target),
+        }), el('span', { text: 'E' }))));
     zellen.set(k.id + '|' + f.id, td);
     return td;
   }
@@ -103,9 +108,10 @@ const ZuordnungReiter = (() => {
       input.defaultValue = w; // Vergleichswert für „geändert?“ (Enter/↑/↓)
       if (!unberuehrt) input.value = w;
     }
-    const doppel = td.querySelector('input[type=checkbox]');
-    doppel.checked = !!eintrag?.doppelt;
-    doppel.disabled = !eintrag;
+    for (const kasten of td.querySelectorAll('input[type=checkbox]')) {
+      kasten.checked = !!eintrag?.[kasten.dataset.art];
+      kasten.disabled = !eintrag;
+    }
     td.classList.toggle('leer', !eintrag);
     td.querySelector('.marke')?.remove();
     const warnung = zu.haupt && eintrag && !ix.istQualifiziert(zu.haupt, f.id, k.stufe);
@@ -137,7 +143,7 @@ const ZuordnungReiter = (() => {
     let lokal = null;
     const d0 = App.zustand.daten;
     const wo = `${d0.faecher.find((f) => f.id === fachId)?.kuerzel} ${d0.klassen.find((k) => k.id === klasseId)?.name}`;
-    const titel = { std: 'Wochenstunden', haupt: 'Hauptlehrkraft', zweit: 'Zweitlehrkraft', doppelt: 'Doppelstunde' }[art];
+    const titel = { std: 'Wochenstunden', haupt: 'Hauptlehrkraft', zweit: 'Zweitlehrkraft', doppelt: 'Doppelstunde', tagesende: 'Tagesende' }[art];
     const r = App.aendere(`Zuordnung ${wo}: ${titel} geändert`, (d) => {
       const k = d.klassen.find((x) => x.id === klasseId);
       const eintrag = k.stundentafel.find((e) => e.fach === fachId);
@@ -152,14 +158,14 @@ const ZuordnungReiter = (() => {
         if (!Number.isInteger(n) || n < 1 || n > 20) { lokal = 'Bitte eine ganze Zahl von 0 bis 20 eingeben.'; return false; }
         if (eintrag) eintrag.stunden = n;
         else {
-          k.stundentafel.push({ fach: fachId, stunden: n, doppelt: false });
+          k.stundentafel.push({ fach: fachId, stunden: n, doppelt: false, tagesende: false });
           const reihenfolge = d.faecher.map((f) => f.id);
           k.stundentafel.sort((a, b) => reihenfolge.indexOf(a.fach) - reihenfolge.indexOf(b.fach));
         }
         return;
       }
       if (!eintrag) { lokal = 'Bitte zuerst Wochenstunden eintragen.'; return false; }
-      if (art === 'doppelt') { eintrag.doppelt = !!roh; return; }
+      if (art === 'doppelt' || art === 'tagesende') { eintrag[art] = !!roh; return; }
       const t = String(roh).trim();
       let lehrkraft = null;
       if (t) {

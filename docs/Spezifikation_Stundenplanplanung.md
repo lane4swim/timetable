@@ -31,7 +31,7 @@ Alle Entitäten haben eine stabile `id` (String, vom Programm vergeben) und werd
 | Lehrkraft | Name, Kürzel, Qualifikationen (Fächer + Stufenbereich), Soll-Stunden pro Woche, Mindest-/Höchstgrenze, Teilzeitfaktor, Aufsichten pro Woche (individuell), Abwesenheiten, nicht verfügbare Zeitfenster | Personalressource |
 | Raum | Name, Raumtyp (Klassenraum, Fachraum, Turnhalle, Schwimmhalle), Fachraumtyp (bei Fachräumen, z. B. NaWi, Musik), Kapazität, Sperrzeiten, Abwesenheiten (datumsgenau) | Raumressource |
 | Klasse | Name, Stufe, Schülerzahl, Klassenlehrkraft, Heimatraum, Stundentafel | Planungsobjekt |
-| Stundentafel | je Fach: Wochenstunden, Doppelstunde gewünscht (ja/nein) | Bedarf der Klasse |
+| Stundentafel | je Fach: Wochenstunden, Doppelstunde gewünscht (ja/nein), am Tagesende gewünscht (ja/nein) | Bedarf der Klasse |
 | Zuordnung (Fest) | Klasse, Fach, Lehrkraft, Rolle (Haupt oder Zweit) | Vorgabe: Wer unterrichtet was dauerhaft; je Klasse und Fach 1–2 Lehrkräfte |
 | Abwesenheit | Lehrkraft oder Raum, Von, Bis, Grund (optional) | Auslöser für Vertretungsplanung |
 | Unterrichtsstunde (Ergebnis) | Klasse, Fach, Lehrkräfte (1–2; die erste ist die Hauptlehrkraft), Raum, Tag, Stunde, Status | Ergebnis der Planung |
@@ -98,6 +98,7 @@ Harte Regeln dürfen in keinem erzeugten Plan verletzt sein. Bei manueller Bearb
 | W10 | Beständigkeit: dieselbe Zweitlehrkraft in derselben Klasse und demselben Fach über die Woche | 3 |
 | W11 | Aufsichtssoll erfüllen: je Aufsicht, die eine Lehrkraft unter ihrem Soll bleibt | 5 |
 | W12 | Aufsicht angrenzend an eigenen Unterricht: Die Lehrkraft unterrichtet direkt vor oder nach der Pause (bei Frühaufsicht: in der 1. Stunde); keine Aufsichten gehäuft an einem Tag | 3 |
+| W13 | Fach am Tagesende, wo die Stundentafel es wünscht: je Stunde des Fachs zählt jede Stunde eines anderen Fachs, die an diesem Tag danach folgt | 4 |
 
 Die Gewichte sind in der Oberfläche änderbar und werden im JSON gespeichert.
 
@@ -241,7 +242,7 @@ Das folgende Beispiel ist gekürzt (nur zwei Stunden im Zeitraster, nicht alle r
     {
       "id": "k-2a", "name": "2a", "stufe": 2, "schueler": 24,
       "klassenlehrkraft": "l-mue", "heimatraum": "r-101",
-      "stundentafel": [ { "fach": "f-ma", "stunden": 5, "doppelt": false } ]
+      "stundentafel": [ { "fach": "f-ma", "stunden": 5, "doppelt": false, "tagesende": false } ]
     }
   ],
   "zuordnungen": [
@@ -249,7 +250,7 @@ Das folgende Beispiel ist gekürzt (nur zwei Stunden im Zeitraster, nicht alle r
     { "klasse": "k-2a", "fach": "f-ma", "lehrkraft": "l-bau", "rolle": "zweit", "zweck": "Förderung" }
   ],
   "einstellungen": {
-    "gewichte": { "W1": 10, "W2": 5, "W3": 8, "W4": 3, "W5": 4, "W6": 2, "W7": 2, "W8": 6, "W9": 4, "W10": 3, "W11": 5, "W12": 3 },
+    "gewichte": { "W1": 10, "W2": 5, "W3": 8, "W4": 3, "W5": 4, "W6": 2, "W7": 2, "W8": 6, "W9": 4, "W10": 3, "W11": 5, "W12": 3, "W13": 4 },
     "maxDoppelbetreuungProTag": 1,
     "zweitbesetzungErlaubt": true,
     "maxLehrkraefteProKlasseUndSlot": 2,

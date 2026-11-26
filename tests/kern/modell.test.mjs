@@ -31,7 +31,7 @@ test('Leerer Zustand: Schemaversion, Bereiche, Einstellungen', () => {
   assert.equal(z.schemaVersion, 1);
   for (const k of ['faecher', 'lehrkraefte', 'raeume', 'klassen', 'zuordnungen']) assert.deepEqual(z[k], []);
   assert.deepEqual(Object.keys(z.plan), ['regelplan', 'aufsichten', 'vertretungen', 'aufsichtsVertretungen']);
-  assert.deepEqual(Object.keys(z.einstellungen.gewichte), ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12']);
+  assert.deepEqual(Object.keys(z.einstellungen.gewichte), ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12', 'W13']);
   assert.equal(z.einstellungen.vertretungsreserveProzent, 10);
   assert.equal(z.einstellungen.maxLehrkraefteProKlasseUndSlot, 2);
   // Zwei Aufrufe liefern unabhängige Objekte
