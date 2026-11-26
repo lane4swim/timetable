@@ -31,6 +31,7 @@ const Schema = (() => {
     tag: (o = {}) => ({ art: 'tag', ...o }),
     stunde: (o = {}) => ({ art: 'stunde', ...o }),
     pause: (o = {}) => ({ art: 'pause', ...o }),
+    farbe: (o = {}) => ({ art: 'farbe', ...o }),
   };
   const P = { pflicht: true };
 
@@ -56,6 +57,7 @@ const Schema = (() => {
     raumtyp: T.text({ nullbar: true, nichtLeer: true, standard: null }),
     blockbar: T.bool({ standard: true }),
     hauptfach: T.bool({ standard: false }),
+    farbe: T.farbe(),
   });
 
   const LEHRKRAFT = T.objekt({
@@ -74,6 +76,7 @@ const Schema = (() => {
     aufsichtenProWoche: T.ganz({ min: 0, max: 50, standard: 0 }),
     gesperrt: T.liste(SPERRE, { standard: () => [] }),
     abwesenheiten: T.liste(ABWESENHEIT, { standard: () => [] }),
+    farbe: T.farbe(),
   });
 
   const RAUM = T.objekt({
@@ -327,6 +330,9 @@ const Schema = (() => {
         return;
       case 'stunde':
         if (!Number.isInteger(wert) || !kx.stunden.has(wert)) fehler(kx, pfad, `Stunde ${zeige(wert)} gibt es im Zeitraster nicht`);
+        return;
+      case 'farbe':
+        if (typeof wert !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(wert)) fehler(kx, pfad, `muss eine Farbe im Format #rrggbb sein, ist ${zeige(wert)}`);
         return;
       case 'pause':
         if (!Number.isInteger(wert) || !kx.pausen.has(wert)) fehler(kx, pfad, `vor Stunde ${zeige(wert)} ist keine Pause festgelegt`);

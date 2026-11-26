@@ -181,12 +181,11 @@ body.ablage-aktiv::after {
 .zelle.ziel, .zelle.aufgenommen-ziel { background: #e5eefc; box-shadow: inset 0 0 0 2px var(--akzent); }
 .pausenzeile th, .pausenzeile td { background: #f0f2f5; font-size: .8rem; padding: 2px 4px; }
 .pausenzeile .zelle { height: auto; min-height: 22px; }
-.karte { background: #eaf1fb; border: 1px solid #b8cbe8; border-radius: 4px; padding: 2px 4px; font-size: .85rem; line-height: 1.3; cursor: grab; margin-bottom: 2px; }
+.karte { background: #eaf1fb; border: 1px solid rgba(26, 29, 35, .18); border-radius: 4px; padding: 2px 5px; font-size: .85rem; line-height: 1.3; cursor: grab; margin-bottom: 2px; }
 .karte.aufgenommen, .chip.aufgenommen { outline: 3px dashed var(--akzent); }
-.karte.konflikt { border: 2px solid var(--fehler); background: #fdecea; }
+.karte.konflikt { outline: 2px solid var(--fehler); outline-offset: 0; }
 .karte.status-aufgeteilt { background: #e6e6e6; border-color: #9a9a9a; color: #333; }
 .karte.status-entfaellt { background: #fff; border-style: dashed; color: var(--text-leise); }
-.karte.status-vertreten, .karte.status-doppeltBetreut, .karte.status-aufsicht { background: #fff4e0; border-color: #d9a650; }
 .karte-lehrer, .karte-raum { font-size: .8rem; color: var(--text-leise); }
 .karte-lehrer .zweit { color: var(--text); }
 .konflikt-marke { color: var(--fehler); font-weight: 700; font-size: .78rem; }
@@ -194,7 +193,10 @@ body.ablage-aktiv::after {
 .gaeste { display: inline-block; font-size: .78rem; background: #eee; border-radius: 3px; padding: 0 4px; }
 .mini { font: inherit; font-size: .8rem; line-height: 1; padding: 0 3px; border: 1px solid var(--linie-kraeftig); border-radius: 3px; background: #fff; cursor: pointer; }
 .chip { display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: .82rem; padding: 1px 6px; margin: 1px 3px 1px 0; border-radius: 10px; border: 1px solid #b8cbe8; background: #eaf1fb; color: var(--text); cursor: grab; }
-.chip.konflikt { border: 2px solid var(--fehler); background: #fdecea; }
+.chip.konflikt { outline: 2px solid var(--fehler); background: #fdecea; }
+.farbmuster { display: inline-block; font-size: .8rem; padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(26, 29, 35, .18); background: var(--flaeche); }
+.farbe-zelle { white-space: nowrap; }
+.farbe-zelle input[type=color] { width: 2.4em; height: 1.8em; padding: 0 2px; border: 1px solid var(--linie-kraeftig); border-radius: 4px; vertical-align: middle; }
 .chip.quelle { cursor: grab; }
 .bedarf { font-size: .78rem; color: var(--text-leise); margin-left: 4px; }
 .bedarf.fehlt { color: var(--fehler); font-weight: 700; }
@@ -237,7 +239,7 @@ body.ablage-aktiv::after {
   .druckseite h2 { font-size: 14pt; margin: 0 0 2pt; }
   .raster { width: 100%; font-size: 9pt; }
   .raster th, .raster td { border: 1px solid #555; }
-  .karte { border: 1px solid #777; background: #fff !important; }
+  .karte, .chip, .farbmuster { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .zelle { height: auto; }
   .kopf, .reiterleiste, .fuss, .dialog { display: none; }
   .panel { border: none; padding: 0; min-height: 0; }

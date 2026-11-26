@@ -172,6 +172,7 @@ const PlanReiter = (() => {
     const k = el('div', {
       class: 'karte' + (regeln ? ' konflikt' : '') + ' status-' + s.status, 'data-index': String(i),
       draggable: fuerDruck ? null : 'true', title: regeln ? info.texte.get('s' + i).join('\n') : null,
+      style: kartenStil(d, s),
     });
     const fach = s.fach ? n.fach(s.fach) : '–';
     const statusText = { vertreten: 'vertreten', doppeltBetreut: '⇄', aufgeteilt: 'aufgeteilt', entfaellt: 'entfällt', aufsicht: 'Aufsicht' }[s.status];
@@ -202,6 +203,18 @@ const PlanReiter = (() => {
     return k;
   }
 
+  /**
+   * Farben einer Karte: Hintergrund nach Fach, Balken links nach Hauptlehrkraft,
+   * schmaler Balken rechts nach Zweitbesetzung. Entfall und Aufteilung bleiben neutral.
+   */
+  function kartenStil(d, s) {
+    const teile = [];
+    if (s.fach && s.status !== 'entfaellt' && s.status !== 'aufgeteilt') teile.push(`background-color:${Kern.Farben.fach(d, s.fach)}`);
+    if (s.lehrkraefte[0]) teile.push(`border-left:6px solid ${Kern.Farben.lehrkraft(d, s.lehrkraefte[0])}`);
+    if (s.lehrkraefte[1]) teile.push(`border-right:4px solid ${Kern.Farben.lehrkraft(d, s.lehrkraefte[1])}`);
+    return teile.join(';') || null;
+  }
+
   function aufsichtChip(d, info, i, fuerDruck) {
     const el = App.el;
     const a = d.plan.aufsichten[i];
@@ -209,6 +222,7 @@ const PlanReiter = (() => {
     const chip = el('span', {
       class: 'chip' + (regeln ? ' konflikt' : ''), 'data-aufsicht': String(i), draggable: fuerDruck ? null : 'true',
       title: regeln ? info.texte.get('a' + i).join('\n') : null,
+      style: `border-left:5px solid ${Kern.Farben.lehrkraft(d, a.lehrkraft)}`,
     }, ansicht.art === 'lehrkraft' && !fuerDruck ? 'Aufsicht' : (d.lehrkraefte.find((l) => l.id === a.lehrkraft)?.kuerzel || a.lehrkraft));
     if (regeln) chip.append(el('span', { class: 'konflikt-marke', text: ' ⚠ ' + [...regeln].join(' ') }));
     if (!fuerDruck) {
@@ -264,14 +278,33 @@ const PlanReiter = (() => {
     const aufsicht = el('section', { class: 'seiten-block', id: 'plan-aufsicht-offen' },
       el('h3', { text: 'Aufsichtssoll offen' }),
       offen.length ? el('div', { class: 'chips' }, ...offen.map((f) => quelle(d, f.lehrkraft, `noch ${f.offen}`, 'aufsichtNeu'))) : el('p', { class: 'leise', text: 'Keine.' }));
+    const farben = farblegende(d, ix);
     const legende = el('section', { class: 'seiten-block' }, el('h3', { text: 'Zeichen' }),
       el('ul', { class: 'legende' }, ...[['⚠ H1', 'Verstoß gegen harte Regel (Nummer)'], ['+KÜR', 'Zweitbesetzung'], ['(2.)', 'Lehrkraft ist hier Zweitbesetzung'], ['⇄', 'Doppelbetreuung'], ['aufgeteilt / + n Gäste', 'Aufteilung einer Klasse']]
         .map(([z, t]) => el('li', {}, el('strong', { text: z }), ' – ' + t))));
     const teile = [konflikte];
     if (ansicht.art !== 'aufsicht') teile.push(kontingente);
     if (ansicht.art === 'aufsicht' || ansicht.art === 'lehrkraft') teile.push(aufsicht);
+    if (farben) teile.push(farben);
     teile.push(legende);
     seite.replaceChildren(...teile);
+  }
+
+  /** Farblegende der aktuellen Ansicht: Fächer (Kartenfarbe) und Lehrkräfte (Balken). */
+  function farblegende(d, ix) {
+    const el = App.el;
+    const sichtbar = d.plan.regelplan.filter((s) => (ansicht.art === 'klasse' ? s.klasse === ansicht.id
+      : ansicht.art === 'lehrkraft' ? s.lehrkraefte.includes(ansicht.id) : ansicht.art === 'raum' ? s.raum === ansicht.id : false));
+    const faecher = [...new Set(sichtbar.map((s) => s.fach).filter(Boolean))].sort((a, b) => ix.name.fach(a).localeCompare(ix.name.fach(b)));
+    const lehrer = [...new Set(ansicht.art === 'aufsicht' ? d.plan.aufsichten.map((a) => a.lehrkraft) : sichtbar.flatMap((s) => s.lehrkraefte))]
+      .sort((a, b) => ix.name.lehrkraft(a).localeCompare(ix.name.lehrkraft(b)));
+    if (!faecher.length && !lehrer.length) return null;
+    return el('section', { class: 'seiten-block', id: 'plan-farben' }, el('h3', { text: 'Farben' }),
+      faecher.length ? el('p', { class: 'leise', text: 'Kartenfarbe = Fach' }) : null,
+      faecher.length ? el('div', { class: 'chips' }, ...faecher.map((f) => el('span', { class: 'farbmuster', 'data-fach': f, style: `background-color:${Kern.Farben.fach(d, f)}`, text: ix.name.fach(f), title: ix.faecher.get(f)?.name }))) : null,
+      lehrer.length ? el('p', { class: 'leise', text: 'Balken links = Lehrkraft (rechts: Zweitbesetzung)' }) : null,
+      lehrer.length ? el('div', { class: 'chips' }, ...lehrer.map((l) => el('span', { class: 'farbmuster', 'data-lehrkraft': l, style: `border-left:6px solid ${Kern.Farben.lehrkraft(d, l)}`, text: ix.name.lehrkraft(l), title: ix.lehrkraefte.get(l)?.name }))) : null,
+      el('p', { class: 'leise', text: 'Farben lassen sich im Reiter „Stammdaten“ ändern.' }));
   }
 
   function quelle(d, lehrkraft, zusatz, art) {

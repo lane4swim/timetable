@@ -28,23 +28,41 @@ const ZuordnungReiter = (() => {
 
   const kuerzel = (d, id) => d.lehrkraefte.find((l) => l.id === id)?.kuerzel || '';
 
+  let aufbau = null; // Signatur von Klassen und Fächern der aufgebauten Matrix
+  let zellen = new Map(); // Klasse|Fach → td
+  let summen = new Map(); // Klasse → td
+
+  /**
+   * Zeichnet die Matrix. Bleiben Klassen und Fächer gleich, werden nur Werte
+   * aktualisiert, damit der Tabulator-Fokus erhalten bleibt.
+   */
   function render() {
     const d = App.zustand.daten;
     const el = App.el;
-    const aktiv = document.activeElement;
-    if (!fokusNach && aktiv && panel.contains(aktiv) && aktiv.dataset.zeile) fokusNach = { zeile: aktiv.dataset.zeile, spalte: aktiv.dataset.spalte };
     panel.querySelector('#liste-lehrkraefte').replaceChildren(...d.lehrkraefte.map((l) => el('option', { value: l.kuerzel, label: l.name })));
     const ix = Kern.Index.erstelle(d);
-    const matrix = panel.querySelector('#zuordnung-matrix');
-    const kopf = el('tr', {}, el('th', { scope: 'col', text: 'Klasse' }), ...d.faecher.map((f) => el('th', { scope: 'col', text: f.kuerzel, title: f.name })), el('th', { scope: 'col', class: 'zahl', text: 'Summe' }));
-    const zeilen = d.klassen.map((k) => {
+    const signatur = JSON.stringify([d.klassen.map((k) => [k.id, k.name]), d.faecher.map((f) => [f.id, f.kuerzel, f.name])]);
+    if (signatur !== aufbau) {
+      aufbau = signatur;
+      const aktiv = document.activeElement;
+      if (!fokusNach && aktiv && panel.contains(aktiv) && aktiv.dataset.zeile) fokusNach = { zeile: aktiv.dataset.zeile, spalte: aktiv.dataset.spalte };
+      zellen = new Map();
+      summen = new Map();
+      const matrix = panel.querySelector('#zuordnung-matrix');
+      const kopf = el('tr', {}, el('th', { scope: 'col', text: 'Klasse' }), ...d.faecher.map((f) => el('th', { scope: 'col', text: f.kuerzel, title: f.name })), el('th', { scope: 'col', class: 'zahl', text: 'Summe' }));
+      const zeilen = d.klassen.map((k) => {
+        const summe = el('td', { class: 'zahl' });
+        summen.set(k.id, summe);
+        return el('tr', {}, el('th', { scope: 'row', text: k.name }), ...d.faecher.map((f) => zelle(k, f)), summe);
+      });
+      matrix.replaceChildren(el('caption', { text: 'Stundentafel und Lehrkräfte je Klasse und Fach' }), el('thead', {}, kopf),
+        el('tbody', {}, ...(zeilen.length ? zeilen : [el('tr', {}, el('td', { colspan: String(d.faecher.length + 2), class: 'leise', text: 'Noch keine Klassen – bitte im Reiter „Stammdaten“ anlegen.' }))])));
+    }
+    for (const k of d.klassen) {
       const tafel = new Map(k.stundentafel.map((e) => [e.fach, e]));
-      return el('tr', {}, el('th', { scope: 'row', text: k.name }),
-        ...d.faecher.map((f) => zelle(d, ix, k, f, tafel.get(f.id))),
-        el('td', { class: 'zahl', text: String(k.stundentafel.reduce((s, e) => s + e.stunden, 0)) }));
-    });
-    matrix.replaceChildren(el('caption', { text: 'Stundentafel und Lehrkräfte je Klasse und Fach' }), el('thead', {}, kopf),
-      el('tbody', {}, ...(zeilen.length ? zeilen : [el('tr', {}, el('td', { colspan: String(d.faecher.length + 2), class: 'leise', text: 'Noch keine Klassen – bitte im Reiter „Stammdaten“ anlegen.' }))])));
+      for (const f of d.faecher) fuelle(zellen.get(k.id + '|' + f.id), d, ix, k, f, tafel.get(f.id));
+      summen.get(k.id).textContent = String(k.stundentafel.reduce((x, e) => x + e.stunden, 0));
+    }
     renderSollIst(d, ix);
     if (fokusNach) {
       const z = panel.querySelector(`[data-zeile="${CSS.escape(fokusNach.zeile)}"][data-spalte="${CSS.escape(fokusNach.spalte)}"]`);
@@ -53,36 +71,55 @@ const ZuordnungReiter = (() => {
     }
   }
 
-  function zelle(d, ix, k, f, eintrag) {
+  /** Baut eine leere Zelle (Felder ohne Werte); die Werte setzt fuelle(). */
+  function zelle(k, f) {
     const el = App.el;
-    const zu = ix.zuordnungVon(k.id, f.id);
     const wo = `${f.kuerzel} ${k.name}`;
-    const feld = (art, wert, beschr, extra = {}) => el('input', {
-      type: 'text', class: 'eingabe-' + art, value: wert, 'data-zeile': k.id, 'data-spalte': f.id + '|' + art,
+    const feld = (art, beschr, extra = {}) => el('input', {
+      type: 'text', class: 'eingabe-' + art, 'data-zeile': k.id, 'data-spalte': f.id + '|' + art, 'data-art': art,
       'aria-label': `${beschr} ${wo}`, spellcheck: 'false', autocomplete: 'off', ...extra,
       onchange: (e) => uebernehme(k.id, f.id, art, e.target.value, e.target),
       onkeydown: (e) => tasten(e, k.id, f.id, art),
     });
-    const td = el('td', { class: 'matrix-zelle' + (eintrag ? '' : ' leer') },
-      el('label', {}, el('span', { text: 'Std' }), feld('std', eintrag ? String(eintrag.stunden) : '', 'Wochenstunden', { inputmode: 'numeric' })),
-      el('label', {}, el('span', { text: 'H' }), feld('haupt', kuerzel(d, zu.haupt), 'Hauptlehrkraft', { list: 'liste-lehrkraefte' })),
-      el('label', {}, el('span', { text: 'Z' }), feld('zweit', kuerzel(d, zu.zweit[0]), 'Zweitlehrkraft', { list: 'liste-lehrkraefte' })),
+    const td = el('td', { class: 'matrix-zelle' },
+      el('label', {}, el('span', { text: 'Std' }), feld('std', 'Wochenstunden', { inputmode: 'numeric' })),
+      el('label', {}, el('span', { text: 'H' }), feld('haupt', 'Hauptlehrkraft', { list: 'liste-lehrkraefte' })),
+      el('label', {}, el('span', { text: 'Z' }), feld('zweit', 'Zweitlehrkraft', { list: 'liste-lehrkraefte' })),
       el('label', { class: 'matrix-doppel' }, el('input', {
-        type: 'checkbox', checked: !!eintrag?.doppelt, disabled: !eintrag, 'aria-label': `Doppelstunde gewünscht ${wo}`,
+        type: 'checkbox', 'aria-label': `Doppelstunde gewünscht ${wo}`, 'data-art': 'doppelt',
         'data-zeile': k.id, 'data-spalte': f.id + '|doppelt', onchange: (e) => uebernehme(k.id, f.id, 'doppelt', e.target.checked, e.target),
       }), el('span', { text: 'D' })));
-    if (zu.haupt && eintrag && !ix.istQualifiziert(zu.haupt, f.id, k.stufe)) {
-      td.classList.add('warnung');
-      td.append(el('span', { class: 'marke', title: `${kuerzel(d, zu.haupt)} ist für ${f.kuerzel} in Stufe ${k.stufe} nicht qualifiziert (H8) – der Planer weist die Stunden neu zu`, text: '⚠ H8' }));
-    }
+    zellen.set(k.id + '|' + f.id, td);
     return td;
+  }
+
+  /** Setzt die Werte einer Zelle (fokussierte oder ungültige Eingaben bleiben unberührt). */
+  function fuelle(td, d, ix, k, f, eintrag) {
+    const zu = ix.zuordnungVon(k.id, f.id);
+    const werte = { std: eintrag ? String(eintrag.stunden) : '', haupt: kuerzel(d, zu.haupt), zweit: kuerzel(d, zu.zweit[0]) };
+    for (const input of td.querySelectorAll('input[type=text]')) {
+      const w = werte[input.dataset.art];
+      const unberuehrt = input === document.activeElement || input.getAttribute('aria-invalid') === 'true';
+      input.defaultValue = w; // Vergleichswert für „geändert?“ (Enter/↑/↓)
+      if (!unberuehrt) input.value = w;
+    }
+    const doppel = td.querySelector('input[type=checkbox]');
+    doppel.checked = !!eintrag?.doppelt;
+    doppel.disabled = !eintrag;
+    td.classList.toggle('leer', !eintrag);
+    td.querySelector('.marke')?.remove();
+    const warnung = zu.haupt && eintrag && !ix.istQualifiziert(zu.haupt, f.id, k.stufe);
+    td.classList.toggle('warnung', !!warnung);
+    if (warnung) {
+      td.append(App.el('span', { class: 'marke', title: `${kuerzel(d, zu.haupt)} ist für ${f.kuerzel} in Stufe ${k.stufe} nicht qualifiziert (H8) – der Planer weist die Stunden neu zu`, text: '⚠ H8' }));
+    }
   }
 
   function tasten(e, klasse, fach, art) {
     const d = App.zustand.daten;
     const i = d.klassen.findIndex((k) => k.id === klasse);
     const r = e.key === 'Enter' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
-    if (e.key === 'Escape') { e.preventDefault(); render(); return; }
+    if (e.key === 'Escape') { e.preventDefault(); e.target.value = e.target.defaultValue; e.target.removeAttribute('aria-invalid'); panel.querySelector('#zuordnung-meldung').replaceChildren(); return; }
     if (!r) return;
     e.preventDefault();
     const ziel = d.klassen[i + r];
@@ -143,6 +180,7 @@ const ZuordnungReiter = (() => {
       return false;
     }
     meldung.replaceChildren();
+    eingabe.removeAttribute('aria-invalid');
     if (danach) fokusNach = danach;
     render();
     return true;
