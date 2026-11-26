@@ -193,6 +193,9 @@ body.ablage-aktiv::after {
 .pausenzeile .zelle { height: auto; min-height: 22px; }
 .karte { background: #eaf1fb; border: 1px solid rgba(26, 29, 35, .18); border-radius: 4px; padding: 2px 5px; font-size: .85rem; line-height: 1.3; cursor: grab; margin-bottom: 2px; }
 .karte.aufgenommen, .chip.aufgenommen { outline: 3px dashed var(--akzent); }
+/* Touchscreen: keine Textauswahl, keine Lupe/Kontextmenü beim Halten; Doppeltipp-Zoom aus */
+.raster .karte, .raster .chip, .chip.quelle { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+.geist { position: fixed; z-index: 100; pointer-events: none; opacity: .9; transform: translate(-50%, -60%) scale(1.05); box-shadow: 0 6px 18px rgba(0, 0, 0, .3); margin: 0; }
 .karte.konflikt { outline: 2px solid var(--fehler); outline-offset: 0; }
 .karte.status-aufgeteilt { background: #e6e6e6; border-color: #9a9a9a; color: #333; }
 .karte.status-entfaellt { background: #fff; border-style: dashed; color: var(--text-leise); }
@@ -5612,7 +5615,7 @@ const PlanReiter = (() => {
           el('select', { id: 'plan-auswahl', 'aria-labelledby': 'plan-auswahl-titel', onchange: (e) => { ansicht.id = e.target.value; render(); } })),
         el('button', { type: 'button', class: 'knopf', id: 'plan-drucken', text: 'Drucken', onclick: () => drucke(false) }),
         el('button', { type: 'button', class: 'knopf', id: 'plan-drucken-alle', text: 'Alle drucken', onclick: () => drucke(true) })),
-      el('p', { class: 'hinweis', text: 'Ziehen Sie Stunden auf andere Zeitslots (in der Klasse wird getauscht). Tastatur: Pfeiltasten, Enter zum Aufnehmen und Ablegen, Esc zum Abbrechen, Entf entfernt Zweitbesetzung oder Aufsicht.' }),
+      el('p', { class: 'hinweis', text: 'Ziehen Sie Stunden auf andere Zeitslots (in der Klasse wird getauscht). Touchscreen: Karte antippen und dann das Ziel antippen – oder Karte kurz gedrückt halten und ziehen. Tastatur: Pfeiltasten, Enter zum Aufnehmen und Ablegen, Esc zum Abbrechen, Entf entfernt Zweitbesetzung oder Aufsicht.' }),
       el('p', { id: 'plan-ansage', class: 'ansage', 'aria-live': 'polite' }),
       el('div', { class: 'plan-layout' },
         el('div', { class: 'plan-raster-rahmen', id: 'plan-raster-rahmen' }),
@@ -5620,6 +5623,7 @@ const PlanReiter = (() => {
     );
     if (!document.getElementById('druckbereich')) document.body.append(el('div', { id: 'druckbereich' }));
     window.addEventListener('afterprint', () => document.getElementById('druckbereich').replaceChildren());
+    richteBeruehrungEin();
     sichtbar = App.beobachteSichtbar(panel, render);
     render();
   }
@@ -5775,7 +5779,7 @@ const PlanReiter = (() => {
     if (art !== 'raum' && s.raum) k.append(el('div', { class: 'karte-raum', text: n.raum(s.raum) }));
     if (regeln) k.append(el('div', { class: 'konflikt-marke', text: '⚠ ' + [...regeln].join(' ') }));
     if (!fuerDruck) {
-      k.addEventListener('dragstart', (e) => { e.dataTransfer.setData(MIME, JSON.stringify({ art: 'stunde', index: i })); e.dataTransfer.effectAllowed = 'move'; });
+      k.addEventListener('dragstart', (e) => { if (!nativesZiehen(e)) return; e.dataTransfer.setData(MIME, JSON.stringify({ art: 'stunde', index: i })); e.dataTransfer.effectAllowed = 'move'; });
     }
     return k;
   }
@@ -5804,7 +5808,7 @@ const PlanReiter = (() => {
     if (regeln) chip.append(el('span', { class: 'konflikt-marke', text: ' ⚠ ' + [...regeln].join(' ') }));
     if (!fuerDruck) {
       chip.append(el('button', { type: 'button', class: 'mini', tabindex: '-1', 'aria-label': 'Aufsicht entfernen', title: 'Aufsicht entfernen', text: '×', onclick: (e) => { e.stopPropagation(); fuehreAus({ art: 'aufsichtWeg', index: i }); } }));
-      chip.addEventListener('dragstart', (e) => { e.dataTransfer.setData(MIME, JSON.stringify({ art: 'aufsicht', index: i })); e.dataTransfer.effectAllowed = 'move'; });
+      chip.addEventListener('dragstart', (e) => { if (!nativesZiehen(e)) return; e.dataTransfer.setData(MIME, JSON.stringify({ art: 'aufsicht', index: i })); e.dataTransfer.effectAllowed = 'move'; });
     }
     return chip;
   }
@@ -5829,7 +5833,7 @@ const PlanReiter = (() => {
       const karte = e.target.closest?.('.karte');
       lege(nutzlast, td, karte ? Number(karte.dataset.index) : null);
     });
-    td.addEventListener('click', () => { const r = koordinaten(td); if (r) { aktiv = r; setzeAktiv(true); } });
+    td.addEventListener('click', (e) => tippe(td, e));
     td.addEventListener('focus', () => { const r = koordinaten(td); if (r && (r.zeile !== aktiv.zeile || r.spalte !== aktiv.spalte)) { aktiv = r; setzeAktiv(false); } });
     td.addEventListener('keydown', tasten);
   }
@@ -5889,9 +5893,14 @@ const PlanReiter = (() => {
     const chip = App.el('button', {
       type: 'button', class: 'chip quelle', draggable: 'true', 'data-quelle': art, 'data-lehrkraft': lehrkraft,
       'aria-label': `${l.kuerzel} (${l.name}) ${zusatz} – aufnehmen`, text: `${l.kuerzel} · ${zusatz}`,
-      onclick: () => { aufgenommen = { art, lehrkraft }; ansage(`${l.kuerzel} aufgenommen – Zielzelle mit den Pfeiltasten wählen und Enter drücken (Esc bricht ab).`); setzeAktiv(true); },
+      onclick: () => {
+        if (Date.now() < klickSperreBis) return;
+        aufgenommen = { art, lehrkraft };
+        ansage(`${l.kuerzel} aufgenommen – Zielzelle antippen bzw. anklicken oder mit den Pfeiltasten wählen und Enter drücken (Esc bricht ab).`);
+        setzeAktiv(zeigerArt === 'mouse');
+      },
     });
-    chip.addEventListener('dragstart', (e) => { e.dataTransfer.setData(MIME, JSON.stringify({ art, lehrkraft })); e.dataTransfer.effectAllowed = 'copy'; });
+    chip.addEventListener('dragstart', (e) => { if (!nativesZiehen(e)) return; e.dataTransfer.setData(MIME, JSON.stringify({ art, lehrkraft })); e.dataTransfer.effectAllowed = 'copy'; });
     return chip;
   }
 
@@ -6034,6 +6043,147 @@ const PlanReiter = (() => {
       aktiv = merke;
       setzeAktiv(true);
     }
+  }
+
+  /* ----------------------------- Touchscreen ---------------------------- */
+  // HTML-Drag-and-drop funktioniert auf Touchscreens (insbesondere Safari unter
+  // iOS/iPadOS) nicht zuverlässig. Daher zwei eigene Wege:
+  //   1. Antippen und Ziel antippen (wie Aufnehmen/Ablegen per Tastatur)
+  //   2. Gedrückt halten (≈ 350 ms) und ziehen; kurzes Wischen scrollt weiter
+  const HALTEN_MS = 350;
+  const TOLERANZ_PX = 10;
+  let zeigerArt = 'mouse';
+  let beruehrung = null; // { nutzlast, quelle, x, y, timer, aktiv, geist, ziel }
+  let klickSperreBis = 0;
+
+  /** Was eine Karte bzw. ein Chip transportiert. */
+  function nutzlastVon(element) {
+    const k = element?.closest?.('.raster .karte[data-index]');
+    if (k) return { art: 'stunde', index: Number(k.dataset.index) };
+    const c = element?.closest?.('.raster .chip[data-aufsicht]');
+    if (c) return { art: 'aufsicht', index: Number(c.dataset.aufsicht) };
+    const q = element?.closest?.('.chip.quelle');
+    if (q) return { art: q.dataset.quelle, lehrkraft: q.dataset.lehrkraft };
+    return null;
+  }
+
+  /** Natives Ziehen nur mit Maus; bei Berührung übernimmt die eigene Steuerung. */
+  function nativesZiehen(e) {
+    if (zeigerArt !== 'mouse' || beruehrung) { e.preventDefault(); return false; }
+    return true;
+  }
+
+  function richteBeruehrungEin() {
+    panel.addEventListener('pointerdown', (e) => { zeigerArt = e.pointerType || 'mouse'; }, true);
+    panel.addEventListener('touchstart', (e) => { zeigerArt = 'touch'; beruehrungStart(e); }, { passive: true });
+    // Kein Kontextmenü/Lupe beim langen Drücken auf Karten
+    panel.addEventListener('contextmenu', (e) => { if (zeigerArt !== 'mouse' && nutzlastVon(e.target)) e.preventDefault(); });
+  }
+
+  /** Tippen oder Klicken auf eine Zelle: ablegen, aufnehmen oder Zelle wählen. */
+  function tippe(td, e) {
+    if (Date.now() < klickSperreBis || e.target.closest('button')) return;
+    const r = koordinaten(td);
+    if (r) aktiv = r;
+    if (aufgenommen) {
+      const eigene = nutzlastVon(e.target);
+      if (eigene && eigene.art === aufgenommen.art && eigene.index === aufgenommen.index && eigene.index !== undefined) {
+        aufgenommen = null;
+        ansage('Abgebrochen.');
+      } else {
+        const karte = e.target.closest('.karte');
+        const nutzlast = aufgenommen;
+        aufgenommen = null;
+        lege(nutzlast, td, karte ? Number(karte.dataset.index) : null);
+      }
+      setzeAktiv(zeigerArt === 'mouse');
+      return;
+    }
+    if (zeigerArt !== 'mouse') {
+      const n = nutzlastVon(e.target);
+      if (n) {
+        aufgenommen = n;
+        ansage(`${n.art === 'stunde' ? 'Stunde' : 'Aufsicht'} aufgenommen – jetzt das Ziel antippen (nochmals antippen bricht ab).`);
+        setzeAktiv(false);
+        return;
+      }
+    }
+    setzeAktiv(true);
+  }
+
+  function beruehrungStart(e) {
+    abbrechenBeruehrung();
+    if (e.touches.length !== 1 || e.target.closest('button.mini')) return;
+    const quelleElement = e.target.closest('.karte, .chip');
+    const nutzlast = nutzlastVon(e.target);
+    if (!quelleElement || !nutzlast) return;
+    const t = e.touches[0];
+    beruehrung = { nutzlast, quelle: quelleElement, x: t.clientX, y: t.clientY, aktiv: false, ziel: null, geist: null };
+    beruehrung.timer = setTimeout(starteZiehen, HALTEN_MS);
+    document.addEventListener('touchmove', beruehrungBewegung, { passive: false });
+    document.addEventListener('touchend', beruehrungEnde, { passive: false });
+    document.addEventListener('touchcancel', abbrechenBeruehrung);
+  }
+
+  function starteZiehen() {
+    if (!beruehrung) return;
+    beruehrung.aktiv = true;
+    const geist = beruehrung.quelle.cloneNode(true);
+    const rechteck = beruehrung.quelle.getBoundingClientRect();
+    geist.classList.add('geist');
+    geist.removeAttribute('id');
+    geist.style.width = rechteck.width + 'px';
+    geist.style.left = beruehrung.x + 'px';
+    geist.style.top = beruehrung.y + 'px';
+    document.body.append(geist);
+    beruehrung.geist = geist;
+    beruehrung.quelle.classList.add('aufgenommen');
+    navigator.vibrate?.(15);
+    ansage('Zum Ziel ziehen und loslassen.');
+  }
+
+  function beruehrungBewegung(e) {
+    if (!beruehrung) return;
+    const t = e.touches[0];
+    if (!beruehrung.aktiv) {
+      // vor Ablauf der Haltezeit bewegt: der Finger scrollt – kein Ziehen
+      if (Math.hypot(t.clientX - beruehrung.x, t.clientY - beruehrung.y) > TOLERANZ_PX) abbrechenBeruehrung();
+      return;
+    }
+    e.preventDefault(); // nicht scrollen, solange gezogen wird
+    beruehrung.geist.style.left = t.clientX + 'px';
+    beruehrung.geist.style.top = t.clientY + 'px';
+    const td = document.elementFromPoint(t.clientX, t.clientY)?.closest('.raster td[data-tag]');
+    if (td !== beruehrung.ziel) {
+      beruehrung.ziel?.classList.remove('ziel');
+      td?.classList.add('ziel');
+      beruehrung.ziel = td || null;
+    }
+    beruehrung.punkt = { x: t.clientX, y: t.clientY };
+  }
+
+  function beruehrungEnde(e) {
+    if (!beruehrung) return;
+    if (!beruehrung.aktiv) { abbrechenBeruehrung(); return; } // kurzer Tipp → Klick-Behandlung
+    e.preventDefault();
+    const { nutzlast, ziel, punkt } = beruehrung;
+    const karte = punkt ? document.elementFromPoint(punkt.x, punkt.y)?.closest('.karte') : null;
+    abbrechenBeruehrung();
+    klickSperreBis = Date.now() + 500; // nachfolgenden Klick ignorieren
+    if (ziel) lege(nutzlast, ziel, karte && ziel.contains(karte) ? Number(karte.dataset.index) : null);
+    else ansage('Nicht abgelegt – bitte über einer Zelle loslassen.');
+  }
+
+  function abbrechenBeruehrung() {
+    if (!beruehrung) return;
+    clearTimeout(beruehrung.timer);
+    beruehrung.geist?.remove();
+    beruehrung.ziel?.classList.remove('ziel');
+    beruehrung.quelle?.classList.remove('aufgenommen');
+    beruehrung = null;
+    document.removeEventListener('touchmove', beruehrungBewegung);
+    document.removeEventListener('touchend', beruehrungEnde);
+    document.removeEventListener('touchcancel', abbrechenBeruehrung);
   }
 
   /* ------------------------------- Druck ------------------------------- */

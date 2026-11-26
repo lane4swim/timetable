@@ -33,6 +33,7 @@ Alle Kriterien sind durch automatische Tests belegt. Kern-Tests laufen mit `npm 
 | Nutzbar ab 1280 px | `tests/e2e/bericht.test.mjs` (keine waagerechte Rollleiste in allen Reitern) |
 | Rückgängig/Wiederholen ≥ 50 Schritte, Tastaturbedienung der Tabellen | `tests/e2e/stammdaten.test.mjs` |
 | Druckansicht je Klasse und Lehrkraft | `tests/e2e/plan.test.mjs` → „Druckansicht …“ |
+| Plan-Bedienung auf dem Touchscreen (Antippen, Halten und Ziehen) | `tests/e2e/touch.test.mjs` (Touch-Emulation in Chromium) |
 
 ## Nicht automatisch geprüft
 
