@@ -209,3 +209,36 @@ describe('Verfahren', () => {
     assert.deepEqual(r.bericht.verstoesse, []);
   });
 });
+
+describe('Raumtypen (Rückmeldung: Sport wurde nicht eingeplant)', () => {
+  test('Schreibweise des Raumtyps spielt keine Rolle („Turnhalle“, „ turnhalle “)', () => {
+    for (const wert of ['Turnhalle', ' turnhalle ', 'TURNHALLE']) {
+      const z = datensatz('klein');
+      z.faecher.find((f) => f.kuerzel === 'SP').raumtyp = wert;
+      const r = Planer.plane(z);
+      assert.equal(r.bericht.vektor[0], 0, wert);
+      assert.equal(r.plan.regelplan.filter((s) => s.fach === 'f-sp').length, 12, wert);
+      assert.ok(r.plan.regelplan.filter((s) => s.fach === 'f-sp').every((s) => z.raeume.find((x) => x.id === s.raum).typ === 'turnhalle'));
+      assert.deepEqual(r.bericht.verstoesse, []);
+    }
+  });
+  test('fehlt der Raum ganz, fällt nur dieses Fach aus – mit Begründung und Hinweis', () => {
+    const z = datensatz('klein');
+    z.raeume = z.raeume.filter((x) => x.typ !== 'turnhalle');
+    const r = Planer.plane(z);
+    const sport = z.klassen.reduce((s, k) => s + k.stundentafel.find((e) => e.fach === 'f-sp').stunden, 0);
+    assert.equal(r.bericht.vektor[0], sport, 'genau die Sportstunden fallen aus');
+    assert.equal(r.bericht.untereSchrankeK1, sport);
+    assert.ok(r.bericht.ausfall.every((a) => a.fach === 'f-sp' && /kein Raum vom Typ „turnhalle“ vorhanden/.test(a.grund)));
+    assert.ok(r.bericht.warnungen.some((w) => /SP: kein Raum vom Typ „turnhalle“ vorhanden/.test(w)));
+    assert.ok(!r.bericht.warnungen.some((w) => /Kapazität qualifizierter Lehrkräfte/.test(w)), 'keine irreführende Personalwarnung');
+    assert.deepEqual(r.bericht.verstoesse, []);
+  });
+  test('zu kleine Räume des Typs: Ausfall nur für die betroffene Klasse', () => {
+    const z = leererPlan(miniSchule());
+    z.raeume.find((x) => x.id === 'r-th').kapazitaet = 21; // 1a (20) passt, 1b (22) nicht
+    const r = Planer.plane(z);
+    assert.deepEqual(r.bericht.ausfall.map((a) => [a.klasse, a.fach, a.grund]), [['k-1b', 'f-sp', 'kein Raum vom Typ „turnhalle“ mit 22 Plätzen']]);
+    assert.equal(r.plan.regelplan.filter((s) => s.klasse === 'k-1a' && s.fach === 'f-sp').length, 1);
+  });
+});

@@ -268,3 +268,26 @@ test('Farben in Stammdaten wählen und zurücksetzen', async () => {
   await seite.click(`#tabelle-faecher tr[data-schluessel="${f.id}"] .farbe-zelle button`);
   assert.equal((await daten()).faecher[0].farbe, undefined);
 });
+
+test('Benötigter Raumtyp ist eine Auswahl mit Turnhalle, Schwimmhalle und Fachraumtypen', async () => {
+  await seite.click('#stamm-faecher');
+  const d = await daten();
+  const sp = d.faecher.find((f) => f.kuerzel === 'SP');
+  const de = d.faecher.find((f) => f.kuerzel === 'DE');
+  const auswahl = seite.locator(`#tabelle-faecher [data-zeile="${sp.id}"][data-spalte="raumtyp"]`);
+  assert.equal(await auswahl.evaluate((e) => e.tagName), 'SELECT');
+  assert.equal(await auswahl.inputValue(), 'turnhalle');
+  const optionen = await auswahl.locator('option').allTextContents();
+  assert.ok(optionen.includes('Turnhalle'), optionen.join(' | '));
+  assert.ok(optionen.some((o) => /^Schwimmhalle – ⚠ kein solcher Raum/.test(o)), 'Schwimmhalle wählbar, aber gekennzeichnet');
+  assert.ok(optionen.includes('Fachraum: musik'));
+  // Deutsch auf Turnhalle stellen und wieder zurück auf Klassenraum
+  await seite.locator(`#tabelle-faecher [data-zeile="${de.id}"][data-spalte="raumtyp"]`).selectOption('turnhalle');
+  assert.equal((await daten()).faecher.find((f) => f.id === de.id).raumtyp, 'turnhalle');
+  await seite.locator(`#tabelle-faecher [data-zeile="${de.id}"][data-spalte="raumtyp"]`).selectOption('');
+  assert.equal((await daten()).faecher.find((f) => f.id === de.id).raumtyp, null);
+  // Großgeschriebener Wert aus einer Datei wird als „Turnhalle“ erkannt
+  await seite.evaluate((id) => window.Stundenplan.App.aendere('Test', (x) => { x.faecher.find((f) => f.id === id).raumtyp = 'Turnhalle'; }), sp.id);
+  assert.equal(await auswahl.inputValue(), 'turnhalle');
+  assert.deepEqual(fehler, []);
+});

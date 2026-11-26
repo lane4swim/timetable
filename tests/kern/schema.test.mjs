@@ -378,3 +378,15 @@ test('Fehlerliste ist begrenzt', () => {
   assert.ok(fehler.length <= 501);
   assert.match(fehler.at(-1).meldung, /weitere Fehler/);
 });
+
+test('Raumtyp ohne Rücksicht auf Groß-/Kleinschreibung: keine Warnung bei „Turnhalle“', () => {
+  const d = datensatz('klein');
+  d.faecher.find((f) => f.kuerzel === 'SP').raumtyp = 'Turnhalle';
+  const { fehler, warnungen } = pruefe(d);
+  assert.deepEqual(fehler, []);
+  assert.deepEqual(warnungen, []);
+  assert.equal(Modell.raumtypSchluessel('  Turnhalle '), 'turnhalle');
+  assert.equal(Modell.raumtypSchluessel('  '), null);
+  assert.equal(Modell.raumtypDesRaums({ typ: 'fachraum', fachraumtyp: 'NaWi' }), 'nawi');
+  assert.equal(Modell.raumtypDesRaums({ typ: 'klassenraum' }), null);
+});

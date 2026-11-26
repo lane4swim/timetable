@@ -217,7 +217,7 @@ const Kosten = (() => {
       if (!s.fach || !Index.STATUS.abgedeckt(s)) continue;
       const f = ix.faecher.get(s.fach);
       if (f?.hauptfach && !ix.istVormittag(s.stunde)) w('W4', 1, `${n.klasse(s.klasse)} ${n.slot(s.tag, s.stunde)} Stunde: Hauptfach ${n.fach(s.fach)} am Nachmittag`);
-      if ((f?.raumtyp === 'turnhalle' || f?.raumtyp === 'schwimmhalle') && s.stunde !== erste && ix.pauseVor.has(s.stunde)) {
+      if (Modell.SONDERRAUMTYPEN.includes(Modell.raumtypSchluessel(f?.raumtyp)) && s.stunde !== erste && ix.pauseVor.has(s.stunde)) {
         w('W4', 1, `${n.klasse(s.klasse)} ${n.slot(s.tag, s.stunde)} Stunde: ${n.fach(s.fach)} direkt nach der Pause`);
       }
     }
@@ -231,7 +231,7 @@ const Kosten = (() => {
       for (let i = 1; i < folge.length; i++) if (folge[i].raum !== folge[i - 1].raum) wechsel++;
       w('W6', wechsel, `${n.klasse(klasse)} wechselt am ${tag} ${wechsel}-mal den Raum`);
       for (const s of folge) {
-        if (heimat && s.raum !== heimat && s.fach && !ix.faecher.get(s.fach)?.raumtyp) {
+        if (heimat && s.raum !== heimat && s.fach && !Modell.raumtypSchluessel(ix.faecher.get(s.fach)?.raumtyp)) {
           w('W6', 1, `${n.klasse(klasse)} ${n.slot(tag, s.stunde)} Stunde ${n.fach(s.fach)} in ${n.raum(s.raum)} statt im Heimatraum`);
         }
       }
