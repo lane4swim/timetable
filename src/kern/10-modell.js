@@ -31,9 +31,9 @@ const Modell = (() => {
   /** Rollen einer Zuordnung (§2). */
   const ROLLEN = Object.freeze(['haupt', 'zweit']);
 
-  /** Voreingestellte Gewichte der weichen Regeln W1–W12 (§4). */
+  /** Voreingestellte Gewichte der weichen Regeln W1–W13 (§4). */
   const STANDARD_GEWICHTE = Object.freeze({
-    W1: 10, W2: 5, W3: 8, W4: 3, W5: 4, W6: 2, W7: 2, W8: 6, W9: 4, W10: 3, W11: 5, W12: 3,
+    W1: 10, W2: 5, W3: 8, W4: 3, W5: 4, W6: 2, W7: 2, W8: 6, W9: 4, W10: 3, W11: 5, W12: 3, W13: 4,
   });
 
   /** Standardeinstellungen (§8 „einstellungen“ und Annahmen des Implementierungsplans). */

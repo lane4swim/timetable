@@ -48,7 +48,7 @@ test('Bericht: Überblick, Ausfall, Vertretungsquote, Auslastung, weiche Regeln'
   assert.match(await feld('Vertretungsquote'), new RegExp(`${Math.round(b.vertretung.quote * 1000) / 10} %`));
   assert.equal(await feld('Ausfallstunden im Zeitraum'), String(b.vertretung.ausfallStunden));
   assert.equal(await seite.locator('#bericht-auslastung tbody tr').count(), z.lehrkraefte.length);
-  assert.equal(await seite.locator('#bericht-weich tbody tr').count(), 12);
+  assert.equal(await seite.locator('#bericht-weich tbody tr').count(), 13);
   assert.equal(await seite.locator('#bericht-ausfall-zeitraum tbody tr').count(), Math.max(1, b.vertretung.ausfall.length));
   // Druck
   await seite.evaluate(() => { window.print = () => {}; });

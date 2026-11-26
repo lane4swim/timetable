@@ -242,3 +242,19 @@ describe('Raumtypen (Rückmeldung: Sport wurde nicht eingeplant)', () => {
     assert.equal(r.plan.regelplan.filter((s) => s.klasse === 'k-1a' && s.fach === 'f-sp').length, 1);
   });
 });
+
+test('Option „Tagesende“: das Fach wird bevorzugt am Ende des Schultags platziert', () => {
+  const mitOption = (z) => { for (const k of z.klassen) for (const e of k.stundentafel) if (e.fach === 'f-ku' || e.fach === 'f-re') e.tagesende = true; return z; };
+  const ohne = Planer.plane(datensatz('klein'));
+  const zMit = mitOption(datensatz('klein'));
+  const mit = Planer.plane(zMit);
+  const w13 = (r) => Kosten.bewerte(zMit, { stunden: r.plan.regelplan, aufsichten: r.plan.aufsichten }).weich.W13.anzahl;
+  assert.deepEqual(mit.bericht.verstoesse, []);
+  assert.equal(mit.bericht.vektor[0], 0);
+  assert.ok(w13(mit) < w13(ohne) / 4, `mit Option ${w13(mit)}, ohne ${w13(ohne)}`);
+  // die meisten KU/RE-Stunden haben danach keine andere Stunde mehr
+  const amEnde = mit.plan.regelplan.filter((s) => (s.fach === 'f-ku' || s.fach === 'f-re')
+    && !mit.plan.regelplan.some((x) => x.klasse === s.klasse && x.tag === s.tag && x.stunde > s.stunde && x.fach !== s.fach));
+  const alle = mit.plan.regelplan.filter((s) => s.fach === 'f-ku' || s.fach === 'f-re');
+  assert.ok(amEnde.length >= alle.length * 0.75, `${amEnde.length} von ${alle.length} am Tagesende`);
+});

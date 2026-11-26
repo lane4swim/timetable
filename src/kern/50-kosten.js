@@ -2,7 +2,7 @@
  * Modul Kosten
  * Bewertet einen Plan mit dem lexikografischen Kostenvektor
  * (K1, K1A, K2, K3, K4, K5, K6) aus Spezifikation §3. K6 ist die gewichtete
- * Summe der weichen Regeln W1–W12 (§4). Jeder Kostenanteil wird mit
+ * Summe der weichen Regeln W1–W13 (§4). Jeder Kostenanteil wird mit
  * Einzelposten begründet (§9 Nachvollziehbarkeit).
  * ========================================================================== */
 const Kosten = (() => {
@@ -18,7 +18,7 @@ const Kosten = (() => {
     K5: 'ungenutztes Kontingent trotz möglicher Zweitbesetzung',
     K6: 'Planqualität (weiche Regeln)',
   });
-  const WEICH = Object.freeze(['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12']);
+  const WEICH = Object.freeze(['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12', 'W13']);
   const WTITEL = Object.freeze({
     W1: 'kompakter Schultag der Klassen',
     W2: 'Leerstunden bei Lehrkräften',
@@ -32,6 +32,7 @@ const Kosten = (() => {
     W10: 'beständige Zweitbesetzung',
     W11: 'Aufsichtssoll erfüllt',
     W12: 'Aufsicht angrenzend an eigenen Unterricht',
+    W13: 'Fach am Tagesende wie gewünscht',
   });
 
   const S = Index.schluessel;
@@ -210,6 +211,19 @@ const Kosten = (() => {
           w('W3', fehlt, `${n.klasse(k.id)} ${n.fach(t.fach)}: ${fehlt} von ${gewuenscht} gewünschten Doppelstunden fehlen`);
         }
       }
+    }
+
+    /* ---------- W13: Fach am Tagesende gewünscht ---------- */
+    // Je Stunde eines solchen Fachs: Zahl der Stunden anderer Fächer, die an diesem Tag danach folgen
+    for (const [k, idx] of proKlasseTag) {
+      const [klasse, tag] = k.split('|');
+      const tafel = ix.tafel.get(klasse);
+      const folge = idx.map((i) => stunden[i]).sort((a, b) => a.stunde - b.stunde);
+      folge.forEach((s, j) => {
+        if (!s.fach || !Index.STATUS.abgedeckt(s) || !tafel?.get(s.fach)?.tagesende) return;
+        const danach = folge.slice(j + 1).filter((x) => x.fach !== s.fach).length;
+        w('W13', danach, `${n.klasse(klasse)} ${n.slot(tag, s.stunde)} Stunde ${n.fach(s.fach)}: ${danach} Stunde(n) danach (Tagesende gewünscht)`);
+      });
     }
 
     /* ---------- W4: Hauptfächer vormittags, Sport nicht nach der Pause ---------- */

@@ -169,6 +169,7 @@ body.ablage-aktiv::after {
 .matrix-zelle label span { width: 2.2em; }
 .matrix-zelle input[type=text] { font: inherit; font-size: .9rem; width: 5em; padding: 1px 4px; border: 1px solid var(--linie); border-radius: 3px; }
 .matrix-zelle.warnung { box-shadow: inset 0 0 0 2px var(--warnung); }
+.matrix-optionen { display: flex; gap: 8px; }
 .marke { display: inline-block; font-size: .75rem; font-weight: 600; color: var(--warnung); }
 
 /* ------------------------------- Plan ------------------------------------- */
@@ -463,9 +464,9 @@ const Modell = (() => {
   /** Rollen einer Zuordnung (§2). */
   const ROLLEN = Object.freeze(['haupt', 'zweit']);
 
-  /** Voreingestellte Gewichte der weichen Regeln W1–W12 (§4). */
+  /** Voreingestellte Gewichte der weichen Regeln W1–W13 (§4). */
   const STANDARD_GEWICHTE = Object.freeze({
-    W1: 10, W2: 5, W3: 8, W4: 3, W5: 4, W6: 2, W7: 2, W8: 6, W9: 4, W10: 3, W11: 5, W12: 3,
+    W1: 10, W2: 5, W3: 8, W4: 3, W5: 4, W6: 2, W7: 2, W8: 6, W9: 4, W10: 3, W11: 5, W12: 3, W13: 4,
   });
 
   /** Standardeinstellungen (§8 „einstellungen“ und Annahmen des Implementierungsplans). */
@@ -786,6 +787,7 @@ const Schema = (() => {
       fach: T.ref('faecher', P),
       stunden: T.ganz({ ...P, min: 1, max: 20 }),
       doppelt: T.bool({ standard: false }),
+      tagesende: T.bool({ standard: false }),
     }), { standard: () => [] }),
   });
 
@@ -1815,7 +1817,7 @@ const Regeln = (() => {
  * Modul Kosten
  * Bewertet einen Plan mit dem lexikografischen Kostenvektor
  * (K1, K1A, K2, K3, K4, K5, K6) aus Spezifikation §3. K6 ist die gewichtete
- * Summe der weichen Regeln W1–W12 (§4). Jeder Kostenanteil wird mit
+ * Summe der weichen Regeln W1–W13 (§4). Jeder Kostenanteil wird mit
  * Einzelposten begründet (§9 Nachvollziehbarkeit).
  * ========================================================================== */
 const Kosten = (() => {
@@ -1831,7 +1833,7 @@ const Kosten = (() => {
     K5: 'ungenutztes Kontingent trotz möglicher Zweitbesetzung',
     K6: 'Planqualität (weiche Regeln)',
   });
-  const WEICH = Object.freeze(['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12']);
+  const WEICH = Object.freeze(['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12', 'W13']);
   const WTITEL = Object.freeze({
     W1: 'kompakter Schultag der Klassen',
     W2: 'Leerstunden bei Lehrkräften',
@@ -1845,6 +1847,7 @@ const Kosten = (() => {
     W10: 'beständige Zweitbesetzung',
     W11: 'Aufsichtssoll erfüllt',
     W12: 'Aufsicht angrenzend an eigenen Unterricht',
+    W13: 'Fach am Tagesende wie gewünscht',
   });
 
   const S = Index.schluessel;
@@ -2023,6 +2026,19 @@ const Kosten = (() => {
           w('W3', fehlt, `${n.klasse(k.id)} ${n.fach(t.fach)}: ${fehlt} von ${gewuenscht} gewünschten Doppelstunden fehlen`);
         }
       }
+    }
+
+    /* ---------- W13: Fach am Tagesende gewünscht ---------- */
+    // Je Stunde eines solchen Fachs: Zahl der Stunden anderer Fächer, die an diesem Tag danach folgen
+    for (const [k, idx] of proKlasseTag) {
+      const [klasse, tag] = k.split('|');
+      const tafel = ix.tafel.get(klasse);
+      const folge = idx.map((i) => stunden[i]).sort((a, b) => a.stunde - b.stunde);
+      folge.forEach((s, j) => {
+        if (!s.fach || !Index.STATUS.abgedeckt(s) || !tafel?.get(s.fach)?.tagesende) return;
+        const danach = folge.slice(j + 1).filter((x) => x.fach !== s.fach).length;
+        w('W13', danach, `${n.klasse(klasse)} ${n.slot(tag, s.stunde)} Stunde ${n.fach(s.fach)}: ${danach} Stunde(n) danach (Tagesende gewünscht)`);
+      });
     }
 
     /* ---------- W4: Hauptfächer vormittags, Sport nicht nach der Pause ---------- */
@@ -2798,12 +2814,16 @@ const Planer = (() => {
       const f = p.fIdx.get(e.fach);
       if (e.doppelt && F[f].blockbar) gewuenscht[c * nF + f] = Math.floor(e.stunden / 2);
     }));
+    // Fach am Tagesende gewünscht (W13)
+    const amEnde = new Uint8Array(K.length * nF);
+    K.forEach((k, c) => k.stundentafel.forEach((e) => { if (e.tagesende) amEnde[c * nF + p.fIdx.get(e.fach)] = 1; }));
+    const gewichtEnde = g.W13 ?? 0;
     const paare = new Int16Array(K.length * nF * T);
     const cd = new Float64Array(K.length * T);
     const w3 = new Float64Array(K.length);
     const td = new Float64Array(L.length * T);
 
-    /** Kosten eines Klassentags (W1, W4, W5, W6) und Doppelstunden-Paare des Tages. */
+    /** Kosten eines Klassentags (W1, W4, W5, W6, W13) und Doppelstunden-Paare des Tages. */
     function klassentag(c, d) {
       const len = p.laenge[c * T + d];
       const basis = c * p.NS + d * H;
@@ -2811,12 +2831,16 @@ const Planer = (() => {
       let w4 = 0;
       let w5 = 0;
       let w6 = 0;
+      let w13 = 0;
       let letzterRaum = -2;
       for (let f = 0; f < nF; f++) paare[(c * nF + f) * T + d] = 0;
       for (let h = 0; h < len; h++) {
         const it = items[p.grid[basis + h]];
         if (p.hauptfach[it.f] && p.nachmittag[h]) w4++;
         if (p.sport[it.f] && p.nachPause[h]) w4++;
+        if (gewichtEnde && amEnde[c * nF + it.f]) {
+          for (let x = h + 1; x < len; x++) if (items[p.grid[basis + x]].f !== it.f) w13++;
+        }
         const raum = it.typ;
         if (h > 0 && raum !== letzterRaum) w6++;
         letzterRaum = raum;
@@ -2839,7 +2863,7 @@ const Planer = (() => {
         if (h === 0 || items[p.grid[basis + h - 1]].f !== f) bloecke.set(f, (bloecke.get(f) || 0) + 1);
       }
       for (const b of bloecke.values()) w5 += b - 1;
-      return k + g.W4 * w4 + g.W5 * w5 + g.W6 * w6;
+      return k + g.W4 * w4 + g.W5 * w5 + g.W6 * w6 + gewichtEnde * w13;
     }
     function w3Klasse(c) {
       let fehlt = 0;
@@ -4873,7 +4897,7 @@ const ZuordnungReiter = (() => {
     panel = ziel;
     const el = App.el;
     panel.append(
-      el('p', { class: 'hinweis', text: 'Je Zelle: Wochenstunden (Std), Hauptlehrkraft (H) und Zweitlehrkraft (Z) als Kürzel, D = Doppelstunde gewünscht. Leere Stunden entfernen das Fach aus der Stundentafel.' }),
+      el('p', { class: 'hinweis', text: 'Je Zelle: Wochenstunden (Std), Hauptlehrkraft (H) und Zweitlehrkraft (Z) als Kürzel, D = Doppelstunde gewünscht, E = am Tagesende gewünscht. Leere Stunden entfernen das Fach aus der Stundentafel.' }),
       el('datalist', { id: 'liste-lehrkraefte' }),
       el('div', { class: 'meldungen', id: 'zuordnung-meldung', 'aria-live': 'polite' }),
       el('div', { class: 'tabellen-rahmen' }, el('table', { class: 'tabelle matrix', id: 'zuordnung-matrix' })),
@@ -4943,10 +4967,15 @@ const ZuordnungReiter = (() => {
       el('label', {}, el('span', { text: 'Std' }), feld('std', 'Wochenstunden', { inputmode: 'numeric' })),
       el('label', {}, el('span', { text: 'H' }), feld('haupt', 'Hauptlehrkraft', { list: 'liste-lehrkraefte' })),
       el('label', {}, el('span', { text: 'Z' }), feld('zweit', 'Zweitlehrkraft', { list: 'liste-lehrkraefte' })),
-      el('label', { class: 'matrix-doppel' }, el('input', {
-        type: 'checkbox', 'aria-label': `Doppelstunde gewünscht ${wo}`, 'data-art': 'doppelt',
-        'data-zeile': k.id, 'data-spalte': f.id + '|doppelt', onchange: (e) => uebernehme(k.id, f.id, 'doppelt', e.target.checked, e.target),
-      }), el('span', { text: 'D' })));
+      el('div', { class: 'matrix-optionen' },
+        el('label', { class: 'matrix-doppel', title: 'Doppelstunde gewünscht' }, el('input', {
+          type: 'checkbox', 'aria-label': `Doppelstunde gewünscht ${wo}`, 'data-art': 'doppelt',
+          'data-zeile': k.id, 'data-spalte': f.id + '|doppelt', onchange: (e) => uebernehme(k.id, f.id, 'doppelt', e.target.checked, e.target),
+        }), el('span', { text: 'D' })),
+        el('label', { class: 'matrix-doppel', title: 'am Tagesende gewünscht' }, el('input', {
+          type: 'checkbox', 'aria-label': `Tagesende gewünscht ${wo}`, 'data-art': 'tagesende',
+          'data-zeile': k.id, 'data-spalte': f.id + '|tagesende', onchange: (e) => uebernehme(k.id, f.id, 'tagesende', e.target.checked, e.target),
+        }), el('span', { text: 'E' }))));
     zellen.set(k.id + '|' + f.id, td);
     return td;
   }
@@ -4961,9 +4990,10 @@ const ZuordnungReiter = (() => {
       input.defaultValue = w; // Vergleichswert für „geändert?“ (Enter/↑/↓)
       if (!unberuehrt) input.value = w;
     }
-    const doppel = td.querySelector('input[type=checkbox]');
-    doppel.checked = !!eintrag?.doppelt;
-    doppel.disabled = !eintrag;
+    for (const kasten of td.querySelectorAll('input[type=checkbox]')) {
+      kasten.checked = !!eintrag?.[kasten.dataset.art];
+      kasten.disabled = !eintrag;
+    }
     td.classList.toggle('leer', !eintrag);
     td.querySelector('.marke')?.remove();
     const warnung = zu.haupt && eintrag && !ix.istQualifiziert(zu.haupt, f.id, k.stufe);
@@ -4995,7 +5025,7 @@ const ZuordnungReiter = (() => {
     let lokal = null;
     const d0 = App.zustand.daten;
     const wo = `${d0.faecher.find((f) => f.id === fachId)?.kuerzel} ${d0.klassen.find((k) => k.id === klasseId)?.name}`;
-    const titel = { std: 'Wochenstunden', haupt: 'Hauptlehrkraft', zweit: 'Zweitlehrkraft', doppelt: 'Doppelstunde' }[art];
+    const titel = { std: 'Wochenstunden', haupt: 'Hauptlehrkraft', zweit: 'Zweitlehrkraft', doppelt: 'Doppelstunde', tagesende: 'Tagesende' }[art];
     const r = App.aendere(`Zuordnung ${wo}: ${titel} geändert`, (d) => {
       const k = d.klassen.find((x) => x.id === klasseId);
       const eintrag = k.stundentafel.find((e) => e.fach === fachId);
@@ -5010,14 +5040,14 @@ const ZuordnungReiter = (() => {
         if (!Number.isInteger(n) || n < 1 || n > 20) { lokal = 'Bitte eine ganze Zahl von 0 bis 20 eingeben.'; return false; }
         if (eintrag) eintrag.stunden = n;
         else {
-          k.stundentafel.push({ fach: fachId, stunden: n, doppelt: false });
+          k.stundentafel.push({ fach: fachId, stunden: n, doppelt: false, tagesende: false });
           const reihenfolge = d.faecher.map((f) => f.id);
           k.stundentafel.sort((a, b) => reihenfolge.indexOf(a.fach) - reihenfolge.indexOf(b.fach));
         }
         return;
       }
       if (!eintrag) { lokal = 'Bitte zuerst Wochenstunden eintragen.'; return false; }
-      if (art === 'doppelt') { eintrag.doppelt = !!roh; return; }
+      if (art === 'doppelt' || art === 'tagesende') { eintrag[art] = !!roh; return; }
       const t = String(roh).trim();
       let lehrkraft = null;
       if (t) {

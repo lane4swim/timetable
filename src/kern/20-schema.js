@@ -101,6 +101,7 @@ const Schema = (() => {
       fach: T.ref('faecher', P),
       stunden: T.ganz({ ...P, min: 1, max: 20 }),
       doppelt: T.bool({ standard: false }),
+      tagesende: T.bool({ standard: false }),
     }), { standard: () => [] }),
   });
 
