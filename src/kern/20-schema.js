@@ -99,7 +99,7 @@ const Schema = (() => {
     heimatraum: T.ref('raeume', { nullbar: true, standard: null }),
     stundentafel: T.liste(T.objekt({
       fach: T.ref('faecher', P),
-      stunden: T.ganz({ ...P, min: 1, max: 20 }),
+      stunden: T.ganz({ ...P, min: 1, max: 40 }),
       doppelt: T.bool({ standard: false }),
       tagesende: T.bool({ standard: false }),
     }), { standard: () => [] }),

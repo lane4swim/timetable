@@ -155,7 +155,7 @@ const ZuordnungReiter = (() => {
           return;
         }
         const n = Number(t);
-        if (!Number.isInteger(n) || n < 1 || n > 20) { lokal = 'Bitte eine ganze Zahl von 0 bis 20 eingeben.'; return false; }
+        if (!Number.isInteger(n) || n < 1 || n > 40) { lokal = 'Bitte eine ganze Zahl von 0 bis 40 eingeben.'; return false; }
         if (eintrag) eintrag.stunden = n;
         else {
           k.stundentafel.push({ fach: fachId, stunden: n, doppelt: false, tagesende: false });
