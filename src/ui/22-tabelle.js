@@ -49,7 +49,8 @@ const Tabelle = (() => {
    * @param {(zeile: object, i: number) => string} [o.schluessel]  stabiler Zeilenschlüssel (Standard: id)
    * @param {(zeile: object) => string} [o.name]   lesbarer Zeilenname
    * @param {object[]} o.spalten        { feld, titel, art: text|zahl|bool|wahl|anzeige, breite, min, max, ganz,
-   *                                     optionen(d) → [[wert, text]], anzeigen(zeile, d), setzen(zeile, wert, d) → Fehlertext|undefined }
+   *                                     optionen(d) → [[wert, text]], anzeigen(zeile, d), setzen(zeile, wert, d) → Fehlertext|undefined,
+   *                                     bei „anzeige“ optional aktion(id) (Schaltfläche), aktionTitel, leer }
    * @param {(d: object) => (object|string)} [o.neu]   neue Zeile anlegen (oder Fehlertext)
    * @param {(d: object, zeile: object) => ({pfad,text}[]|undefined)} [o.verweise] blockierende Verweise
    * @param {(d: object, schluessel: string) => void} [o.entferne] Zeile entfernen (Standard: aus liste)
@@ -131,7 +132,7 @@ const Tabelle = (() => {
     function schreibeWert(feld, s, z, d) {
       const wert = s.anzeigen ? s.anzeigen(z, d) : z[s.feld];
       if (s.art === 'bool') feld.checked = !!wert;
-      else if (s.art === 'anzeige') feld.textContent = String(wert ?? '');
+      else if (s.art === 'anzeige') feld.textContent = String(wert ?? '') || (s.aktion ? s.leer || '–' : '');
       else feld.value = String(wert ?? '');
     }
 
@@ -143,7 +144,11 @@ const Tabelle = (() => {
         const wert = s.anzeigen ? s.anzeigen(z, d) : z[s.feld];
         const gemeinsam = { 'data-zeile': key, 'data-spalte': s.feld, 'aria-label': beschr };
         let feld;
-        if (s.art === 'anzeige') {
+        if (s.art === 'anzeige' && s.aktion) {
+          // Anzeige mit Sprungziel (z. B. Qualifikationen → Matrix)
+          feld = el('button', { type: 'button', class: 'verweis', 'data-zeile': key, 'data-spalte': s.feld, title: s.aktionTitel || '',
+            text: String(wert ?? '') || s.leer || '–', onclick: () => s.aktion(z.id ?? key) });
+        } else if (s.art === 'anzeige') {
           feld = el('span', { text: String(wert ?? '') });
         } else if (s.art === 'farbe') {
           feld = el('input', { type: 'color', ...gemeinsam, value: String(wert), onchange: (e) => uebernehme(key, s, e.target.value, e.target) });

@@ -10,6 +10,7 @@ const Kern = Object.freeze({
   Farben,
   Schema,
   Verweise,
+  Qualifikation,
   Index,
   Regeln,
   Kosten,
