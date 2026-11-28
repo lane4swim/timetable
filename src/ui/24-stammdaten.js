@@ -1,8 +1,8 @@
 /* ==========================================================================
  * Modul StammdatenReiter (Oberfläche, Reiter „Stammdaten“)
  * Tabellen für Lehrkräfte, Fächer, Räume, Klassen, Zeitraster mit Pausen und
- * Schule (§7). Kompakte Eingaben:
- *   Qualifikationen „MA 1–4; DE 5–10“  (Fachkürzel, optional Stufenbereich)
+ * Schule (§7) sowie die Qualifikationsmatrix (Lehrkräfte × Fächer, je Zelle
+ * Primarstufe · Sek I · Sek II). Kompakte Eingaben:
  *   Sperrzeiten     „Fr 5–6; Mo 1“      (Tag, Stunden)
  *   Nachbarräume    „102, 103“          (Raumnamen)
  * Löschen ist gesperrt, solange die Entität referenziert wird (mit Liste).
@@ -15,31 +15,12 @@ const StammdatenReiter = (() => {
   const tabellen = {};
 
   const BEREICHE = [
-    ['lehrkraefte', 'Lehrkräfte'], ['faecher', 'Fächer'], ['raeume', 'Räume'], ['klassen', 'Klassen'],
+    ['lehrkraefte', 'Lehrkräfte'], ['qualifikationen', 'Qualifikationen'], ['faecher', 'Fächer'], ['raeume', 'Räume'], ['klassen', 'Klassen'],
     ['zeitraster', 'Zeitraster und Pausen'], ['schule', 'Schule'],
   ];
 
   /* ------------------------ Text ↔ Daten ------------------------------ */
 
-  const kuerzelVon = (d, id) => d.faecher.find((f) => f.id === id)?.kuerzel || id;
-
-  function qualiText(z, d) {
-    return z.qualifikationen.map((q) => `${kuerzelVon(d, q.fach)} ${q.stufenVon === q.stufenBis ? q.stufenVon : q.stufenVon + '–' + q.stufenBis}`).join('; ');
-  }
-  function qualiLesen(text, d) {
-    const ergebnis = [];
-    for (const teil of text.split(';').map((t) => t.trim()).filter(Boolean)) {
-      const m = /^(\S+)(?:\s+(\d+)(?:\s*[-–]\s*(\d+))?)?$/.exec(teil);
-      if (!m) return `„${teil}“ verstehe ich nicht. Beispiel: MA 1–4; DE 5–10`;
-      const fach = d.faecher.find((f) => f.kuerzel.toLowerCase() === m[1].toLowerCase());
-      if (!fach) return `Fachkürzel „${m[1]}“ gibt es nicht. Vorhanden: ${d.faecher.map((f) => f.kuerzel).join(', ') || '–'}`;
-      const von = m[2] ? Number(m[2]) : 1;
-      const bis = m[3] ? Number(m[3]) : m[2] ? von : 13;
-      if (von < 1 || bis > 13 || bis < von) return `Stufenbereich bei „${teil}“ muss zwischen 1 und 13 liegen.`;
-      ergebnis.push({ fach: fach.id, stufenVon: von, stufenBis: bis });
-    }
-    return ergebnis;
-  }
   function sperrText(z) {
     return (z.gesperrt || []).map((g) => `${g.tag} ${Tabelle.Text.bereiche(g.stunden)}`).join('; ');
   }
@@ -101,7 +82,9 @@ const StammdatenReiter = (() => {
       spalten: [
         { feld: 'name', titel: 'Name', art: 'text', pflicht: true, breite: '12em' },
         { feld: 'kuerzel', titel: 'Kürzel', art: 'text', pflicht: true, max: 12, breite: '5em' },
-        { feld: 'qualifikationen', titel: 'Qualifikationen (Fach Stufen)', art: 'text', breite: '14em', platzhalter: 'z. B. MA 1–4; DE 1–4', anzeigen: qualiText, setzen: setzeMit(qualiLesen, 'qualifikationen') },
+        { feld: 'qualifikationen', titel: 'Qualifikationen', art: 'anzeige', leer: 'keine – festlegen',
+          aktionTitel: 'In der Qualifikationsmatrix bearbeiten',
+          anzeigen: (z, d) => Kern.Qualifikation.zusammenfassung(z, d.faecher), aktion: (id) => zeigeQualifikationen(id) },
         { feld: 'sollStunden', titel: 'Soll', art: 'zahl', min: 0, max: 40 },
         { feld: 'minStunden', titel: 'Min', art: 'zahl', min: 0, max: 40 },
         { feld: 'maxStunden', titel: 'Max', art: 'zahl', min: 0, max: 40 },
@@ -302,7 +285,8 @@ const StammdatenReiter = (() => {
         el('input', { type: 'text', 'data-schulfeld': feld, onchange: (e) => App.aendere(`Schule: ${titel} geändert`, (d) => { d.schule[feld] = e.target.value.trim(); }) }))));
     const listen = el('datalist', { id: 'liste-raumtypen' });
     const bereiche = {
-      lehrkraefte: el('div', {}, el('p', { class: 'hinweis', text: 'Qualifikationen als „Fachkürzel Stufen“, mehrere durch Semikolon: MA 1–4; DE 1–4. Sperrzeiten als „Tag Stunden“: Fr 5–6; Mo 1.' }), tabellen.lehrkraefte.element),
+      lehrkraefte: el('div', {}, el('p', { class: 'hinweis', text: 'Qualifikationen werden im Bereich „Qualifikationen“ gepflegt (Klick auf die Zusammenfassung springt dorthin). Sperrzeiten als „Tag Stunden“: Fr 5–6; Mo 1.' }), tabellen.lehrkraefte.element),
+      qualifikationen: QualiMatrix.baue(),
       faecher: el('div', {}, el('p', { class: 'hinweis', text: 'Benötigter Raumtyp: „Klassenraum“ für Unterricht im Heimatraum, sonst Turnhalle, Schwimmhalle oder ein Fachraumtyp. Fachraumtypen entstehen im Bereich „Räume“ (Typ „Fachraum“). Für ein Fach ohne passenden Raum können keine Stunden geplant werden.' }), tabellen.faecher.element),
       raeume: el('div', {}, tabellen.raeume.element),
       klassen: el('div', {}, el('p', { class: 'hinweis', text: 'Stundentafeln und Lehrkräfte je Fach werden im Reiter „Zuordnung“ gepflegt.' }), tabellen.klassen.element),
@@ -345,8 +329,15 @@ const StammdatenReiter = (() => {
     panel.querySelector('#liste-raumtypen').replaceChildren(...[...typen].map((t) => App.el('option', { value: t })));
     for (const input of panel.querySelectorAll('#stamm-tage input')) input.checked = d.zeitraster.tage.includes(input.dataset.tag);
     for (const input of panel.querySelectorAll('[data-schulfeld]')) if (input !== document.activeElement) input.value = d.schule[input.dataset.schulfeld] || '';
+    if (aktiv === 'qualifikationen') QualiMatrix.render();
     tabellen[aktiv]?.render();
   }
 
-  return { sichtbar: () => sichtbar(), baue, wechsle, qualiLesen, sperrLesen };
+  /** Springt zur Matrix und setzt den Fokus auf die Zeile der Lehrkraft. */
+  function zeigeQualifikationen(lehrkraftId) {
+    wechsle('qualifikationen');
+    QualiMatrix.fokus(lehrkraftId);
+  }
+
+  return { sichtbar: () => sichtbar(), baue, wechsle, sperrLesen };
 })();

@@ -249,3 +249,18 @@ body.ablage-aktiv::after {
   .panel { border: none; padding: 0; min-height: 0; }
   .panel[hidden] { display: none; }
 }
+
+/* Qualifikationsmatrix */
+.quali-matrix th[scope=col] { text-align: center; white-space: nowrap; }
+.quali-matrix th[scope=row] { text-align: left; white-space: nowrap; }
+.quali-gruppe { display: flex; gap: 3px; justify-content: center; margin-top: 2px; }
+.quali-matrix th[scope=row] .quali-gruppe { justify-content: flex-start; }
+.quali-zelle { text-align: center; min-width: 6em; }
+.quali-zelle.warnung { box-shadow: inset 0 0 0 2px var(--warnung); }
+.quali-knopf { font: inherit; font-size: .75rem; min-width: 2.4em; padding: 2px 4px; border: 1px solid var(--linie); border-radius: 3px; background: var(--flaeche, transparent); color: var(--text-leise); cursor: pointer; }
+.quali-knopf[aria-pressed=true] { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); font-weight: 600; }
+.quali-knopf[aria-pressed=mixed] { border: 2px dashed var(--akzent); color: var(--text); }
+.quali-knopf:focus-visible { outline: 2px solid var(--fokus, var(--akzent)); outline-offset: 1px; }
+.quali-zelle .marke { display: block; }
+button.verweis { font: inherit; background: none; border: 0; padding: 0; color: var(--akzent); text-decoration: underline; cursor: pointer; text-align: left; }
+.quali-matrix th[scope=row], .quali-matrix thead th:first-child { position: sticky; left: 0; z-index: 1; background: var(--flaeche); }

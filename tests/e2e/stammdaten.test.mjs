@@ -89,15 +89,8 @@ test('sofortige Prüfung: Zahlenbereich, Pflichtfeld, doppeltes Kürzel, Querpr�
   assert.equal(await zelle('tabelle-lehrkraefte', a.id, 'maxStunden').inputValue(), String(a.maxStunden));
 });
 
-test('Qualifikationen und Sperrzeiten als Kurzschreibweise', async () => {
+test('Sperrzeiten als Kurzschreibweise', async () => {
   const a = (await daten()).lehrkraefte[0];
-  const q = zelle('tabelle-lehrkraefte', a.id, 'qualifikationen');
-  await eingeben(q, 'MA 1-4; XY 2');
-  assert.match(await seite.textContent('#stamm-bereich-lehrkraefte .meldungen'), /Fachkürzel „XY“ gibt es nicht/);
-  await eingeben(zelle('tabelle-lehrkraefte', a.id, 'qualifikationen'), 'mu 3-4; DE');
-  const quali = (await daten()).lehrkraefte[0].qualifikationen;
-  assert.deepEqual(quali.map((x) => [x.stufenVon, x.stufenBis]), [[3, 4], [1, 13]]);
-  assert.equal(await zelle('tabelle-lehrkraefte', a.id, 'qualifikationen').inputValue(), 'MU 3–4; DE 1–13');
   await eingeben(zelle('tabelle-lehrkraefte', a.id, 'gesperrt'), 'fr 5-6; Mo 1, 3');
   assert.deepEqual((await daten()).lehrkraefte[0].gesperrt, [{ tag: 'Fr', stunden: [5, 6] }, { tag: 'Mo', stunden: [1, 3] }]);
   await eingeben(zelle('tabelle-lehrkraefte', a.id, 'gesperrt'), 'Fr 9');
@@ -236,14 +229,13 @@ test('Tab nach dem Hinzufügen einer Zeile springt Feld für Feld weiter und spe
   await seite.keyboard.press('Control+a');
   await seite.keyboard.type('MUS');
   await seite.keyboard.press('Tab');
-  assert.deepEqual(await fokus(), [neu.id, 'qualifikationen']);
-  await seite.keyboard.type('DE 1-4');
+  assert.deepEqual(await fokus(), [neu.id, 'qualifikationen'], 'Verweis auf die Qualifikationsmatrix');
   await seite.keyboard.press('Tab');
   assert.deepEqual(await fokus(), [neu.id, 'sollStunden']);
   await seite.keyboard.press('Shift+Tab');
   assert.deepEqual(await fokus(), [neu.id, 'qualifikationen'], 'auch rückwärts');
   const l = (await daten()).lehrkraefte[5];
-  assert.deepEqual([l.name, l.kuerzel, l.qualifikationen.length], ['Max Muster', 'MUS', 1]);
+  assert.deepEqual([l.name, l.kuerzel], ['Max Muster', 'MUS']);
   // Beschriftungen folgen dem neuen Namen
   assert.equal(await seite.getAttribute(`#tabelle-lehrkraefte [data-zeile="${neu.id}"][data-spalte="kuerzel"]`, 'aria-label'), 'Kürzel – Max Muster');
 });
@@ -307,4 +299,74 @@ test('Zuordnung: Option „Tagesende“ (E) neben „Doppelstunde“ (D)', async
   // ohne Wochenstunden nicht wählbar
   const frei = d.faecher.find((f) => !k.stundentafel.some((e) => e.fach === f.id));
   if (frei) assert.equal(await seite.locator(`#zuordnung-matrix [data-zeile="${k.id}"][data-spalte="${frei.id}|tagesende"]`).isDisabled(), true);
+});
+
+test('Qualifikationsmatrix: Stufengruppen je Zelle, Zeile und Spalte', async () => {
+  const d = await daten();
+  const a = d.lehrkraefte[0];
+  const de = d.faecher.find((f) => f.kuerzel === 'DE');
+  const ku = d.faecher.find((f) => f.kuerzel === 'KU');
+  // Zusammenfassung in der Lehrkräfte-Tabelle, Klick springt zur Matrix
+  const verweis = zelle('tabelle-lehrkraefte', a.id, 'qualifikationen');
+  assert.match(await verweis.textContent(), /\(P\)/);
+  await verweis.click();
+  assert.equal(await seite.getAttribute('#stamm-qualifikationen', 'aria-pressed'), 'true');
+  assert.ok(await seite.isVisible('#quali-matrix'));
+  assert.equal(await seite.evaluate(() => document.activeElement.dataset.lk), a.id, 'Fokus in der Zeile der Lehrkraft');
+  // Grundschule: nur Primarstufe sichtbar
+  const sichtbar = await seite.$$eval('#quali-gruppen input', (l) => l.map((i) => [i.dataset.gruppe, i.checked]));
+  assert.deepEqual(sichtbar, [['P', true], ['SI', false], ['SII', false]]);
+  const knopf = (lk, fach, g) => seite.locator(`#quali-matrix .quali-knopf[data-lk="${lk}"][data-fach="${fach}"][data-gruppe="${g}"]`);
+  // Einzelne Zelle umschalten
+  const ohneKu = d.lehrkraefte.find((l) => !l.qualifikationen.some((q) => q.fach === ku.id));
+  assert.equal(await knopf(ohneKu.id, ku.id, 'P').getAttribute('aria-pressed'), 'false');
+  await knopf(ohneKu.id, ku.id, 'P').click();
+  assert.equal(await knopf(ohneKu.id, ku.id, 'P').getAttribute('aria-pressed'), 'true');
+  assert.deepEqual((await daten()).lehrkraefte.find((l) => l.id === ohneKu.id).qualifikationen.filter((q) => q.fach === ku.id), [{ fach: ku.id, stufenVon: 1, stufenBis: 4 }]);
+  assert.equal(await seite.evaluate(() => document.activeElement.dataset.fach), ku.id, 'Fokus bleibt auf dem Schalter');
+  await seite.keyboard.press('Space');
+  assert.equal(await knopf(ohneKu.id, ku.id, 'P').getAttribute('aria-pressed'), 'false', 'Tastatur schaltet zurück');
+  // Weitere Stufengruppe einblenden und setzen: P + SI → 1–10
+  await seite.locator('#quali-gruppen input[data-gruppe="SI"]').check();
+  await knopf(a.id, de.id, 'SI').click();
+  const deA = (await daten()).lehrkraefte[0].qualifikationen.filter((q) => q.fach === de.id);
+  assert.deepEqual(deA.map((q) => [q.stufenVon, q.stufenBis]), [[1, 10]]);
+  // Teilweise abgedeckte Gruppe (3–4) erscheint gemischt, Klick setzt die ganze Gruppe
+  await seite.evaluate(([id, f]) => window.Stundenplan.App.aendere('Test', (x) => {
+    const l = x.lehrkraefte.find((y) => y.id === id); l.qualifikationen = l.qualifikationen.filter((q) => q.fach !== f).concat({ fach: f, stufenVon: 3, stufenBis: 4 });
+  }), [ohneKu.id, ku.id]);
+  assert.equal(await knopf(ohneKu.id, ku.id, 'P').getAttribute('aria-pressed'), 'mixed');
+  assert.match(await knopf(ohneKu.id, ku.id, 'P').getAttribute('title'), /nur Stufen 3–4/);
+  await knopf(ohneKu.id, ku.id, 'P').click();
+  assert.equal(await knopf(ohneKu.id, ku.id, 'P').getAttribute('aria-pressed'), 'true');
+  // Zeile: alle Fächer P für eine Lehrkraft (zweiter Klick entfernt)
+  const zeileP = seite.locator(`#quali-matrix [data-zeile-lk="${ohneKu.id}"][data-gruppe="P"]`);
+  await zeileP.click();
+  let l = (await daten()).lehrkraefte.find((x) => x.id === ohneKu.id);
+  assert.ok(d.faecher.every((f) => l.qualifikationen.some((q) => q.fach === f.id && q.stufenVon <= 1 && q.stufenBis >= 4)));
+  assert.equal(await zeileP.getAttribute('aria-pressed'), 'true');
+  await zeileP.click();
+  l = (await daten()).lehrkraefte.find((x) => x.id === ohneKu.id);
+  assert.ok(!l.qualifikationen.some((q) => q.stufenVon <= 4), 'Primarstufe überall entfernt');
+  // Spalte: KU P für alle Lehrkräfte
+  await seite.locator(`#quali-matrix [data-spalte-fach="${ku.id}"][data-gruppe="P"]`).click();
+  assert.ok((await daten()).lehrkraefte.every((x) => x.qualifikationen.some((q) => q.fach === ku.id && q.stufenVon === 1 && q.stufenBis === 4)));
+  // Rückgängig
+  await seite.keyboard.press('Control+z');
+  assert.ok(!(await daten()).lehrkraefte.every((x) => x.qualifikationen.some((q) => q.fach === ku.id)));
+  assert.deepEqual(fehler, []);
+});
+
+test('Qualifikationsmatrix markiert Hauptlehrkräfte ohne Qualifikation (H8)', async () => {
+  const d = await daten();
+  const zu = d.zuordnungen.find((z) => z.rolle === 'haupt' && z.lehrkraft);
+  await seite.click('#stamm-qualifikationen');
+  const zelleH8 = seite.locator(`#quali-matrix td:has(.quali-knopf[data-lk="${zu.lehrkraft}"][data-fach="${zu.fach}"])`);
+  assert.equal(await zelleH8.locator('.marke').count(), 0);
+  await seite.locator(`#quali-matrix .quali-knopf[data-lk="${zu.lehrkraft}"][data-fach="${zu.fach}"][data-gruppe="P"]`).click();
+  assert.match(await zelleH8.textContent(), /⚠ H8/);
+  assert.match(await zelleH8.locator('.marke').getAttribute('title'), /Hauptlehrkraft/);
+  await seite.locator(`#quali-matrix .quali-knopf[data-lk="${zu.lehrkraft}"][data-fach="${zu.fach}"][data-gruppe="P"]`).click();
+  assert.equal(await zelleH8.locator('.marke').count(), 0);
+  assert.deepEqual(fehler, []);
 });
