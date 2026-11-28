@@ -233,3 +233,67 @@ describe('weitere Fälle', () => {
     }
   });
 });
+
+describe('Zwei-Schritt-Ersatz und Mehrarbeit', () => {
+  /** B wäre mit einer weiteren Stunde über dem Soll; Di 3 ist B Zweitbesetzung in 1b. */
+  const schule = (mitDoppel = true) => {
+    const z = miniSchule();
+    abwesend(z, 'l-a');
+    if (mitDoppel) z.plan.regelplan[7].lehrkraefte = ['l-a', 'l-b'];
+    lk(z, 'l-b').sollStunden = mitDoppel ? 3 : 2;
+    return z;
+  };
+
+  test('Lehrkraft mit Freistunde vertritt und wird aus einer doppelt besetzten Stunde herausgenommen', () => {
+    const z = schule();
+    const v = loese1aMo2(z);
+    assert.equal(v.stufe, 3);
+    assert.ok(v.zweiSchritt);
+    assert.equal(v.stufeText, 'Vertretung durch Lehrkraft der Klasse (Zwei-Schritt-Ersatz)');
+    assert.match(v.text, /^B vertritt und wird dafür am Di 2026-11-17 in der 3\. Stunde \(1b DE, A unterrichtet allein\) entlastet – ohne Mehrarbeit$/);
+    assert.deepEqual(v.eintraege, [
+      { datum: MO, klasse: 'k-1a', fach: 'f-ma', stunde: 2, status: 'vertreten', lehrkraefte: ['l-b'], raum: 'r-a', grund: 'vertretungEigeneLehrkraft' },
+      { datum: DI, klasse: 'k-1b', fach: 'f-de', stunde: 3, status: 'regulaer', lehrkraefte: ['l-a'], raum: 'r-b', grund: 'entlastung' },
+    ]);
+    // Wochenstunden von B bleiben gleich, keine neuen Verstöße (übrig: nur noch offene Einträge der abwesenden A)
+    assert.ok(nachher(z, v).every((x) => /A ist am 2026-11-16 abwesend/.test(x.text)));
+    assert.deepEqual(Regeln.pruefeHart(z, Vertretung.tagesplan(z, DI), { datum: DI }), []);
+    const stundenB = [MO, DI].flatMap((d) => Vertretung.tagesplan(z, d).stunden).filter((s) => s.status !== 'entfaellt' && s.lehrkraefte.includes('l-b')).length;
+    assert.equal(stundenB, 3);
+    // Die direkte Vertretung mit Mehrarbeit bleibt als Alternative sichtbar
+    assert.ok(v.alternativen.some((a) => a.mehrarbeit && /B vertritt .*Mehrarbeit: 4 statt 3 Soll-Stunden/.test(a.text)));
+  });
+
+  test('ohne Entlastungsmöglichkeit hat eine Vertretung ohne Mehrarbeit Vorrang vor der eigenen Lehrkraft mit Mehrarbeit', () => {
+    const z = schule(false);
+    const v = loese1aMo2(z);
+    assert.equal(v.stufe, 4);
+    assert.ok(!v.mehrarbeit);
+    assert.ok(!/^B /.test(v.text));
+    const b = v.alternativen.find((a) => /^B vertritt/.test(a.text));
+    assert.ok(b && b.stufe === 3 && b.mehrarbeit, 'B mit Mehrarbeit als Alternative');
+  });
+
+  test('keine rückwirkende Entlastung: nur am Vertretungstag oder später in der Woche', () => {
+    const z = schule();
+    // Vertretung am Dienstag (1a Di 2 DE bei A); B ist nur Mo 1 in 1b doppelt besetzt
+    z.plan.regelplan[7].lehrkraefte = ['l-a'];
+    z.plan.regelplan[5].lehrkraefte = ['l-b', 'l-c'];
+    lk(z, 'l-a').abwesenheiten = [{ von: DI, bis: DI, grund: 'krank' }];
+    lk(z, 'l-b').qualifikationen.push({ fach: 'f-de', stufenVon: 1, stufenBis: 4 });
+    const v = Vertretung.loese(z, { art: 'lehrkraft', datum: DI, klasse: 'k-1a', stunde: 2, lehrkraft: 'l-a' });
+    assert.ok([v, ...v.alternativen].every((c) => !c.zweiSchritt));
+  });
+
+  test('Hauptlehrkraft wird entlastet: die Zweitbesetzung übernimmt die Stunde', () => {
+    const z = schule();
+    z.plan.regelplan[7].lehrkraefte = ['l-b', 'l-a'];
+    lk(z, 'l-b').qualifikationen.push({ fach: 'f-de', stufenVon: 1, stufenBis: 4 });
+    const v = loese1aMo2(z);
+    assert.ok(v.zweiSchritt);
+    assert.match(v.text, /1b DE, A übernimmt/);
+    assert.deepEqual(v.eintraege[1], { datum: DI, klasse: 'k-1b', fach: 'f-de', stunde: 3, status: 'vertreten', lehrkraefte: ['l-a'], raum: 'r-b', grund: 'entlastung' });
+    Vertretung.uebernehmen(z, v);
+    assert.deepEqual(Regeln.pruefeHart(z, Vertretung.tagesplan(z, DI), { datum: DI }), []);
+  });
+});
