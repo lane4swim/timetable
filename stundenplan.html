@@ -3409,6 +3409,10 @@ const Bearbeitung = (() => {
  *     gewinnt, innerhalb der Stufe entscheidet der Kostenvektor (§3).
  *     „Zulässig“ heißt: die Lösung erzeugt in keinem betroffenen Tagesplan
  *     einen neuen Verstoß gegen harte Regeln und hält die Höchststunden ein.
+ *     Innerhalb der Stufen 3 und 4 haben Lösungen ohne Mehrarbeit (Wochenstunden
+ *     über dem Soll) Vorrang. Dazu gehört der Zwei-Schritt-Ersatz: Eine Lehrkraft
+ *     mit Freistunde vertritt und wird dafür in derselben Woche (am selben oder
+ *     einem späteren Tag) aus einer doppelt besetzten Stunde herausgenommen.
  *   - uebernehmen(z, vorschlag): trägt die Einträge in plan.vertretungen bzw.
  *     plan.aufsichtsVertretungen ein (Bestätigung durch die Nutzerin, §5)
  * Der Regelplan wird nie verändert.
@@ -3499,7 +3503,9 @@ const Vertretung = (() => {
     const frei = (l, stunde) => !abwesend(ix.lehrkraefte.get(l), datum) && !ix.lehrkraftGesperrt(l, tag, stunde) && !belegtIm(l, stunde).length;
     const stundenAmTag = (l) => new Set(tp.stunden.filter((s) => Index.STATUS.belegt(s) && s.lehrkraefte.includes(l)).map((s) => s.stunde));
     const reserveFrei = (l) => (woche.get(l) || 0) + 1 <= ix.lehrkraefte.get(l).maxStunden;
-    return { z, ix, datum, tag, tp, wochentage, woche, aufsichtenWoche, belegtIm, frei, stundenAmTag, reserveFrei };
+    /** Eine zusätzliche Stunde wäre Mehrarbeit (Wochenstunden über dem Soll). */
+    const mehrarbeit = (l) => (woche.get(l) || 0) + 1 > ix.lehrkraefte.get(l).sollStunden;
+    return { z, ix, datum, tag, tp, wochentage, woche, aufsichtenWoche, belegtIm, frei, stundenAmTag, reserveFrei, mehrarbeit };
   }
 
   /* ------------------------- Bewertung von Lösungen --------------------- */
@@ -3530,7 +3536,8 @@ const Vertretung = (() => {
 
   /**
    * Prüft eine Lösung: keine neuen Verstöße an den betroffenen Daten,
-   * Höchststunden der Woche eingehalten. Liefert den Kostenvektor oder null.
+   * Höchststunden der Woche eingehalten. Liefert den Kostenvektor oder null:
+   * Kosten des Tags der betroffenen Stunde, für weitere Tage nur die Änderung.
    */
   function pruefe(z, loesung, vorherVerstoesse) {
     const neu = mitLoesung(z, loesung);
@@ -3550,7 +3557,12 @@ const Vertretung = (() => {
         if (!zaehler.get(k)) return null; // neuer Verstoß
         zaehler.set(k, zaehler.get(k) - 1);
       }
-      const b = Kosten.bewerte(neu, tp, { datum: d, mitPosten: false }).vektor;
+      let b = Kosten.bewerte(neu, tp, { datum: d, mitPosten: false }).vektor;
+      if (d !== daten[0]) {
+        // weitere Tage (Tausch, Entlastung): nur die Veränderung zählt, nicht die Kosten des ganzen Tages
+        const alt = Kosten.bewerte(z, tagesplan(z, d), { datum: d, mitPosten: false }).vektor;
+        b = b.map((x, i) => x - alt[i]);
+      }
       vektor = vektor ? vektor.map((x, i) => x + b[i]) : b;
     }
     // Höchststunden der Woche (H7) für alle beteiligten Lehrkräfte
@@ -3609,14 +3621,20 @@ const Vertretung = (() => {
     const springer = new Set(Bearbeitung.freieKontingente(z).map((x) => x.lehrkraft));
     const angrenzend = (l) => { const st = ctx.stundenAmTag(l); return st.has(s.stunde - 1) || st.has(s.stunde + 1); };
     const kandidaten = [];
+    const zweiSchritt = [];
     for (const l of z.lehrkraefte) {
-      if (l.id === abw || !ctx.reserveFrei(l.id)) continue;
+      if (l.id === abw) continue;
       const qual = ix.istQualifiziert(l.id, s.fach, k.stufe);
+      // Zwei-Schritt-Ersatz: frei, aber eine weitere Stunde wäre Mehrarbeit oder über der Höchstgrenze
+      if (ctx.frei(l.id, s.stunde) && (ctx.mehrarbeit(l.id) || !ctx.reserveFrei(l.id))) {
+        for (const ent of entlastungen(ctx, l.id, s)) zweiSchritt.push({ l, stufe: eigene.has(l.id) ? 3 : 4, qual, ent });
+      }
+      if (!ctx.reserveFrei(l.id)) continue;
       if (ctx.frei(l.id, s.stunde)) {
         const stufe = eigene.has(l.id) ? 3 : 4;
         const art = stufe === 3 ? (l.id === k.klassenlehrkraft ? 'Klassenlehrkraft' : 'Lehrkraft der Klasse') : qual ? (springer.has(l.id) ? 'Springerpool' : 'freie qualifizierte Lehrkraft') : 'Notfalleinsatz ohne Fachqualifikation';
         const rang = stufe === 3 ? (qual ? 0 : 1) : qual ? (springer.has(l.id) ? 0 : 1) : 3;
-        kandidaten.push({ l, stufe, rang, art, qual });
+        kandidaten.push({ l, stufe, rang, art, qual, mehrarbeit: ctx.mehrarbeit(l.id) });
       } else if (!abwesend(l, ctx.datum) && !ix.lehrkraftGesperrt(l.id, ctx.tag, s.stunde)) {
         // nur Zweitbesetzung im Slot → abziehen (Stufe 4)
         const dort = ctx.belegtIm(l.id, s.stunde);
@@ -3627,13 +3645,30 @@ const Vertretung = (() => {
       }
     }
     kandidaten.sort((a, b) => a.stufe - b.stufe || a.rang - b.rang || angrenzend(b.l.id) - angrenzend(a.l.id) || (ctx.woche.get(a.l.id) || 0) - (ctx.woche.get(b.l.id) || 0) || a.l.id.localeCompare(b.l.id));
+    // ohne Mehrarbeit zuerst prüfen (die Zahl geprüfter Kandidaten je Stufe ist begrenzt)
+    kandidaten.sort((a, b) => !!a.mehrarbeit - !!b.mehrarbeit);
     const proStufe = { 3: 0, 4: 0 };
+    const mehr = (l) => ` – Mehrarbeit: ${(ctx.woche.get(l) || 0) + 1} statt ${ix.lehrkraefte.get(l).sollStunden} Soll-Stunden`;
     for (const c of kandidaten) {
       if (proStufe[c.stufe]++ >= 8) continue; // je Stufe die aussichtsreichsten prüfen
       const eintraege = [eintrag(ctx, s, { lehrkraefte: [c.l.id], status: 'vertreten', grund: c.stufe === 3 ? 'vertretungEigeneLehrkraft' : c.abzug ? 'zweitbesetzungAbgezogen' : c.qual ? 'vertretungQualifiziert' : 'notfalleinsatz' })];
       if (c.abzug) eintraege.push(eintrag(ctx, c.abzug, { lehrkraefte: [c.abzug.lehrkraefte[0]], grund: 'zweitbesetzungAbgezogen' }));
-      liste.push({ stufe: c.stufe, text: `${n.lehrkraft(c.l.id)} vertritt (${c.art}${c.qual || c.stufe === 4 ? '' : ', fachfremd'})`, eintraege, rang: c.rang });
+      liste.push({ stufe: c.stufe, text: `${n.lehrkraft(c.l.id)} vertritt (${c.art}${c.qual || c.stufe === 4 ? '' : ', fachfremd'})${c.mehrarbeit ? mehr(c.l.id) : ''}`, eintraege, rang: c.rang, mehrarbeit: c.mehrarbeit });
       if (c.abzug && !c.qual) eintraege[0].grund = 'notfalleinsatz';
+    }
+
+    // Zwei-Schritt-Ersatz (Stufe 3 bzw. 4, ohne Mehrarbeit): je Lehrkraft die beste Entlastung, insgesamt höchstens 6
+    zweiSchritt.sort((a, b) => a.stufe - b.stufe || b.qual - a.qual || a.ent.rang - b.ent.rang || a.l.id.localeCompare(b.l.id));
+    const gesehen = new Set();
+    for (const c of zweiSchritt) {
+      if (gesehen.has(c.l.id) || gesehen.size >= 6) continue;
+      gesehen.add(c.l.id);
+      const grund = c.stufe === 3 ? 'vertretungEigeneLehrkraft' : c.qual ? 'vertretungQualifiziert' : 'notfalleinsatz';
+      liste.push({
+        stufe: c.stufe, rang: (c.qual ? 1 : 3) + 0.5, zweiSchritt: true,
+        text: `${n.lehrkraft(c.l.id)} vertritt${c.qual ? '' : ' (fachfremd)'} und wird dafür ${c.ent.text} entlastet – ohne Mehrarbeit`,
+        eintraege: [eintrag(ctx, s, { lehrkraefte: [c.l.id], status: 'vertreten', grund }), c.ent.eintrag],
+      });
     }
 
     // Stufe 5: Doppelbetreuung durch eine Lehrkraft, die im Slot eine andere Klasse unterrichtet
@@ -3664,6 +3699,41 @@ const Vertretung = (() => {
 
     liste.push(...kandidatenAufteilung(ctx, s), ...kandidatenEntfall(ctx, s, abw));
     return liste.map((c) => ({ ...c, wo }));
+  }
+
+  /**
+   * Mögliche Entlastungen einer Lehrkraft für den Zwei-Schritt-Ersatz: doppelt
+   * besetzte Stunden derselben Woche ab dem Vertretungstag, in denen sie
+   * herausgenommen werden kann. Die andere Lehrkraft unterrichtet allein weiter
+   * (war die Lehrkraft Hauptlehrkraft, rückt die Zweitbesetzung auf).
+   * Bevorzugt: als Zweitbesetzung eingeplant, gleicher Tag, früh in der Woche.
+   */
+  function entlastungen(ctx, l, s) {
+    const { ix, z } = ctx;
+    const n = ix.name;
+    const liste = [];
+    for (const d2 of ctx.wochentage) {
+      if (d2 < ctx.datum) continue; // keine rückwirkende Entlastung
+      ctx.plaene ??= new Map([[ctx.datum, ctx.tp]]);
+      if (!ctx.plaene.has(d2)) ctx.plaene.set(d2, tagesplan(z, d2));
+      for (const m of ctx.plaene.get(d2).stunden) {
+        if (m.lehrkraefte.length !== 2 || !m.lehrkraefte.includes(l) || !Index.STATUS.fachunterricht(m)) continue;
+        if (d2 === ctx.datum && m.klasse === s.klasse && m.stunde === s.stunde) continue;
+        const andere = m.lehrkraefte.find((x) => x !== l);
+        if (!andere || abwesend(ix.lehrkraefte.get(andere), d2)) continue;
+        const warHaupt = m.lehrkraefte[0] === l;
+        const qualAndere = ix.istQualifiziert(andere, m.fach, ix.klassen.get(m.klasse).stufe);
+        const wann = d2 === ctx.datum ? 'am selben Tag' : `am ${Hilfen.wochentag(d2)} ${d2}`;
+        const e = { datum: d2, klasse: m.klasse, fach: m.fach, stunde: m.stunde, status: warHaupt ? 'vertreten' : m.status, lehrkraefte: [andere], raum: m.raum, grund: 'entlastung' };
+        for (const k of Object.keys(e)) if (e[k] === undefined) delete e[k];
+        liste.push({
+          rang: (warHaupt ? 2 : 0) + (warHaupt && !qualAndere ? 2 : 0) + (d2 === ctx.datum ? 0 : 1),
+          text: `${wann} in der ${m.stunde}. Stunde (${n.klasse(m.klasse)} ${n.fach(m.fach)}${warHaupt ? `, ${n.lehrkraft(andere)} übernimmt` : `, ${n.lehrkraft(andere)} unterrichtet allein`})`,
+          eintrag: e, datum: d2, stunde: m.stunde,
+        });
+      }
+    }
+    return liste.sort((a, b) => a.rang - b.rang || a.datum.localeCompare(b.datum) || a.stunde - b.stunde).slice(0, 2);
   }
 
   /** Stufe 6: Aufteilung auf Klassen, die im Slot Unterricht haben (Kapazität, H6). */
@@ -3860,11 +3930,16 @@ const Vertretung = (() => {
       const notfall = { stufe: 8, text: 'Keine Lösung ohne Regelverstoß – Stunde entfällt (prüfen!)', eintraege: [eintrag(ctx, s, { lehrkraefte: [], raum: null, status: 'entfaellt', grund: 'keineLoesung' })], wo: `${ctx.ix.name.klasse(s.klasse)} ${b.datum} ${s.stunde}. Stunde` };
       bewertet.push({ ...notfall, vektor: null });
     }
-    bewertet.sort((x, y) => x.stufe - y.stufe || (x.vektor && y.vektor ? Kosten.vergleiche(x.vektor, y.vektor) : 0) || (x.rang ?? 0) - (y.rang ?? 0));
+    // Mehrarbeit in den Stufen 3 und 4 erst nach allen Lösungen dieser Stufen ohne Mehrarbeit
+    const ordnung = (c) => (c.mehrarbeit && c.stufe >= 3 && c.stufe < 5 ? 4.5 : c.stufe);
+    bewertet.sort((x, y) => ordnung(x) - ordnung(y) || x.stufe - y.stufe || (x.vektor && y.vektor ? Kosten.vergleiche(x.vektor, y.vektor) : 0) || (x.rang ?? 0) - (y.rang ?? 0));
     const [beste, ...rest] = bewertet;
     // Alternativen: weitere der gleichen Stufe und die besten späteren Stufen
     const alternativen = [];
     const stufenGesehen = new Set([beste.stufe]);
+    // ein Zwei-Schritt-Ersatz soll unter den Alternativen sichtbar sein, wenn es einen gibt
+    const zwei = rest.find((c) => c.zweiSchritt);
+    if (zwei && !beste.zweiSchritt) { alternativen.push(zwei); rest.splice(rest.indexOf(zwei), 1); }
     for (const c of rest) {
       if (alternativen.length >= maxAlt) break;
       if (c.stufe === beste.stufe || !stufenGesehen.has(c.stufe) || alternativen.filter((x) => x.stufe === c.stufe).length < 2) {
@@ -3874,7 +3949,8 @@ const Vertretung = (() => {
     }
     const stufenText = (st) => STUFEN[art][Math.floor(st)] || (st === 8 ? 'Keine regelkonforme Lösung' : '');
     const form = (c) => ({
-      stufe: Math.floor(c.stufe), stufeText: stufenText(c.stufe), text: c.text, vektor: c.vektor,
+      stufe: Math.floor(c.stufe), stufeText: stufenText(c.stufe) + (c.zweiSchritt ? ' (Zwei-Schritt-Ersatz)' : ''), text: c.text, vektor: c.vektor,
+      mehrarbeit: !!c.mehrarbeit, zweiSchritt: !!c.zweiSchritt,
       eintraege: c.eintraege || [], aufsichtsEintraege: c.aufsichtsEintraege || [],
     });
     return {
@@ -3902,7 +3978,7 @@ const Vertretung = (() => {
     vertretungEigeneLehrkraft: 'Vertretung durch Lehrkraft der Klasse', vertretungQualifiziert: 'Vertretung durch qualifizierte Lehrkraft',
     zweitbesetzungAbgezogen: 'Zweitbesetzung für Vertretung abgezogen', notfalleinsatz: 'Notfalleinsatz (fachfremd)', doppelbetreuung: 'Doppelbetreuung',
     aufteilung: 'Aufteilung der Klasse', entfallRand: 'Entfall am Tagesrand', nachgerueckt: 'Folgende Stunden nachgerückt', aufsicht: 'Aufsicht statt Unterricht',
-    raumausfall: 'Raumausfall – Ersatzraum', keineLoesung: 'Keine regelkonforme Lösung gefunden',
+    raumausfall: 'Raumausfall – Ersatzraum', entlastung: 'Entlastung für eine Vertretung (Zwei-Schritt-Ersatz)', keineLoesung: 'Keine regelkonforme Lösung gefunden',
   };
 
   return { STUFEN, GRUENDE, tagesplan, betroffen, vorschlaege, loese, uebernehmen, ausfallbericht };
